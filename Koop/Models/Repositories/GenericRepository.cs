@@ -15,10 +15,10 @@ namespace Koop.Models.Repositories
             _koopDbContext = koopDbContext;
             _objectSet = _koopDbContext.Set<T>();
         }
-        
-        public IEnumerable<T> GetAll(Func<T, bool> predicate = null)
+
+        public IQueryable<T> GetAll()
         {
-            return predicate is not null ? _objectSet.Where(predicate) : _objectSet.AsEnumerable();
+            return _objectSet;
         }
 
         public T GetDetail(Func<T, bool> predicate)

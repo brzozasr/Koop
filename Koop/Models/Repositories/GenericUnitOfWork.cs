@@ -59,6 +59,7 @@ namespace Koop.Models.Repositories
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

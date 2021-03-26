@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using Koop.Models;
 using Koop.Models.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +14,6 @@ namespace Koop.Controllers
             _uow = genericUnitOfWork;
         }
         
-        [Authorize]
         public IActionResult Index()
         {
             return Ok(new
@@ -26,9 +23,43 @@ namespace Koop.Controllers
             });
         }
 
-        public IActionResult Data()
+        public IActionResult NoAuth()
         {
-            return Ok(_uow.Repository<Fund>().GetAll());
+            return Ok(new
+            {
+                Message = "It works",
+                Time = DateTime.Now
+            });
+        }
+        
+        [Authorize]
+        public IActionResult Auth()
+        {
+            return Ok(new
+            {
+                Message = "It works",
+                Time = DateTime.Now
+            });
+        }
+        
+        [Authorize(Policy = "Szymek")]
+        public IActionResult AuthUserName()
+        {
+            return Ok(new
+            {
+                Message = "It works",
+                Time = DateTime.Now
+            });
+        }
+        
+        [Authorize(Policy = "StandardUser")]
+        public IActionResult AuthRole()
+        {
+            return Ok(new
+            {
+                Message = "It works",
+                Time = DateTime.Now
+            });
         }
     }
 }

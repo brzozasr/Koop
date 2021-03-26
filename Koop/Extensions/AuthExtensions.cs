@@ -1,8 +1,13 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Koop.Models;
 using Koop.Models.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
@@ -15,8 +20,14 @@ namespace Koop.Extensions
             services
                 .AddAuthorization(o =>
                 {
-                    o.AddPolicy("Admin", p => p.RequireUserName("snow"));
-                    o.AddPolicy("User", p => p.RequireUserName("janek"));
+                    o.AddPolicy("Admin", p => p.RequireRole("Admin"));
+                    o.AddPolicy("KoTy", p => p.RequireRole("Koty"));
+                    o.AddPolicy("OpRo", p => p.RequireRole("OpRo"));
+                    o.AddPolicy("Paczkers", p => p.RequireRole("Paczkers"));
+                    o.AddPolicy("Wprowadzacz", p => p.RequireRole("Wprowadzacz"));
+                    o.AddPolicy("Skarbnik", p => p.RequireRole("Skarbnik"));
+                    o.AddPolicy("StandardUser", p => p.RequireRole("Default"));
+                    o.AddPolicy("Szymek", p => p.RequireUserName("Szymek33"));
                 })
                 .AddAuthentication(o =>
                 {

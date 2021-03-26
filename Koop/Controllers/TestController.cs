@@ -52,7 +52,7 @@ namespace Koop.Controllers
             });
         }
         
-        [Authorize(Policy = "StandardUser")]
+        [Authorize(Roles = "Koty")]
         public IActionResult AuthRole()
         {
             return Ok(new

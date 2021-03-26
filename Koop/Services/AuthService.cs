@@ -87,6 +87,11 @@ namespace Koop.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
             };
 
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             //var roleClaims = roles.Select(r => new Claim(ClaimTypes.Role, r));
             //claims.AddRange(roleClaims);
 

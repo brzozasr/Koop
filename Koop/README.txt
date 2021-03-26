@@ -2,13 +2,13 @@ Aby uruchomić projekt:
 - utworzyć pustą bazę w PostgreSQL;
 - zaktualizować 'connection string' w pliku 'appsettings.json';
 - utworzyć tabele w bazie komendą: 'dotnet ef database update';
-- załadować mockowe dane - komendy insert znajdują się w 'pliku koop_mock_data.sql';
+- załadować mockowe dane - komendy 'INSERT' znajdują się w pliku 'koop_mock_data.sql';
 
 W pliku 'Controllers/AuthController.cs' znajdują się endpoint'y do zarządzania użytkownikami.
 W pliku 'Controllers/TestController.cs' znajdują się endpointy do testowania weryfikacji uwierzytelniania.
 
 Zaobserwowany problem:
-- nie działa poprwanie autoryzacja poprzez role. Zwykła autoryzacja oraz autoryzacja poprzez nazwę użytkownika działa poprwanie.
+- nie działa poprawnie autoryzacja poprzez role. Zwykła autoryzacja oraz autoryzacja poprzez nazwę użytkownika działa poprawnie.
 - ustawienia 'Policy' znajdują się w pliku 'Extensions/AuthExtensions.cs';
 
 Odtworzenie problemu:

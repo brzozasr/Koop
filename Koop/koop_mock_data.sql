@@ -1,6 +1,7 @@
 -- To install pgcrypto module needed to run gen_random_uuid() function
 -- The query must be run only once
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- UPDATE: the module is not needed yet
+-- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 
 -- Mock data
@@ -22,15 +23,6 @@ INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-000
 INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000001', N'Szkic');
 INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000002', N'Zatwierdzone');
 INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000003', N'Zrealizowane');
-
-/*INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000001', N'admin');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000002', N'koty');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000003', N'opro');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000004', N'paczkers');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000005', N'rozwazacz');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000006', N'wprowadzacz');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000007', N'skarbnik');
-INSERT INTO functions (function_id, function_name) VALUES ('00000000-0000-0000-0000-000000000008', N'default');*/
 
 INSERT INTO funds (fund_id, value) VALUES ('00000000-0000-0000-0000-000000000001', 10);
 INSERT INTO funds (fund_id, value) VALUES ('00000000-0000-0000-0000-000000000002', 30);

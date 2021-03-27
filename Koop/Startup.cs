@@ -9,6 +9,7 @@ using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Services;
+using Koop.Services.SwaggerExtension;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -37,9 +38,11 @@ namespace Koop
                 m.AddProfile(new MappingProfiles());
             });
             
-            services.AddControllersWithViews();
+            services.AddControllers();
+            
             services.AddDbContext<KoopDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
+            
             services.AddIdentity<User, Role>()
                 .AddEntityFrameworkStores<KoopDbContext>()
                 .AddDefaultTokenProviders();
@@ -54,6 +57,8 @@ namespace Koop
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();
 
             services.AddAuth(jwtSettings);
+            
+            services.AddSwaggerExt();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -62,27 +67,16 @@ namespace Koop
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                app.UseSwaggerExt();
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
+            
             app.UseRouting();
-
+            
             app.UseAuth();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
-            });
+            
+            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }

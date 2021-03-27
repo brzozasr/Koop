@@ -44,7 +44,7 @@ namespace Koop.Services
             return _userManager.CreateAsync(user, userSignUp.Password);
         }
 
-        public string? SignIn(UserLogIn userLogIn)
+        public string SignIn(UserLogIn userLogIn)
         {
             var user = _userManager.Users.SingleOrDefault(u => u.Email == userLogIn.Email);
             if (user is null)

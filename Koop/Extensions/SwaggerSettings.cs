@@ -1,11 +1,10 @@
 using System;
-using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
-namespace Koop.Services.SwaggerExtension
+namespace Koop.Extensions
 {
     public static class SwaggerSettings
     {

@@ -9,7 +9,6 @@ using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Services;
-using Koop.Services.SwaggerExtension;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -57,6 +56,7 @@ namespace Koop
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();
 
             services.AddAuth(jwtSettings);
+            services.AddIdentityPasswordPolicy();
             
             services.AddSwaggerExt();
         }

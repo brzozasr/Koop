@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Koop.Controllers
 {
-    public class TestController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class TestController : ControllerBase
     {
         private IGenericUnitOfWork _uow;
 
@@ -14,6 +16,8 @@ namespace Koop.Controllers
             _uow = genericUnitOfWork;
         }
         
+        [AllowAnonymous]
+        [HttpGet]
         public IActionResult Index()
         {
             return Ok(new
@@ -23,6 +27,8 @@ namespace Koop.Controllers
             });
         }
 
+        [AllowAnonymous]
+        [HttpGet("NoAuth")]
         public IActionResult NoAuth()
         {
             return Ok(new
@@ -33,6 +39,7 @@ namespace Koop.Controllers
         }
         
         [Authorize]
+        [HttpGet("Auth")]
         public IActionResult Auth()
         {
             return Ok(new
@@ -43,6 +50,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Policy = "Szymek")]
+        [HttpGet("AuthUserName")]
         public IActionResult AuthUserName()
         {
             return Ok(new
@@ -53,6 +61,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Koty")]
+        [HttpGet("AuthRole")]
         public IActionResult AuthRole()
         {
             return Ok(new

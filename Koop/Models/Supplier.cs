@@ -24,5 +24,8 @@ namespace Koop.Models
 
         public virtual User Opro { get; set; }
         public virtual ICollection<Product> Products { get; set; }
+
+        // public string OproName => $"{Opro.FirstName} {Opro.LastName}";
+        public string OproName { get; set; }
     }
 }

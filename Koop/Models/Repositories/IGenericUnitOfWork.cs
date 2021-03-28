@@ -6,5 +6,6 @@ namespace Koop.Models.Repositories
         IRepositoryView<T> RepositoryView<T>() where T : class;
         void SaveChanges();
         void Dispose(bool disposing);
+        IShopRepository ShopRepository();
     }
 }

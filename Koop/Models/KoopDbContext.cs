@@ -35,6 +35,7 @@ namespace Koop.Models
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
 
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)

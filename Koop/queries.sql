@@ -97,3 +97,14 @@ create or replace view user_order_history_view as
              left join order_status os on oi.order_status_id = os.order_status_id
              left join orders o on oi.order_id = o.order_id
     group by "FirstName", "LastName", c."Id", order_stop_date, order_status_name;
+
+
+select string_agg(o.order_start_date, ',') pp
+from ordered_items as ord_item
+    left join orders o on ord_item.order_id = o.order_id
+    left join products p on p.product_id = ord_item.product_id
+    left join "AspNetUsers" ANU on ord_item.coop_id = ANU."Id"
+    left join order_status os on ord_item.order_status_id = os.order_status_id
+    left join baskets b on ANU."Id" = b.coop_id
+group by o.order_id;
+

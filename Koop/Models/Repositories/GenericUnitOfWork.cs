@@ -11,12 +11,14 @@ namespace Koop.Models.Repositories
         private KoopDbContext _koopDbContext;
         private Dictionary<Type, object> _repositories;
         private Dictionary<Type, object> _repositoriesView;
+        private IShopRepository _shopRepository;
 
         public GenericUnitOfWork(KoopDbContext koopDbContext)
         {
             _koopDbContext = koopDbContext;
             _repositories = new Dictionary<Type, object>();
             _repositoriesView = new Dictionary<Type, object>();
+            _shopRepository = new ShopRepository(_koopDbContext);
         }
 
         public IRepository<T> Repository<T>() where T : class
@@ -55,7 +57,12 @@ namespace Koop.Models.Repositories
 
             this.disposed = true;
         }
-        
+
+        public IShopRepository ShopRepository()
+        {
+            return _shopRepository;
+        }
+
         public void Dispose()
         {
             Dispose(true);

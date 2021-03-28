@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using Koop.Models.RepositoryModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Models.Repositories
 {

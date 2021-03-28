@@ -35,6 +35,7 @@ namespace Koop.Models
         public virtual DbSet<Unit> Units { get; set; }
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
+        public virtual DbSet<ListForPackersView> ListForPackersViews { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -480,6 +481,19 @@ namespace Koop.Models
                     .HasMaxLength(200)
                     .IsUnicode(false)
                     .HasColumnName("work_type");
+            });
+            
+            modelBuilder.Entity<ListForPackersView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("list_for_packers_view");
+
+                entity.Property(e => e.ProductName)
+                    .HasMaxLength(100)
+                    .HasColumnName("product_name");
+
+                entity.Property(e => e.ProductsInBaskets).HasColumnName("products_in_baskets");
             });
 
             OnModelCreatingPartial(modelBuilder);

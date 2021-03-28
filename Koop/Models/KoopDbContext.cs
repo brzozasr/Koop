@@ -17,7 +17,6 @@ namespace Koop.Models
             : base(options)
         {
         }
-        
 
         public virtual DbSet<AvailableQuantity> AvailableQuantities { get; set; }
         public virtual DbSet<Basket> Baskets { get; set; }

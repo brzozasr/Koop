@@ -488,11 +488,23 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToView("order_view");
+                entity.ToTable("order_view");
+
+                entity.Property(e => e.AmountInMagazine).HasColumnName("amount_in_magazine");
+
+                entity.Property(e => e.Available).HasColumnName("available");
 
                 entity.Property(e => e.BasketName)
                     .HasMaxLength(100)
                     .HasColumnName("basket_name");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
+
+                entity.Property(e => e.Description).HasColumnName("description");
+
+                entity.Property(e => e.Email).HasMaxLength(256);
+
+                entity.Property(e => e.FundPrice).HasColumnName("fund_price");
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 
@@ -510,13 +522,19 @@ namespace Koop.Models
 
                 entity.Property(e => e.OrderedItemId).HasColumnName("ordered_item_id");
 
+                entity.Property(e => e.Price).HasColumnName("price");
+
                 entity.Property(e => e.ProductName)
                     .HasMaxLength(100)
                     .HasColumnName("product_name");
 
                 entity.Property(e => e.Quantity).HasColumnName("quantity");
+
+                entity.Property(e => e.TotalFundPrice).HasColumnName("total_fund_price");
+
+                entity.Property(e => e.TotalPrice).HasColumnName("total_price");
             });
-            
+
             modelBuilder.Entity<FnListForPacker>(entity =>
             {
                 entity.HasNoKey();

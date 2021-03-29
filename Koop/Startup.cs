@@ -38,7 +38,7 @@ namespace Koop
             });
             
             services.AddControllers();
-            
+
             services.AddDbContext<KoopDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
             

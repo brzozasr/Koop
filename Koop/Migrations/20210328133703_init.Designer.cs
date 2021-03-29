@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    [Migration("20210324113615_snap1")]
-    partial class snap1
+    [Migration("20210328133703_init")]
+    partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -167,6 +167,20 @@ namespace Koop.Migrations
                     b.HasKey("FundId");
 
                     b.ToTable("funds");
+                });
+
+            modelBuilder.Entity("Koop.Models.ListForPackersView", b =>
+                {
+                    b.Property<string>("ProductName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductsInBaskets")
+                        .HasColumnType("text")
+                        .HasColumnName("products_in_baskets");
+
+                    b.ToView("list_for_packers_view");
                 });
 
             modelBuilder.Entity("Koop.Models.Order", b =>

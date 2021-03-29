@@ -21,6 +21,10 @@
       <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.1.1" />
       <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.1.1" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.9.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="5.0.4">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,7 +1,7 @@
 ﻿using System;
+using Koop.Models.ModelView;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 
 #nullable disable
@@ -35,7 +35,8 @@ namespace Koop.Models
         public virtual DbSet<Unit> Units { get; set; }
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
-        public virtual DbSet<ListForPackersView> ListForPackersViews { get; set; }
+        public virtual DbSet<OrderView> OrderViews { get; set; }
+        public virtual DbSet<FnListForPacker> FnListForPackers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -483,17 +484,50 @@ namespace Koop.Models
                     .HasColumnName("work_type");
             });
             
-            modelBuilder.Entity<ListForPackersView>(entity =>
+            modelBuilder.Entity<OrderView>(entity =>
             {
                 entity.HasNoKey();
 
-                entity.ToView("list_for_packers_view");
+                entity.ToView("order_view");
+
+                entity.Property(e => e.BasketName)
+                    .HasMaxLength(100)
+                    .HasColumnName("basket_name");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStartDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_start_date");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_stop_date");
+
+                entity.Property(e => e.OrderedItemId).HasColumnName("ordered_item_id");
 
                 entity.Property(e => e.ProductName)
                     .HasMaxLength(100)
                     .HasColumnName("product_name");
 
-                entity.Property(e => e.ProductsInBaskets).HasColumnName("products_in_baskets");
+                entity.Property(e => e.Quantity).HasColumnName("quantity");
+            });
+            
+            modelBuilder.Entity<FnListForPacker>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToFunction("list_for_packer");
+                
+                entity.Property(e => e.ProductName)
+                    .HasColumnName("product_name");
+
+                entity.Property(e => e.ProductsInBaskets)
+                    .HasColumnName("products_in_baskets");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -2,11 +2,14 @@ using System;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
+using System.Threading.Tasks;
+using Koop.models;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Controllers
 {
@@ -68,10 +71,10 @@ namespace Koop.Controllers
         }
 
         [HttpGet]
-        public IActionResult Products(string orderBy="name", int start=1, int count=10, string orderDir="asc")
+        public IActionResult Products(string orderBy = "name", int start = 1, int count = 10, string orderDir = "asc")
         {
             orderBy = orderBy.ToLower();
-            Expression < Func<ProductsShop, object> > order = orderBy switch
+            Expression<Func<ProductsShop, object>> order = orderBy switch
             {
                 "name" => p => p.ProductName,
                 "price" => p => p.Price,
@@ -91,37 +94,45 @@ namespace Koop.Controllers
             };
 
             return Ok(_uow.ShopRepository().GetProductsShop(order, start, count, direction));
-        
+        }
+
         [HttpGet("supplier/{abbr}")]
         public IActionResult Supplier(string abbr)
         {
-            return Ok(_uow.Repository<Supplier>().GetAll().SingleOrDefault(s => s.SupplierAbbr.ToLower() == abbr));
-            // return _uow.Repository<Supplier>().GetAll().Include(p => p.Products)
-            //     .SingleOrDefaultAsync(p => p.SupplierAbbr == "CHOR");
+            return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
 
+        
         [HttpGet("supplier/{abbr}/edit")]
         public IActionResult EditSupplier(string abbr)
         {
-            return Ok(_uow.Repository<Supplier>().GetAll().SingleOrDefault(s => s.SupplierAbbr.ToLower() == abbr));
-        }
-
-        [HttpGet("allsuppliers")]
-        public IActionResult AllSuppliers()
-        {
-            return Ok(_uow.Repository<Supplier>().GetAll());
+            return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
         
+        //TODO EWA: refactor!
+
+        // [HttpGet("allsuppliers")]
+        // public IActionResult AllSuppliers()
+        // {
+        //     return Ok(_uow.Repository<Supplier>().GetAll());
+        // }
+        
         [HttpGet("cooperator/{firstname}+{lastname}/history")]
-        public IActionResult CoOrderHistoryView(string firstName, string lastName)
+        public IActionResult UserOrdersHistoryView(string firstName, string lastName)
         {
-            return Ok(_uow.Repository<CoopOrderHistoryView>().GetAll().Where(s=>s.FirstName.ToLower() == firstName && s.LastName.ToLower() == lastName));
+            return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
         
         [HttpGet("order/baskets")]
         public IActionResult BasketName()
         {
-            return Ok(_uow.Repository<Basket>().GetAll());
+            return Ok(_uow.ShopRepository().GetBaskets());
+        }
+        
+        [HttpGet("bigorders")]
+        public IActionResult BigOrders()
+        {
+            return Ok(_uow.Repository<Order>().GetAll());
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using Koop.models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -34,6 +35,7 @@ namespace Koop.Models
         public virtual DbSet<Unit> Units { get; set; }
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
+        public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryView { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -476,6 +478,24 @@ namespace Koop.Models
                     .IsUnicode(false)
                     .HasColumnName("work_type");
             });
+            
+            modelBuilder.Entity<UserOrdersHistoryView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("user_orders_history_view");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate).HasColumnName("order_stop_date");
+
+                entity.Property(e => e.Price).HasColumnName("price");
+            });
+            
 
             OnModelCreatingPartial(modelBuilder);
         }

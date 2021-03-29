@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,6 +88,56 @@ namespace Koop.Models.Repositories
             }
             
             return output;
+        }
+        
+        public IEnumerable<Basket> GetBaskets()
+        {
+            var baskets = _koopDbContext.Baskets
+                .Include(b => b.Coop)
+                .Where(b=>b.CoopId != null)
+                .Select(b => new Basket()
+                {
+                    BasketId = b.BasketId,
+                    BasketName = b.BasketName,
+                    CoopName = $"{b.Coop.FirstName} {b.Coop.LastName}",
+                    CoopId = b.CoopId
+                });
+            
+            return baskets;
+        }
+
+        public IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName)
+        {
+            return _koopDbContext.UserOrdersHistoryView.Where(c =>
+                c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
+        }
+
+        public Supplier GetSupplier(string abbr)
+        {
+            var supplier = _koopDbContext.Suppliers
+                .Include(s => s.Opro)
+                // .Include(s=>s.Products)
+                .Select(s=> new Supplier()
+                {
+                    SupplierId = s.SupplierId,
+                    SupplierName = s.SupplierName,
+                    SupplierAbbr = s.SupplierAbbr,
+                    Description = s.Description,
+                    Email = s.Email,
+                    Phone = s.Phone,
+                    Picture = s.Picture,
+                    OrderClosingDate = s.OrderClosingDate,
+                    OproId = s.OproId,
+                    OproName = $"{s.Opro.FirstName} {s.Opro.LastName}",
+                })
+                .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
+            
+            return supplier;
+        }
+
+        public IEnumerable<Order> GetBigOrders()
+        {
+            throw new NotImplementedException();
         }
     }
 }

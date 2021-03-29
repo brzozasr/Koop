@@ -170,6 +170,20 @@ namespace Koop.Migrations
                     b.ToTable("funds");
                 });
 
+            modelBuilder.Entity("Koop.Models.ListForPackersView", b =>
+                {
+                    b.Property<string>("ProductName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductsInBaskets")
+                        .HasColumnType("text")
+                        .HasColumnName("products_in_baskets");
+
+                    b.ToView("list_for_packers_view");
+                });
+
             modelBuilder.Entity("Koop.Models.Order", b =>
                 {
                     b.Property<Guid>("OrderId")

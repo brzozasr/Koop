@@ -30,7 +30,8 @@ namespace Koop.Controllers
                 return Created(string.Empty, string.Empty);
             }
 
-            return Problem(userCreateResult.Errors.ToString(), null, 500);
+            // return Problem(userCreateResult.Errors.ToString(), null, 500);
+            return BadRequest(userCreateResult.Errors);
         }
 
         [HttpPost("signin")]

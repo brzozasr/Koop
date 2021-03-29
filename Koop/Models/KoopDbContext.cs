@@ -1,8 +1,10 @@
 ﻿using System;
 using Koop.models;
+using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
 
 #nullable disable
 
@@ -36,14 +38,21 @@ namespace Koop.Models
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
         public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryView { get; set; }
+        public virtual DbSet<OrderView> OrderViews { get; set; }
+        public virtual DbSet<FnListForPacker> FnListForPackers { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseNpgsql("Server=localhost;Port=5432;Database=koop;User Id=wojtek;Password=wojtek19842041;");
+                IConfigurationRoot configuration = new ConfigurationBuilder()
+                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                    .AddJsonFile("appsettings.json")
+                    .Build();
+
+                optionsBuilder.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
+                    x => x.UseNodaTime().UseNetTopologySuite());
             }
         }
 
@@ -477,6 +486,70 @@ namespace Koop.Models
                     .HasMaxLength(200)
                     .IsUnicode(false)
                     .HasColumnName("work_type");
+            });
+            
+            modelBuilder.Entity<OrderView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("order_view");
+
+                entity.Property(e => e.AmountInMagazine).HasColumnName("amount_in_magazine");
+
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.BasketName)
+                    .HasMaxLength(100)
+                    .HasColumnName("basket_name");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
+
+                entity.Property(e => e.Description).HasColumnName("description");
+
+                entity.Property(e => e.Email).HasMaxLength(256);
+
+                entity.Property(e => e.FundPrice).HasColumnName("fund_price");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStartDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_start_date");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_stop_date");
+
+                entity.Property(e => e.OrderedItemId).HasColumnName("ordered_item_id");
+
+                entity.Property(e => e.Price).HasColumnName("price");
+
+                entity.Property(e => e.ProductName)
+                    .HasMaxLength(100)
+                    .HasColumnName("product_name");
+
+                entity.Property(e => e.Quantity).HasColumnName("quantity");
+
+                entity.Property(e => e.TotalFundPrice).HasColumnName("total_fund_price");
+
+                entity.Property(e => e.TotalPrice).HasColumnName("total_price");
+            });
+
+            modelBuilder.Entity<FnListForPacker>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToFunction("list_for_packer");
+                
+                entity.Property(e => e.ProductName)
+                    .HasColumnName("product_name");
+
+                entity.Property(e => e.ProductsInBaskets)
+                    .HasColumnName("products_in_baskets");
             });
             
             modelBuilder.Entity<UserOrdersHistoryView>(entity =>

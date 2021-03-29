@@ -60,6 +60,9 @@ namespace Koop.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("coop_id");
 
+                    b.Property<string>("CoopName")
+                        .HasColumnType("text");
+
                     b.HasKey("BasketId");
 
                     b.HasIndex("CoopId");
@@ -178,11 +181,16 @@ namespace Koop.Migrations
                         .HasColumnType("timestamp")
                         .HasColumnName("order_start_date");
 
+                    b.Property<Guid>("OrderStatusId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("OrderStopDate")
                         .HasColumnType("timestamp")
                         .HasColumnName("order_stop_date");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("OrderStatusId");
 
                     b.ToTable("orders");
                 });
@@ -390,6 +398,9 @@ namespace Koop.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("opro_id");
 
+                    b.Property<string>("OproName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("OrderClosingDate")
                         .HasColumnType("timestamp")
                         .HasColumnName("order_closing_date");
@@ -580,6 +591,37 @@ namespace Koop.Migrations
                     b.ToTable("work_types");
                 });
 
+            modelBuilder.Entity("Koop.models.UserOrdersHistoryView", b =>
+                {
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("OrderStatusName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("order_status_name");
+
+                    b.Property<DateTime?>("OrderStopDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_stop_date");
+
+                    b.Property<string>("Price")
+                        .HasColumnType("text")
+                        .HasColumnName("price");
+
+                    b.ToTable("user_orders_history_view");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.Property<int>("Id")
@@ -719,6 +761,17 @@ namespace Koop.Migrations
                     b.Navigation("Coop");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Koop.Models.Order", b =>
+                {
+                    b.HasOne("Koop.Models.OrderStatus", "OrderStatus")
+                        .WithMany()
+                        .HasForeignKey("OrderStatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OrderStatus");
                 });
 
             modelBuilder.Entity("Koop.Models.OrderedItem", b =>

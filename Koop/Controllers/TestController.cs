@@ -99,31 +99,40 @@ namespace Koop.Controllers
         [HttpGet("supplier/{abbr}")]
         public IActionResult Supplier(string abbr)
         {
-            return Ok(_uow.Repository<Supplier>().GetSupplier(abbr));
+            return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
 
+        
         [HttpGet("supplier/{abbr}/edit")]
         public IActionResult EditSupplier(string abbr)
         {
-            return Ok(_uow.Repository<Supplier>().GetSupplier(abbr));
+            return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
+        
+        //TODO EWA: refactor!
 
-        [HttpGet("allsuppliers")]
-        public IActionResult AllSuppliers()
-        {
-            return Ok(_uow.Repository<Supplier>().GetAll());
-        }
+        // [HttpGet("allsuppliers")]
+        // public IActionResult AllSuppliers()
+        // {
+        //     return Ok(_uow.Repository<Supplier>().GetAll());
+        // }
         
         [HttpGet("cooperator/{firstname}+{lastname}/history")]
         public IActionResult UserOrdersHistoryView(string firstName, string lastName)
         {
-            return Ok(_uow.Repository<UserOrdersHistoryView>().GetUserOrders(firstName, lastName));
+            return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
         
         [HttpGet("order/baskets")]
         public IActionResult BasketName()
         {
-            return Ok(_uow.Repository<Basket>().GetBaskets());
+            return Ok(_uow.ShopRepository().GetBaskets());
+        }
+        
+        [HttpGet("bigorders")]
+        public IActionResult BigOrders()
+        {
+            return Ok(_uow.Repository<Order>().GetAll());
         }
     }
 }

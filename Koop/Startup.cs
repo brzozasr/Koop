@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Extensions;
 using Koop.Mapper;
@@ -11,7 +7,6 @@ using Koop.Models.Repositories;
 using Koop.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -36,7 +31,7 @@ namespace Koop
             {
                 m.AddProfile(new MappingProfiles());
             });
-            
+
             services.AddControllers();
 
             services.AddDbContext<KoopDbContext>(options =>
@@ -51,6 +46,7 @@ namespace Koop
 
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
+            
 
             services.Configure<JwtSettings>(Configuration.GetSection("Jwt"));
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();

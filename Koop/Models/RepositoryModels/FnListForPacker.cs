@@ -1,7 +1,6 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace Koop.Models.ModelView
+namespace Koop.Models.RepositoryModels
 {
     [Keyless]
     public class FnListForPacker

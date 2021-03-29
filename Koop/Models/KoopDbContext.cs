@@ -1,5 +1,5 @@
 ﻿using System;
-using Koop.Models.ModelView;
+using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

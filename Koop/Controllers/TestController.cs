@@ -25,7 +25,7 @@ namespace Koop.Controllers
         }
         
         [AllowAnonymous]
-        [HttpGet]
+        [HttpGet("index")]
         public IActionResult Index()
         {
             return Ok(new
@@ -79,7 +79,7 @@ namespace Koop.Controllers
             });
         }
 
-        [HttpGet]
+        [HttpGet("products")]
         public IActionResult Products(string orderBy = "name", int start = 1, int count = 10, string orderDir = "asc")
         {
             orderBy = orderBy.ToLower();

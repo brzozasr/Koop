@@ -451,6 +451,4 @@ MigrationBackup/
 
 # End of https://www.gitignore.io/api/visualstudio,jetbrains+all,visualstudiocode
 
-appsettings.json
-appsettings.Development.json
 .DS_Store

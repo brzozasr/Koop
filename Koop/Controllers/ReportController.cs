@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Koop.Models;
@@ -25,15 +26,21 @@ namespace Koop.Controllers
             _uow = uow;
             _koopDbContext = koopDbContext;
         }
-
-        [Authorize(Roles = "Admin,Koty")]
+        
+        [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/{daysBack}")]
-        public IActionResult ReportPackers(int daysBack)
+        public async Task<IActionResult> ReportPackers(int daysBack)
         {
-           // var result = _koopDbContext.Set<FnListForPacker>().FromSqlRaw("SELECT * FROM list_for_packer({0});", 50).ToList();
-           
-            var result = _koopDbContext.FnListForPackers.FromSqlRaw("SELECT * FROM list_for_packer({0});", daysBack);
-            return Ok(result);
+            try
+            {
+                var result = await _uow.Repository<FnListForPacker>()
+                    .ExecuteSql("SELECT * FROM list_for_packer({0});", daysBack);
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
         }
     }
 }

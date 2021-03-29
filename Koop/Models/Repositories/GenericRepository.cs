@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Models.Repositories
@@ -34,6 +35,11 @@ namespace Koop.Models.Repositories
         public void Delete(T entity)
         {
             _objectSet.Remove(entity);
+        }
+
+        public async Task<List<T>> ExecuteSql(string query, params object[] parameters)
+        {
+            return await _objectSet.FromSqlRaw(query, parameters).ToListAsync();
         }
     }
 }

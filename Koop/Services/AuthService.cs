@@ -46,7 +46,9 @@ namespace Koop.Services
 
         public string SignIn(UserLogIn userLogIn)
         {
-            var user = _userManager.Users.SingleOrDefault(u => u.Email == userLogIn.Email);
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());
+            
             if (user is null)
             {
                 return null;

@@ -64,6 +64,24 @@ namespace Koop.Services
 
             return null;
         }
+
+        public User GetUser(Guid userId)
+        {
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.Id == userId);
+
+            return user;
+        }
+        
+        public Task<IdentityResult> EditUser([FromBody]UserEdit userEdit)
+        {
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.Id == userEdit.Id);
+
+            var updatedUser = _mapper.Map(userEdit, user);
+            
+            return _userManager.UpdateAsync(updatedUser);
+        }
         
         public Task<IdentityResult> CreateRole(string roleName)
         {

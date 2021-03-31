@@ -11,6 +11,7 @@ namespace Koop.Mapper
         {
             CreateMap<UserSignUp, User>();
             CreateMap<OrderView, CoopOrder>();
+            CreateMap<UserEdit, User>();
         }
     }
 }

@@ -105,6 +105,12 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetProductsShop(order, start, count, direction));
         }
 
+        [HttpGet("cooporder")]
+        public IActionResult CoopOrder(Guid coopId, Guid orderId)
+        {
+            return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
+        }
+
         [HttpGet("supplier/{abbr}")]
         public IActionResult Supplier(string abbr)
         {

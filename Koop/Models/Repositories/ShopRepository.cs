@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Koop.Models.Repositories
 {
@@ -87,6 +88,40 @@ namespace Koop.Models.Repositories
                 output.Add(tmp);
             }
             
+            return output;
+        }
+
+        public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)
+        {
+            var order = _koopDbContext.OrderedItems
+                .Include(p => p.OrderStatus)
+                .Include(p => p.Product)
+                .ThenInclude(p => p.Unit)
+                .Join(_koopDbContext.Users, item => item.CoopId, user => user.Id,
+                    (item, user) => new {Products = item, User = user})
+                .Where(p => p.User.Id == cooperatorId)
+                .Where(p => p.Products.OrderId == orderId);
+
+            double price = 0;
+            List<CooperatorOrder> output = new List<CooperatorOrder>();
+            foreach (var item in order)
+            {
+                //price += item.Products.Product.Price * item
+                
+                CooperatorOrder cooperatorOrder = new CooperatorOrder()
+                {
+                    FirstName = item.User.FirstName,
+                    LastName = item.User.LastName,
+                    ProductName = item.Products.Product.ProductName,
+                    Unit = item.Products.Product.Unit.UnitName,
+                    OrderStatus = item.Products.OrderStatus.OrderStatusName,
+                    ChosenQuantity = item.Products.Quantity,
+                    Quantity = item.Products.Quantity
+                };
+                
+                output.Add(cooperatorOrder);
+            }
+
             return output;
         }
         

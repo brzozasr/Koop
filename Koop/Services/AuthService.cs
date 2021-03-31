@@ -46,7 +46,9 @@ namespace Koop.Services
 
         public string SignIn(UserLogIn userLogIn)
         {
-            var user = _userManager.Users.SingleOrDefault(u => u.Email == userLogIn.Email);
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());
+            
             if (user is null)
             {
                 return null;
@@ -61,6 +63,24 @@ namespace Koop.Services
             }
 
             return null;
+        }
+
+        public User GetUser(Guid userId)
+        {
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.Id == userId);
+
+            return user;
+        }
+        
+        public Task<IdentityResult> EditUser([FromBody]UserEdit userEdit)
+        {
+            var user = _userManager.Users
+                .SingleOrDefault(p => p.Id == userEdit.Id);
+
+            var updatedUser = _mapper.Map(userEdit, user);
+            
+            return _userManager.UpdateAsync(updatedUser);
         }
         
         public Task<IdentityResult> CreateRole(string roleName)

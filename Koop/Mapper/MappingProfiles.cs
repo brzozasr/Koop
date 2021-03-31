@@ -27,6 +27,7 @@ namespace Koop.Mapper
             //         {
             //             ProductName = src.ProductName
             //         }));
+            CreateMap<UserEdit, User>();
         }
     }
 }

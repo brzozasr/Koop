@@ -72,5 +72,24 @@ namespace Koop.Controllers
 
             return Problem(result.Errors.First().Description, null, 500);
         }
+
+        [HttpGet("user/get")]
+        public IActionResult EditUser(Guid userId)
+        {
+            return Ok(_authService.GetUser(userId));
+        }
+
+        [HttpPost("user/edit")]
+        public async Task<IActionResult> EditUser(UserEdit userEdit)
+        {
+            var result = await _authService.EditUser(userEdit);
+
+            if (result.Succeeded)
+            {
+                return Ok(userEdit);
+            }
+            
+            return Problem(result.Errors.First().Description, null, 500);
+        }
     }
 }

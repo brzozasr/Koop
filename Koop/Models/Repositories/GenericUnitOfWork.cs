@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace Koop.Models.Repositories
 {
@@ -43,6 +44,12 @@ namespace Koop.Models.Repositories
         public void SaveChanges()
         {
             _koopDbContext.SaveChanges();
+        }
+
+        public async Task<int> SaveChangesAsync()
+        {
+            var success = await _koopDbContext.SaveChangesAsync();
+            return success;
         }
 
         public virtual void Dispose(bool disposing)

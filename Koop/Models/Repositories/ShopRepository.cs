@@ -102,12 +102,9 @@ namespace Koop.Models.Repositories
                 .Where(p => p.User.Id == cooperatorId)
                 .Where(p => p.Products.OrderId == orderId);
 
-            double price = 0;
             List<CooperatorOrder> output = new List<CooperatorOrder>();
             foreach (var item in order)
             {
-                //price += item.Products.Product.Price * item
-                
                 CooperatorOrder cooperatorOrder = new CooperatorOrder()
                 {
                     FirstName = item.User.FirstName,
@@ -115,8 +112,9 @@ namespace Koop.Models.Repositories
                     ProductName = item.Products.Product.ProductName,
                     Unit = item.Products.Product.Unit.UnitName,
                     OrderStatus = item.Products.OrderStatus.OrderStatusName,
-                    ChosenQuantity = item.Products.Quantity,
-                    Quantity = item.Products.Quantity
+                    Quantity = item.Products.Quantity,
+                    Price = item.Products.Product.Price * item.Products.Quantity,
+                    UnitPrice = item.Products.Product.Price
                 };
                 
                 output.Add(cooperatorOrder);

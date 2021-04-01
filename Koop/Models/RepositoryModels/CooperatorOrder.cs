@@ -5,9 +5,11 @@ namespace Koop.Models.RepositoryModels
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string ProductName { get; set; }
+        public string Description { get; set; }
         public string Unit { get; set; }
         public string OrderStatus { get; set; }
-        public double ChosenQuantity { get; set; }
         public int Quantity { get; set; }
+        public double Price { get; set; }
+        public double UnitPrice { get; set; }
     }
 }

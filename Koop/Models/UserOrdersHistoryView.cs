@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 #nullable disable
 
-namespace Koop.Models
+namespace Koop.models
 {
-    public partial class CoopOrderHistoryView
+    public partial class UserOrdersHistoryView
     {
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public Guid? OrderId { get; set; }

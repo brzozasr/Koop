@@ -12,7 +12,7 @@ namespace Koop.Models
             Works = new HashSet<Work>();
         }
 
-        public long WorkTypeId { get; set; }
+        public Guid WorkTypeId { get; set; }
         public string WorkType1 { get; set; }
 
         public virtual ICollection<Work> Works { get; set; }

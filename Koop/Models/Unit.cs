@@ -12,7 +12,7 @@ namespace Koop.Models
             Products = new HashSet<Product>();
         }
 
-        public long UnitId { get; set; }
+        public Guid UnitId { get; set; }
         public string UnitName { get; set; }
 
         public virtual ICollection<Product> Products { get; set; }

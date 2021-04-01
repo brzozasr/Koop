@@ -12,7 +12,7 @@ namespace Koop.Models
             ProductCategories = new HashSet<ProductCategory>();
         }
 
-        public long CategoryId { get; set; }
+        public Guid CategoryId { get; set; }
         public string CategoryName { get; set; }
 
         public virtual ICollection<ProductCategory> ProductCategories { get; set; }

@@ -1,500 +1,247 @@
-CREATE TABLE available_quantities
-(
-  available_quantity_id bigint NOT NULL IDENTITY(1, 1),
-  product_id bigint NOT NULL,
-  quantity int NOT NULL
-)
-
-
-ALTER TABLE available_quantities ADD CONSTRAINT pk_available_quantities
-  PRIMARY KEY (available_quantity_id)
-
-
-CREATE TABLE baskets
-(
-  basket_id bigint NOT NULL IDENTITY(1, 1),
-  coop_id bigint NULL
-)
-
-
-ALTER TABLE baskets ADD CONSTRAINT pk_baskets
-  PRIMARY KEY (basket_id)
-
-
-CREATE TABLE categories
-(
-  category_id bigint NOT NULL IDENTITY(1, 1),
-  category_name varchar(100) NOT NULL
-)
-
-
-ALTER TABLE categories ADD CONSTRAINT pk_categories
-  PRIMARY KEY (category_id)
-
-
-CREATE TABLE cooperators
-(
-  coop_id bigint NOT NULL IDENTITY(1, 1),
-  first_name varchar(20) NOT NULL,
-  last_name varchar(20) NOT NULL,
-  email varchar(30) NOT NULL,
-  phone varchar(20) NULL,
-  info text NULL,
-  debt float NULL,
-  fund_id bigint NOT NULL,
-  function_id bigint NULL,
-  basket_id tinyint NULL
-)
-
-
-ALTER TABLE cooperators ADD CONSTRAINT pk_cooperators
-  PRIMARY KEY (coop_id)
-
-
-CREATE TABLE favorities
-(
-  favorite_id bigint NOT NULL IDENTITY(1, 1),
-  coop_id bigint NOT NULL,
-  product_id bigint NOT NULL
-)
-
-
-ALTER TABLE favorities ADD CONSTRAINT pk_favorities
-  PRIMARY KEY (favorite_id)
-
-
-CREATE TABLE functions
-(
-  function_id bigint NOT NULL IDENTITY(1, 1),
-  function_name varchar(100) NOT NULL
-)
-
-
-ALTER TABLE functions ADD CONSTRAINT pk_functions
-  PRIMARY KEY (function_id)
-
-
-CREATE TABLE funds
-(
-  fund_id bigint NOT NULL IDENTITY(1, 1),
-  value tinyint NOT NULL
-)
-
-
-ALTER TABLE funds ADD CONSTRAINT pk_funds
-  PRIMARY KEY (fund_id)
-
-
-CREATE TABLE order_status
-(
-  order_status_id bigint NOT NULL IDENTITY(1, 1),
-  order_status_name varchar(100) NOT NULL
-)
-
-
-ALTER TABLE order_status ADD CONSTRAINT pk_order_status
-  PRIMARY KEY (order_status_id)
-
-
-CREATE TABLE ordered_items
-(
-  ordered_item_id bigint NOT NULL IDENTITY(1, 1),
-  order_id bigint NOT NULL,
-  product_id bigint NOT NULL,
-  coop_id bigint NOT NULL,
-  order_status_id bigint NOT NULL,
-  quantity int NOT NULL DEFAULT 0
-)
-
-
-ALTER TABLE ordered_items ADD CONSTRAINT pk_ordered_items
-  PRIMARY KEY (ordered_item_id)
-
-
-CREATE TABLE orders
-(
-  order_id bigint NOT NULL IDENTITY(1, 1),
-  order_start_date datetime NOT NULL,
-  order_stop_date datetime NOT NULL
-)
-
-
-ALTER TABLE orders ADD CONSTRAINT pk_orders
-  PRIMARY KEY (order_id)
-
-
-CREATE TABLE product_categories
-(
-  product_category_id bigint NOT NULL IDENTITY(1, 1),
-  product_id bigint NOT NULL,
-  category_id bigint NOT NULL
-)
-
-
-ALTER TABLE product_categories ADD CONSTRAINT pk_product_categories
-  PRIMARY KEY (product_category_id)
-
-
-CREATE TABLE products
-(
-  product_id bigint NOT NULL IDENTITY(1, 1),
-  product_name varchar(100) NOT NULL,
-  price float NOT NULL,
-  description text NULL,
-  amount_in_magazine int NOT NULL DEFAULT 0,
-  magazine bit NOT NULL DEFAULT 0,
-  amount_max int NULL,
-  deposit int NULL DEFAULT 0,
-  picture text DEFAULT '',
-  unit_id bigint NOT NULL,
-  supplier_id bigint NOT NULL,
-  available bit NOT NULL DEFAULT 0,
-  blocked bit NOT NULL DEFAULT 0
-)
-
-
-ALTER TABLE products ADD CONSTRAINT pk_products
-  PRIMARY KEY (product_id)
-
-
-CREATE TABLE suppliers
-(
-  supplier_id bigint NOT NULL IDENTITY(1, 1),
-  supplier_name varchar(100) NOT NULL,
-  supplier_abbr varchar(20) NOT NULL,
-  description text NULL,
-  email varchar(30) NOT NULL,
-  phone varchar(20) NOT NULL,
-  picture text NULL,
-  order_closing_date datetime NULL,
-  opro_id bigint NOT NULL
-)
-
-
-ALTER TABLE suppliers ADD CONSTRAINT pk_suppliers
-  PRIMARY KEY (supplier_id)
-
-
-CREATE TABLE units
-(
-  unit_id bigint NOT NULL IDENTITY(1, 1),
-  unit_name varchar(50) NULL
-)
-
-
-ALTER TABLE units ADD CONSTRAINT pk_units
-  PRIMARY KEY (unit_id)
-
-
-CREATE TABLE work_types
-(
-  work_type_id bigint NOT NULL IDENTITY(1, 1),
-  work_type varchar(200) NOT NULL
-)
-
-
-ALTER TABLE work_types ADD CONSTRAINT pk_work_types
-  PRIMARY KEY (work_type_id)
-
-
-CREATE TABLE works
-(
-  work_id bigint NOT NULL IDENTITY(1, 1),
-  work_date datetime NOT NULL,
-  duration float NOT NULL,
-  coop_id bigint NOT NULL,
-  work_type_id bigint NOT NULL
-)
-
-
-ALTER TABLE works ADD CONSTRAINT pk_works
-  PRIMARY KEY (work_id)
-
-
-ALTER TABLE available_quantities ADD CONSTRAINT fk_available_quantities_product_id
-  FOREIGN KEY (product_id) REFERENCES products (product_id)
-
-
-ALTER TABLE baskets ADD CONSTRAINT fk_baskets_coop_id
-  FOREIGN KEY (coop_id) REFERENCES cooperators (coop_id)
-
-
-ALTER TABLE cooperators ADD CONSTRAINT fk_cooperators_function_id
-  FOREIGN KEY (function_id) REFERENCES functions (function_id)
-
-
-ALTER TABLE cooperators ADD CONSTRAINT fk_cooperators_fund_id
-  FOREIGN KEY (fund_id) REFERENCES funds (fund_id)
-
-
-ALTER TABLE favorities ADD CONSTRAINT fk_favorities_coop_id
-  FOREIGN KEY (coop_id) REFERENCES cooperators (coop_id)
-
-
-ALTER TABLE favorities ADD CONSTRAINT fk_favorities_product_id
-  FOREIGN KEY (product_id) REFERENCES products (product_id)
-
-
-ALTER TABLE ordered_items ADD CONSTRAINT fk_ordered_items_coop_id
-  FOREIGN KEY (coop_id) REFERENCES cooperators (coop_id)
-
-
-ALTER TABLE ordered_items ADD CONSTRAINT fk_ordered_items_order_id
-  FOREIGN KEY (order_id) REFERENCES orders (order_id)
-
-
-ALTER TABLE ordered_items ADD CONSTRAINT fk_ordered_items_order_status_id
-  FOREIGN KEY (order_status_id) REFERENCES order_status (order_status_id)
-
-
-ALTER TABLE ordered_items ADD CONSTRAINT fk_ordered_items_product_id
-  FOREIGN KEY (product_id) REFERENCES products (product_id)
-
-
-ALTER TABLE product_categories ADD CONSTRAINT fk_product_categories_category_id
-  FOREIGN KEY (category_id) REFERENCES categories (category_id)
-
-
-ALTER TABLE product_categories ADD CONSTRAINT fk_product_categories_product_id
-  FOREIGN KEY (product_id) REFERENCES products (product_id)
-
-
-ALTER TABLE products ADD CONSTRAINT fk_products_supplier_id
-  FOREIGN KEY (supplier_id) REFERENCES suppliers (supplier_id) ON DELETE CASCADE ON UPDATE CASCADE
-
-
-ALTER TABLE products ADD CONSTRAINT fk_products_unit_id
-  FOREIGN KEY (unit_id) REFERENCES units (unit_id)
-
-
-ALTER TABLE suppliers ADD CONSTRAINT fk_suppliers_coop_id
-  FOREIGN KEY (opro_id) REFERENCES cooperators (coop_id)
-
-
-ALTER TABLE works ADD CONSTRAINT fk_works_coop_id
-  FOREIGN KEY (coop_id) REFERENCES cooperators (coop_id)
-
-
-ALTER TABLE works ADD CONSTRAINT fk_works_work_type_id
-  FOREIGN KEY (work_type_id) REFERENCES work_types (work_type_id)
-
-
-INSERT INTO work_types (work_type) VALUES (N'Sprzatanie');
-INSERT INTO work_types (work_type) VALUES (N'Paczkowanie');
-INSERT INTO work_types (work_type) VALUES (N'Wprowadzanie nowych kooperantów');
-INSERT INTO work_types (work_type) VALUES (N'OpRo');
-INSERT INTO work_types (work_type) VALUES (N'KoTy');
-
-INSERT INTO order_status (order_status_name) VALUES (N'Szkic');
-INSERT INTO order_status (order_status_name) VALUES (N'Zatwierdzone');
-INSERT INTO order_status (order_status_name) VALUES (N'Zrealizowane');
-
-INSERT INTO functions (function_name) VALUES (N'admin');
-INSERT INTO functions (function_name) VALUES (N'koty');
-INSERT INTO functions (function_name) VALUES (N'opro');
-INSERT INTO functions (function_name) VALUES (N'paczkers');
-INSERT INTO functions (function_name) VALUES (N'rozwazacz');
-INSERT INTO functions (function_name) VALUES (N'wprowadzacz');
-INSERT INTO functions (function_name) VALUES (N'skarbnik');
-INSERT INTO functions (function_name) VALUES (N'default');
-
-INSERT INTO funds (value) VALUES (10);
-INSERT INTO funds (value) VALUES (30);
-
-INSERT INTO orders (order_start_date, order_stop_date) VALUES (cast('2021-02-06' as timestamp), cast('2021-02-09' as timestamp));
-INSERT INTO orders (order_start_date, order_stop_date) VALUES (cast('2021-02-13' as timestamp), cast('2021-02-16' as timestamp));
-INSERT INTO orders (order_start_date, order_stop_date) VALUES (cast('2021-02-27' as timestamp), cast('2021-03-02' as timestamp));
-INSERT INTO orders (order_start_date, order_stop_date) VALUES (cast('2021-03-13' as timestamp), cast('2021-03-16' as timestamp));
-
-INSERT INTO units (unit_name) VALUES (N'l');
-INSERT INTO units (unit_name) VALUES (N'kg');
-INSERT INTO units (unit_name) VALUES (N'g');
-INSERT INTO units (unit_name) VALUES (N'piece');
-INSERT INTO units (unit_name) VALUES (N'ml');
-
-INSERT INTO categories (category_name) VALUES (N'Warzywa');
-INSERT INTO categories (category_name) VALUES (N'Produkty zwierzece');
-INSERT INTO categories (category_name) VALUES (N'Alkohol');
-INSERT INTO categories (category_name) VALUES (N'Pieczywo');
-INSERT INTO categories (category_name) VALUES (N'Wyroby cukiernicze');
-INSERT INTO categories (category_name) VALUES (N'Dla wegan');
-INSERT INTO categories (category_name) VALUES (N'Produkty zwierzeco-podobne');
-INSERT INTO categories (category_name) VALUES (N'Napoje');
-
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Cyprian', N'Zalewski', N'bbertouloume0@woothemes.com', N'460 519 0177', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 1, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Gniewomir', N'Witkowski', N'jdebell1@cnbc.com', N'572 452 2547', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 2, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Kamil', N'Gajewski', N'bfargher2@live.com', N'255 849 1951', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 2, 2, 4, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Marcel', N'Zakrzewski', N'zdjordjevic3@icq.com', N'959 246 8273', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 12, 2, 7, 3);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Dorian', N'Szymanski', N'bharrowell4@cam.ac.uk', N'294 762 0360', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', -10, 1, 6, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Jakub', N'Ostrowski', N'rdoers5@imgur.com', N'309 913 9211', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 2, 4, 1);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Lucjan', N'Urbanski', N'nandrus6@so-net.ne.jp', N'930 652 1576', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 8, 3);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Andrzej', N'Kalinowski', N'cgrebert7@jimdo.com', N'494 572 0008', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', -21, 1, 8, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Marcel', N'Dabrowski', N'mginnell8@canalblog.com', N'489 722 9926', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 22, 2, 4, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Mikolaj', N'Wasilewski', N'aleestut9@china.com.cn', N'723 622 1986', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 2, 8, 2);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Jakub', N'Adamski', N'awarkupa@tripadvisor.com', N'129 326 4719', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 8, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Konrad', N'Baran', N'mmantioneb@mysql.com', N'720 752 5258', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 8, null);
-INSERT INTO cooperators (first_name, last_name, email, phone, info, debt, fund_id, function_id, basket_id) VALUES (N'Kuba', N'Malinowski', N'lhaylettc@ucoz.ru', N'290 882 4958', N'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Amet mauris commodo quis imperdiet massa tincidunt nunc pulvinar.', 0, 1, 8, 4);
-
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Chorazy', N'CHOR', N'Best vegetables', N'chor@chor.pl', N'48235125694', null, null, 4);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Gustaw', N'GUMI', N'Sweets without sugar', N'gumi@gumi.pl', N'48562145896', null, cast('2021-03-24' as timestamp), 7);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Kamila', N'KAMI', N'Meat for vegans', N'kami@kami.pl', N'48521359844', null, null, 7);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Jedrzej', N'JEDY', N'Non-milk dairy products', N'jedy@jedy.pl', N'48985632154', null, cast('2021-03-23' as timestamp), 7);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Grzegorz', N'GRZE', N'Alcohol-free wines', N'grze@grze.pl', N'48568741256', null, cast('2021-03-24' as timestamp), 4);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Felicjan', N'FELI', N'Best artificial honey', N'feli@feli.pl', N'48741258963', null, null, 4);
-INSERT INTO suppliers (supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES (N'Eleonora', N'ELEO', N'Flour-free bread', N'eleo@eleo.pl', N'48563259841', null, cast('2021-03-22' as timestamp), 7);
-
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Cebula czerwona', 2, null, 20, true, 20, null, null, 4, 1, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Cukinia', 3, null, 10, true, 10, null, null, 4, 1, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Dynia', 6, null, 15, true, 15, null, null, 4, 1, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Marchew', 4, null, 20, true, 20, null, null, 2, 1, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Muffin black', 10, null, 0, true, 30, null, null, 4, 2, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Mleczna czekolada', 20, null, 0, true, 10, null, null, 4, 2, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Babka piaskowa', 6, null, 0, true, 5, null, null, 4, 2, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Kurczak sojowy', 8, null, 0, true, 15, null, null, 3, 3, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Stek sojowy', 10, null, 0, true, 12, null, null, 3, 3, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Golonko sojowe', 15, null, 0, true, 7, null, null, 3, 3, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Serca drobiowe sojowe', 4, null, 0, true, 22, null, null, 3, 3, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Twaróg', 8, null, 0, true, 6, null, null, 3, 4, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Mleko sojowe', 10, null, 0, true, 5, null, null, 5, 4, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Oscypek', 15, null, 0, true, 6, null, null, 3, 4, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Bryndza', 13, null, 0, true, 5, null, null, 3, 4, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Wino z winogron', 22, null, 10, true, 10, null, null, 1, 5, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Piwo jeczmienne', 6, null, 15, true, 15, null, null, 5, 5, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Piwo lager', 8, null, 15, true, 15, null, null, 5, 5, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Wino porzeczkowe', 10, null, 12, true, 12, null, null, 1, 5, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Miód spadziowy', 15, null, 10, true, 10, null, null, 2, 6, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Miód lipowy', 17, null, 12, true, 12, null, null, 2, 6, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Miód rzepakowy', 13, null, 15, true, 15, null, null, 2, 6, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Bulka pszenna', 3, null, 0, true, 30, null, null, 3, 7, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Chleb zytni', 7, null, 0, true, 15, null, null, 3, 7, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Chleb pszenny', 6, null, 0, true, 10, null, null, 3, 7, true, false);
-INSERT INTO products (product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES (N'Bulka zytnia', 4, null, 0, true, 16, null, null, 3, 7, true, false);
-
-INSERT INTO available_quantities (product_id, quantity) VALUES (1, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (2, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (3, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (4, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (5, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (6, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (7, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (8, 100);
-INSERT INTO available_quantities (product_id, quantity) VALUES (9, 120);
-INSERT INTO available_quantities (product_id, quantity) VALUES (10, 120);
-INSERT INTO available_quantities (product_id, quantity) VALUES (11, 60);
-INSERT INTO available_quantities (product_id, quantity) VALUES (12, 150);
-INSERT INTO available_quantities (product_id, quantity) VALUES (13, 250);
-INSERT INTO available_quantities (product_id, quantity) VALUES (14, 130);
-INSERT INTO available_quantities (product_id, quantity) VALUES (15, 120);
-INSERT INTO available_quantities (product_id, quantity) VALUES (17, 300);
-INSERT INTO available_quantities (product_id, quantity) VALUES (18, 300);
-INSERT INTO available_quantities (product_id, quantity) VALUES (20, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (21, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (22, 1);
-INSERT INTO available_quantities (product_id, quantity) VALUES (23, 100);
-INSERT INTO available_quantities (product_id, quantity) VALUES (24, 250);
-INSERT INTO available_quantities (product_id, quantity) VALUES (25, 250);
-INSERT INTO available_quantities (product_id, quantity) VALUES (26, 100);
-
-INSERT INTO product_categories (product_id, category_id) VALUES (1, 1);
-INSERT INTO product_categories (product_id, category_id) VALUES (2, 1);
-INSERT INTO product_categories (product_id, category_id) VALUES (3, 1);
-INSERT INTO product_categories (product_id, category_id) VALUES (4, 1);
-INSERT INTO product_categories (product_id, category_id) VALUES (5, 5);
-INSERT INTO product_categories (product_id, category_id) VALUES (5, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (6, 5);
-INSERT INTO product_categories (product_id, category_id) VALUES (6, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (7, 5);
-INSERT INTO product_categories (product_id, category_id) VALUES (7, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (8, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (9, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (10, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (11, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (8, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (9, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (10, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (11, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (12, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (13, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (14, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (15, 7);
-INSERT INTO product_categories (product_id, category_id) VALUES (12, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (13, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (14, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (15, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (16, 8);
-INSERT INTO product_categories (product_id, category_id) VALUES (17, 8);
-INSERT INTO product_categories (product_id, category_id) VALUES (18, 8);
-INSERT INTO product_categories (product_id, category_id) VALUES (19, 8);
-INSERT INTO product_categories (product_id, category_id) VALUES (20, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (21, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (22, 6);
-INSERT INTO product_categories (product_id, category_id) VALUES (23, 4);
-INSERT INTO product_categories (product_id, category_id) VALUES (24, 4);
-INSERT INTO product_categories (product_id, category_id) VALUES (25, 4);
-INSERT INTO product_categories (product_id, category_id) VALUES (26, 4);
-
-INSERT INTO baskets (coop_id) VALUES (null);
-INSERT INTO baskets (coop_id) VALUES (null);
-INSERT INTO baskets (coop_id) VALUES (null);
-INSERT INTO baskets (coop_id) VALUES (null);
-INSERT INTO baskets (coop_id) VALUES (null);
-INSERT INTO baskets (coop_id) VALUES (6);
-INSERT INTO baskets (coop_id) VALUES (7);
-INSERT INTO baskets (coop_id) VALUES (10);
-INSERT INTO baskets (coop_id) VALUES (13);
-
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-13' as timestamp), 2, 3, 2);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-13' as timestamp), 1, 10, 5);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-13' as timestamp), 1, 1, 1);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-14' as timestamp), 2, 9, 2);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-16' as timestamp), 1, 7, 4);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-21' as timestamp), 2, 9, 1);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-22' as timestamp), 1, 4, 4);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-25' as timestamp), 1, 3, 2);
-INSERT INTO works (work_date, duration, coop_id, work_type_id) VALUES (cast('2021-02-26' as timestamp), 1, 11, 1);
-
-INSERT INTO favorities (coop_id, product_id) VALUES (1, 4);
-INSERT INTO favorities (coop_id, product_id) VALUES (1, 8);
-INSERT INTO favorities (coop_id, product_id) VALUES (1, 12);
-INSERT INTO favorities (coop_id, product_id) VALUES (2, 8);
-INSERT INTO favorities (coop_id, product_id) VALUES (4, 3);
-INSERT INTO favorities (coop_id, product_id) VALUES (6, 23);
-INSERT INTO favorities (coop_id, product_id) VALUES (8, 25);
-INSERT INTO favorities (coop_id, product_id) VALUES (9, 3);
-INSERT INTO favorities (coop_id, product_id) VALUES (9, 9);
-INSERT INTO favorities (coop_id, product_id) VALUES (5, 5);
-INSERT INTO favorities (coop_id, product_id) VALUES (3, 7);
-INSERT INTO favorities (coop_id, product_id) VALUES (5, 15);
-
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 1, 6, 1, 5);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 3, 10, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 4, 6, 1, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 5, 10, 2, 3);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 7, 7, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 8, 13, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 10, 7, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 12, 6, 1, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 13, 13, 2, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 15, 7, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 17, 6, 1, 4);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 19, 10, 2, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 21, 13, 2, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 22, 10, 2, 3);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 24, 6, 1, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (1, 25, 7, 2, 5);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (2, 1, 1, 3, 6);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (2, 3, 4, 3, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (2, 4, 6, 3, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 5, 8, 3, 10);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 7, 11, 3, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 8, 3, 3, 3);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 10, 4, 3, 3);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 12, 4, 3, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (3, 13, 1, 3, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 15, 6, 3, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 17, 13, 3, 5);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 19, 12, 3, 1);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 21, 11, 3, 2);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 22, 6, 3, 3);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 24, 4, 3, 4);
-INSERT INTO ordered_items (order_id, product_id, coop_id, order_status_id, quantity) VALUES (4, 25, 7, 3, 5);
+-- To install pgcrypto module needed to run gen_random_uuid() function
+-- The query must be run only once
+-- UPDATE: the module is not needed yet
+-- CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+
+-- Mock data
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('970f8db8-c583-4401-84a5-2c7e381f4e3d', 'Admin', 'ADMIN', 'fe14a191-936f-4cd3-be58-ff03174aa367');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('38b7608a-a5ad-4e0a-810c-534f3ffc8bec', 'Koty', 'KOTY', 'b873cd52-a779-4205-b57b-6f1c33da79b3');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('0ff7c431-a8a2-4a80-b618-fc9a18f58125', 'OpRo', 'OPRO', '0abe412c-a7a4-4ee0-aada-ffb29f80e22b');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('3749bd0e-b424-4180-a6f1-19a723d98568', 'Paczkers', 'PACZKERS', 'e780c3e4-eebb-4a9f-b48b-8685bb35b398');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('8b66681b-c724-4aa1-8f96-35b96415f1fe', 'Rozwarzacz', 'ROZWARZACZ', 'fd406ca3-fc08-446c-af6d-7d6d0f9ef45d');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('e070c5b6-ae95-4b15-b30a-21ee180cd183', 'Wprowadzacz', 'WPROWADZACZ', '70e72bcc-cf79-4407-ba26-68d37cbea508');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('f7ce2e09-5170-4757-aa0c-489fe1c8505d', 'Skarbnik', 'SKARBNIK', '86cf895c-5055-4a99-bda0-6feec3ea3a0f');
+INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('117cf1f0-716c-465b-9169-bc4e31e14ee6', 'Default', 'DEFAULT', 'ecde2f6f-62d4-4f76-9153-d7ad7a8d1cbc');
+
+INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-0000-000000000001', N'Sprzatanie');
+INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-0000-000000000002', N'Paczkowanie');
+INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-0000-000000000003', N'Wprowadzanie nowych kooperantów');
+INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-0000-000000000004', N'OpRo');
+INSERT INTO work_types (work_type_id, work_type) VALUES ('00000000-0000-0000-0000-000000000005', N'KoTy');
+
+INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000001', N'Szkic');
+INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000002', N'Zatwierdzone');
+INSERT INTO order_status (order_status_id, order_status_name) VALUES ('00000000-0000-0000-0000-000000000003', N'Zrealizowane');
+
+INSERT INTO funds (fund_id, value) VALUES ('00000000-0000-0000-0000-000000000001', 10);
+INSERT INTO funds (fund_id, value) VALUES ('00000000-0000-0000-0000-000000000002', 30);
+
+INSERT INTO orders (order_id, order_start_date, order_stop_date) VALUES ('00000000-0000-0000-0000-000000000001', cast('2021-02-06' as timestamp), cast('2021-02-09' as timestamp));
+INSERT INTO orders (order_id, order_start_date, order_stop_date) VALUES ('00000000-0000-0000-0000-000000000002', cast('2021-02-13' as timestamp), cast('2021-02-16' as timestamp));
+INSERT INTO orders (order_id, order_start_date, order_stop_date) VALUES ('00000000-0000-0000-0000-000000000003', cast('2021-02-27' as timestamp), cast('2021-03-02' as timestamp));
+INSERT INTO orders (order_id, order_start_date, order_stop_date) VALUES ('00000000-0000-0000-0000-000000000004', cast('2021-03-13' as timestamp), cast('2021-03-16' as timestamp));
+
+INSERT INTO units (unit_id, unit_name) VALUES ('00000000-0000-0000-0000-000000000001', N'l');
+INSERT INTO units (unit_id, unit_name) VALUES ('00000000-0000-0000-0000-000000000002', N'kg');
+INSERT INTO units (unit_id, unit_name) VALUES ('00000000-0000-0000-0000-000000000003', N'g');
+INSERT INTO units (unit_id, unit_name) VALUES ('00000000-0000-0000-0000-000000000004', N'piece');
+INSERT INTO units (unit_id, unit_name) VALUES ('00000000-0000-0000-0000-000000000005', N'ml');
+
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000001', N'Warzywa');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000002', N'Produkty zwierzece');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000003', N'Alkohol');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000004', N'Pieczywo');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000005', N'Wyroby cukiernicze');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000006', N'Dla wegan');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000007', N'Produkty zwierzeco-podobne');
+INSERT INTO categories (category_id, category_name) VALUES ('00000000-0000-0000-0000-000000000008', N'Napoje');
+
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', 'Klaudia', 'Maniak', null, null, null, null, 'Klaudia22', 'KLAUDIA22', 'klaudia@maniak.com', 'KLAUDIA@MANIAK.COM', false, 'AQAAAAEAACcQAAAAEI/JT4uMMrDPCJmFccFG9vkQYGgZdbk9Wt+exE0aGmkxLmdqnhqvtzwzvrXK8Q9yMQ==', '7C74BB4Z67BT72X7LN4EBFIHVGQPKH4Z', '660fa210-1d16-46ce-ae23-f7bbf9f73499', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('92f36639-f450-445d-9ca1-0cbd710fe301', 'Szymon', 'Wiechniak', null, null, null, null, 'Szymek33', 'SZYMEK33', 'szymon@wiechniak.com', 'SZYMON@WIECHNIAK.COM', false, 'AQAAAAEAACcQAAAAEJZFy3mZeAO+9EvKlPWaIyWgMhBjHH2tHt8fepb+wh9fJE2h+1vO0u9o8K70ZIYp5g==', 'GTENLD6RX6VYCD4S6RMNB45MR6VWZRRN', '37d74692-4eaa-4c12-853a-e55093bdc0ea', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('56f90eab-e0f7-44ee-b978-4e96ce6518be', 'Martyna', 'Semeniuk', null, null, null, null, 'Marta33', 'MARTA33', 'martyna@semeniuk.com', 'MARTYNA@SEMENIUK.COM', false, 'AQAAAAEAACcQAAAAEH8cl7Ek61oJYDXOKap2oweqldHFhK2x8VqMqHzWyJ71vRnPutZcyYcbq1A8LPuW/A==', 'UO5SWCBT6TH2IXISDPH3IZODVRBIERLJ', '7b498842-f075-4f84-bce0-0c3540581a3d', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('a878f085-0b77-4132-bb48-ae2b3a5f296c', 'Tadeusz', 'Batko', null, null, null, null, 'Tadek34', 'TADEK34', 'tadeusz@batko.com', 'TADEUSZ@BATKO.COM', false, 'AQAAAAEAACcQAAAAECnVQ+ZNiEDF6NCeu/rwMrEK0qqbTWTPQQoWwfBuyfm8LX2LROaX5rs7q5fQtzTCLw==', '75VSDUS3MJIZQPRDNKGBMHREWLB3OQZG', '37777c65-5444-472c-8a86-abbdb3579912', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('d4d9aad8-ef21-44b1-9c47-42b2ef660c37', 'Agata', 'Kaminska', null, null, null, null, 'Aga43', 'AGA43', 'agata@kaminska.com', 'AGATA@KAMINSKA.COM', false, 'AQAAAAEAACcQAAAAEA0Fv3r7rFXnK6UUWvTe7BF+GPuOmqyufk4Wm5uHfUlwQsYsMIreM5bQgIH8XpIUXg==', 'INAGYTR6Z7VAYXEU3MMFC5OCOLJ36PMS', 'ed39d261-987d-40d3-83b2-58d9bdf35e32', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('9853b222-449d-4dfd-ab1a-a76a9c9b6283', 'Mikolaj', 'Banas', null, null, null, null, 'Mikolaj51', 'MIKOLAJ51', 'mikolaj@banas.com', 'MIKOLAJ@BANAS.COM', false, 'AQAAAAEAACcQAAAAEOtD7q0SGCBcu3rS4HRWKHcvYA8Hna7mgr3JEoZpt8FkgjouZt0IjYKg27LmFiXSXg==', 'CUKY3C3JARK25S5BT4SDHRPHTAWMFHUU', 'ca51fa8e-f39b-45d0-ab7c-7f2a15dd0b8f', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', 'Eliza', 'Orzeszkowa', null, null, null, null, 'Elza', 'ELZA', 'eliza@orzeszkowa.com', 'ELIZA@ORZESZKOWA.COM', false, 'AQAAAAEAACcQAAAAENZzsoFDeg1YpwIkxcdjI3ZpmlU10j8Ngn3V/teqLZe8xI+ByHcKuVqMa+H9mfcGAA==', 'WCCUI5EISFZYYNBRD4ANZE25TRKOF4SB', '25e8ba02-b340-4b75-af0d-d2a995b02b34', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('5697471c-dfc0-4891-87e8-c2680bbba30c', 'Mikolaj', 'Kopernik', null, null, null, null, 'Mikolaj123', 'MIKOLAJ123', 'mikolaj@kopernik.com', 'MIKOLAJ@KOPERNIK.COM', false, 'AQAAAAEAACcQAAAAEHW1A6eb5Z2QHql0L+3CK8D4ZL0HBSE96FjTXVJdUu3EVsD7Xpknd91qEWXNBX9Mkw==', 'O6M624MRGHI5A2HDRGX567HWBKORILJY', '9f0af375-ea60-4b5d-a07e-f107c4a1e3bb', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('928aafdd-43af-47a9-bfe6-badc28dd79cb', 'Stefan', 'Batory', null, null, null, null, 'Krol', 'KROL', 'stefan@batory.com', 'STEFAN@BATORY.COM', false, 'AQAAAAEAACcQAAAAEMDdHRKkWyqOlisraicd5WloN8MYbw1CjiI7Z/5PRNam4GhoRQbZc5cNVb/URbZqzQ==', 'XWQNOIIL3XES2LWRD6X6322AEQKHOS44', 'c6b43bc7-ebac-43bb-bb96-8c7a3f82d3e8', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('6e28cee8-3ca6-4623-9608-986d13a7d06a', 'Agnieszka', 'Cebula', null, null, null, null, 'Aga41', 'AGA41', 'agnieszka@cebula.com', 'AGNIESZKA@CEBULA.COM', false, 'AQAAAAEAACcQAAAAEF0nskS1hAON2lc2JQj8JKcsLftype6kVZjUfc+aywdYE6uNj8rdOy30zo7nCxfMNw==', '2QLV7EH5J4RGVZ5PK5QOHRFFXATVS4OO', 'a8926713-ac5c-4401-9c1c-ca3d93356ca1', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('586cb24d-108d-4b5e-b4a2-f57ec1c4afb1', 'Tymoteusz', 'Krawiec', null, null, null, null, 'Tymek22', 'TYMEK22', 'tymoteusz@krawiec.com', 'TYMOTEUSZ@KRAWIEC.COM', false, 'AQAAAAEAACcQAAAAEAwDLFLuvzIvKXyb1vXdHsSvH1M0O5I7vLP2k+mhNLpw5NU978eVJFgAcKeprXOXjw==', 'TOPTXBDLQUYM5LK3LCQKMDSRZA6GZOLW', 'a104e347-3107-4473-bfdf-1af2cc7a1050', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('1d05af00-be78-49c3-8657-08f620e1171e', 'Oskar', 'Skubis', null, null, null, null, 'Oskar', 'OSKAR', 'oskar@skubis.com', 'OSKAR@SKUBIS.COM', false, 'AQAAAAEAACcQAAAAEBPg2jUkK84jH+rONYaf326h3JOvKfHkTskffIF7lruKNdn78P/Isfgafc4e+VX/tw==', 'I5Y5AXS2BVCOIYD3CWHDY5FN2WGGFVAR', 'c8cbaa3a-4eec-4974-ac20-7f686c13f7bb', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('0724569d-e16b-4ff2-a357-fcac5f87eb74', 'Barbara', 'Wydrych', null, null, null, null, 'Barbara23', 'BARBARA23', 'barbara@wydrych.com', 'BARBARA@WYDRYCH.COM', false, 'AQAAAAEAACcQAAAAEORhjMaPVjK9tPR3+GM/eodD+1iNgP352hfCGQ/zCD8DMsNKX2X9n32e7KsbtgNHPw==', 'ZLNDSMIYJ5HUXT6SEYBSGTXLPQ53Z7Q6', 'e180d959-5d8b-4920-aa75-edcdf55ef646', null, false, false, null, true, 0);
+INSERT INTO "AspNetUsers" ("Id", "FirstName", "LastName", "Info", "Debt", "FundId", "BasketId", "UserName", "NormalizedUserName", "Email", "NormalizedEmail", "EmailConfirmed", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "PhoneNumber", "PhoneNumberConfirmed", "TwoFactorEnabled", "LockoutEnd", "LockoutEnabled", "AccessFailedCount") VALUES ('0603d379-7991-49f2-8c3b-8bbc085b5a4c', 'Henryk', 'Sienkiewicz', null, null, null, null, 'Henryk34', 'HENRYK34', 'henryk@sienkiewicz.com', 'HENRYK@SIENKIEWICZ.COM', false, 'AQAAAAEAACcQAAAAEM34s1v0sOe0q3edTXmRHuIrCWWc8Pe3ZDEeHMsh9xq0Y/6YYktWJp6QZ1umOC01og==', 'MECNWQGKBZXER5PVFLJBR6NMHQLVRFXX', '935f4c6f-2590-4cdb-9924-dc96b5d1ef86', null, false, false, null, true, 0);
+
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('928aafdd-43af-47a9-bfe6-badc28dd79cb', '970f8db8-c583-4401-84a5-2c7e381f4e3d');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('6e28cee8-3ca6-4623-9608-986d13a7d06a', '0ff7c431-a8a2-4a80-b618-fc9a18f58125');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('586cb24d-108d-4b5e-b4a2-f57ec1c4afb1', '0ff7c431-a8a2-4a80-b618-fc9a18f58125');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('1d05af00-be78-49c3-8657-08f620e1171e', '38b7608a-a5ad-4e0a-810c-534f3ffc8bec');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('0724569d-e16b-4ff2-a357-fcac5f87eb74', '3749bd0e-b424-4180-a6f1-19a723d98568');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('0603d379-7991-49f2-8c3b-8bbc085b5a4c', '3749bd0e-b424-4180-a6f1-19a723d98568');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('a878f085-0b77-4132-bb48-ae2b3a5f296c', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('d4d9aad8-ef21-44b1-9c47-42b2ef660c37', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('56f90eab-e0f7-44ee-b978-4e96ce6518be', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('9853b222-449d-4dfd-ab1a-a76a9c9b6283', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('5697471c-dfc0-4891-87e8-c2680bbba30c', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+INSERT INTO "AspNetUserRoles" ("UserId", "RoleId") VALUES ('92f36639-f450-445d-9ca1-0cbd710fe301', '117cf1f0-716c-465b-9169-bc4e31e14ee6');
+
+
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000001', N'Chorazy', N'CHOR', N'Best vegetables', N'chor@chor.pl', N'48235125694', null, null, '6e28cee8-3ca6-4623-9608-986d13a7d06a');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000002', N'Gustaw', N'GUMI', N'Sweets without sugar', N'gumi@gumi.pl', N'48562145896', null, cast('2021-03-24' as timestamp), '586cb24d-108d-4b5e-b4a2-f57ec1c4afb1');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000003', N'Kamila', N'KAMI', N'Meat for vegans', N'kami@kami.pl', N'48521359844', null, null, '586cb24d-108d-4b5e-b4a2-f57ec1c4afb1');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000004', N'Jedrzej', N'JEDY', N'Non-milk dairy products', N'jedy@jedy.pl', N'48985632154', null, cast('2021-03-23' as timestamp), '586cb24d-108d-4b5e-b4a2-f57ec1c4afb1');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000005', N'Grzegorz', N'GRZE', N'Alcohol-free wines', N'grze@grze.pl', N'48568741256', null, cast('2021-03-24' as timestamp), '6e28cee8-3ca6-4623-9608-986d13a7d06a');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000006', N'Felicjan', N'FELI', N'Best artificial honey', N'feli@feli.pl', N'48741258963', null, null, '6e28cee8-3ca6-4623-9608-986d13a7d06a');
+INSERT INTO suppliers (supplier_id, supplier_name, supplier_abbr, description, email, phone, picture, order_closing_date, opro_id) VALUES ('00000000-0000-0000-0000-000000000007', N'Eleonora', N'ELEO', N'Flour-free bread', N'eleo@eleo.pl', N'48563259841', null, cast('2021-03-22' as timestamp), '586cb24d-108d-4b5e-b4a2-f57ec1c4afb1');
+
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000001', N'Cebula czerwona', 2, null, 20, true, 20, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000002', N'Cukinia', 3, null, 10, true, 10, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000003', N'Dynia', 6, null, 15, true, 15, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000004', N'Marchew', 4, null, 20, true, 20, null, null, '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000005', N'Muffin black', 10, null, 0, true, 30, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000006', N'Mleczna czekolada', 20, null, 0, true, 10, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000007', N'Babka piaskowa', 6, null, 0, true, 5, null, null, '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000008', N'Kurczak sojowy', 8, null, 0, true, 15, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000009', N'Stek sojowy', 10, null, 0, true, 12, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000010', N'Golonko sojowe', 15, null, 0, true, 7, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000011', N'Serca drobiowe sojowe', 4, null, 0, true, 22, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000012', N'Twaróg', 8, null, 0, true, 6, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000013', N'Mleko sojowe', 10, null, 0, true, 5, null, null, '00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000004', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000014', N'Oscypek', 15, null, 0, true, 6, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000015', N'Bryndza', 13, null, 0, true, 5, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000016', N'Wino z winogron', 22, null, 10, true, 10, null, null, '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000017', N'Piwo jeczmienne', 6, null, 15, true, 15, null, null, '00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000018', N'Piwo lager', 8, null, 15, true, 15, null, null, '00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000019', N'Wino porzeczkowe', 10, null, 12, true, 12, null, null, '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000020', N'Miód spadziowy', 15, null, 10, true, 10, null, null, '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000006', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000021', N'Miód lipowy', 17, null, 12, true, 12, null, null, '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000006', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000022', N'Miód rzepakowy', 13, null, 15, true, 15, null, null, '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000006', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000023', N'Bulka pszenna', 3, null, 0, true, 30, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000007', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000024', N'Chleb zytni', 7, null, 0, true, 15, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000007', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000025', N'Chleb pszenny', 6, null, 0, true, 10, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000007', true, false);
+INSERT INTO products (product_id, product_name, price, description, amount_in_magazine, magazine, amount_max, deposit, picture, unit_id, supplier_id, available, blocked) VALUES ('00000000-0000-0000-0000-000000000026', N'Bulka zytnia', 4, null, 0, true, 16, null, null, '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000007', true, false);
+
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000006', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000007', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000008', 100);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000008', 110);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000009', 120);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000010', 120);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000011', 60);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000011', 90);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000012', 150);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000013', 250);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000014', 130);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000014', 150);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000014', 100);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000015', 120);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000017', 300);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000018', 300);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000020', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000021', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000022', 1);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000023', 100);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000026', '00000000-0000-0000-0000-000000000024', 250);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000027', '00000000-0000-0000-0000-000000000025', 250);
+INSERT INTO available_quantities (available_quantity_id, product_id, quantity) VALUES ('00000000-0000-0000-0000-000000000028', '00000000-0000-0000-0000-000000000026', 100);
+
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000005');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000005');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000007');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000026', '00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000027', '00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000008');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000028', '00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000008');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000029', '00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000008');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000008');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000033', '00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000006');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000034', '00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000004');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000035', '00000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000004');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000036', '00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000004');
+INSERT INTO product_categories (product_category_id, product_id, category_id) VALUES ('00000000-0000-0000-0000-000000000037', '00000000-0000-0000-0000-000000000026', '00000000-0000-0000-0000-000000000004');
+
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000001', null, 'basket1');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000002', null, 'basket2');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000003', null, 'basket3');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000004', null, 'basket4');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000005', null, 'basket5');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000006', '9853b222-449d-4dfd-ab1a-a76a9c9b6283', 'basket6');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000007', '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', 'basket7');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000008', '6e28cee8-3ca6-4623-9608-986d13a7d06a', 'basket8');
+INSERT INTO baskets (basket_id, coop_id, basket_name) VALUES ('00000000-0000-0000-0000-000000000009', '1d05af00-be78-49c3-8657-08f620e1171e', 'basket9');
+
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000001', cast('2021-02-13' as timestamp), 2, '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000002');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000002', cast('2021-02-13' as timestamp), 1, '6e28cee8-3ca6-4623-9608-986d13a7d06a', '00000000-0000-0000-0000-000000000005');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000003', cast('2021-02-13' as timestamp), 1, 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000001');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000004', cast('2021-02-14' as timestamp), 2, '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000002');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000005', cast('2021-02-16' as timestamp), 1, '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '00000000-0000-0000-0000-000000000004');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000006', cast('2021-02-21' as timestamp), 2, '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000001');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000007', cast('2021-02-22' as timestamp), 1, 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000004');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000008', cast('2021-02-25' as timestamp), 1, '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000002');
+INSERT INTO works (work_id, work_date, duration, coop_id, work_type_id) VALUES ('00000000-0000-0000-0000-000000000009', cast('2021-02-26' as timestamp), 1, '586cb24d-108d-4b5e-b4a2-f57ec1c4afb1', '00000000-0000-0000-0000-000000000001');
+
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000001', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000004');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000002', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000008');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000003', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000012');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000004', '92f36639-f450-445d-9ca1-0cbd710fe301', '00000000-0000-0000-0000-000000000008');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000005', 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000003');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000006', '9853b222-449d-4dfd-ab1a-a76a9c9b6283', '00000000-0000-0000-0000-000000000023');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000007', '5697471c-dfc0-4891-87e8-c2680bbba30c', '00000000-0000-0000-0000-000000000025');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000008', '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000003');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000009', '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000009');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000010', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000005');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000011', '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000007');
+INSERT INTO favorities (favorite_id, coop_id, product_id) VALUES ('00000000-0000-0000-0000-000000000012', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000015');
+
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000001', 5);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003', '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000004', 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000001', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000002', 3);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000007', '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000008', '5697471c-dfc0-4891-87e8-c2680bbba30c', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '5697471c-dfc0-4891-87e8-c2680bbba30c', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '92f36639-f450-445d-9ca1-0cbd710fe301', '00000000-0000-0000-0000-000000000001', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000003', '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000002', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000007', '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '00000000-0000-0000-0000-000000000001', 4);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000009', '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000002', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000002', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '92f36639-f450-445d-9ca1-0cbd710fe301', '00000000-0000-0000-0000-000000000002', 3);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000004', 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000001', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000002', 5);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000017', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000003', 6);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000018', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000003', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000019', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000004', 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000003', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000003', 10);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000007', '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '00000000-0000-0000-0000-000000000003', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000008', '5697471c-dfc0-4891-87e8-c2680bbba30c', '00000000-0000-0000-0000-000000000003', 3);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000002', '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000003', 3);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000002', '92f36639-f450-445d-9ca1-0cbd710fe301', '00000000-0000-0000-0000-000000000003', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', '56f90eab-e0f7-44ee-b978-4e96ce6518be', '00000000-0000-0000-0000-000000000003', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000026', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000003', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000027', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000007', '0fe8d4ce-9e2b-4ca6-9a24-698a8f3e80d4', '00000000-0000-0000-0000-000000000003', 5);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000028', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000009', '928aafdd-43af-47a9-bfe6-badc28dd79cb', '00000000-0000-0000-0000-000000000003', 1);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000029', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'bc4f8369-6ad4-47e3-97c6-3f1e1b68060b', '00000000-0000-0000-0000-000000000003', 2);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000030', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', '92f36639-f450-445d-9ca1-0cbd710fe301', '00000000-0000-0000-0000-000000000003', 3);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', 'a878f085-0b77-4132-bb48-ae2b3a5f296c', '00000000-0000-0000-0000-000000000003', 4);
+INSERT INTO ordered_items (ordered_item_id, order_id, product_id, coop_id, order_status_id, quantity) VALUES ('00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000005', 'd4d9aad8-ef21-44b1-9c47-42b2ef660c37', '00000000-0000-0000-0000-000000000003', 5);

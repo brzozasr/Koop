@@ -14,8 +14,9 @@ namespace Koop.Models.Repositories
     
     public interface IShopRepository
     {
-        IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start, int count,
-            OrderDirection orderDirection = OrderDirection.Asc);
+        public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start,
+            int count,
+            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid));
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
         
@@ -23,5 +24,6 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         Supplier GetSupplier(string abbr);
         IEnumerable<Order> GetBigOrders();
+        public ProductsShop GetProductById(Guid productId);
     }
 }

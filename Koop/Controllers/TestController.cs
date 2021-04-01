@@ -105,6 +105,18 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetProductsShop(order, start, count, direction));
         }
 
+        [HttpGet("product")]
+        public IActionResult Product(Guid productId)
+        {
+            return Ok(_uow.ShopRepository().GetProductById(productId));
+        }
+
+        [HttpPost("product/edit")]
+        public IActionResult ProductEdit(Guid productId)
+        {
+            throw new NotImplementedException();
+        }
+
         [HttpGet("cooporder")]
         public IActionResult CoopOrder(Guid coopId, Guid orderId)
         {
@@ -116,6 +128,8 @@ namespace Koop.Controllers
         {
             return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
+        
+        
 
         
         [HttpGet("supplier/{abbr}/edit")]

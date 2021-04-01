@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography.X509Certificates;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,7 @@ namespace Koop.Models.Repositories
         }
         
         public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start, int count,
-            OrderDirection orderDirection = OrderDirection.Asc)
+            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid))
         {
             /*var products = from pr in koopContext.Products
                     join pc in koopContext.ProductCategories on pr.ProductId equals pc.ProductId into
@@ -45,7 +46,11 @@ namespace Koop.Models.Repositories
                         SupplierAbbr = sg.SupplierAbbr ?? "NaN",
                         Categories = String.Join(',', categoryGroup)  
                     };*/
-            var products = _koopDbContext.Products
+            var products_tmp = productId == Guid.Empty
+                ? _koopDbContext.Products
+                : _koopDbContext.Products.Where(p => p.ProductId == productId);
+            
+            var products = products_tmp
                 .Include(p => p.Supplier)
                 .Include(p => p.Unit)
                 .Join(_koopDbContext.AvailableQuantities, product => product.ProductId, quantity => quantity.ProductId,
@@ -62,7 +67,9 @@ namespace Koop.Models.Repositories
                     AmountMax = p.Product.AmountMax,
                     SupplierAbbr = p.Product.Supplier.SupplierAbbr ?? "NaN",
                     CategoryNames = p.Product.ProductCategories.Select(p => p.Category.CategoryName),
-                    Quantities = p.Product.AvailableQuantities.Select(p => p.Quantity)
+                    Quantities = p.Product.AvailableQuantities.Select(p => p.Quantity),
+                    Magazine = p.Product.Magazine,
+                    Deposit = p.Product.Deposit
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
@@ -71,24 +78,34 @@ namespace Koop.Models.Repositories
             List<ProductsShop> output = new List<ProductsShop>();
             foreach (var product in productsGrouped)
             {
+                var data = product.Value.FirstOrDefault();
+                
                 ProductsShop tmp = new ProductsShop()
                 {
-                    ProductName = product.Value.FirstOrDefault().ProductName,
-                    Price = product.Value.FirstOrDefault().Price,
-                    Picture = product.Value.FirstOrDefault().Picture,
-                    Blocked = product.Value.FirstOrDefault().Blocked,
-                    Available = product.Value.FirstOrDefault().Available,
-                    Description = product.Value.FirstOrDefault().Description,
-                    Unit = product.Value.FirstOrDefault().Unit,
-                    AmountMax = product.Value.FirstOrDefault().AmountMax,
-                    SupplierAbbr = product.Value.FirstOrDefault().SupplierAbbr ?? "NaN",
-                    CategoryNames = product.Value.FirstOrDefault().CategoryNames,
-                    Quantities = product.Value.FirstOrDefault().Quantities
+                    ProductName = data.ProductName,
+                    Price = data.Price,
+                    Picture = data.Picture,
+                    Blocked = data.Blocked,
+                    Available = data.Available,
+                    Description = data.Description,
+                    Unit = data.Unit,
+                    AmountMax = data.AmountMax,
+                    SupplierAbbr = data.SupplierAbbr ?? "NaN",
+                    CategoryNames = data.CategoryNames,
+                    Quantities = data.Quantities,
+                    Magazine = data.Magazine,
+                    Deposit = data.Deposit
                 };
+                
                 output.Add(tmp);
             }
             
             return output;
+        }
+
+        public ProductsShop GetProductById(Guid productId)
+        {
+            return GetProductsShop(p => p.ProductName, 0, 1, productId: productId).SingleOrDefault();
         }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)

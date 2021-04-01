@@ -33,7 +33,7 @@ namespace Koop.Controllers
             try
             {
                 var units = await _uow.Repository<Unit>().GetAllAsync();
-                var categories = await _uow.Repository<Category>().GetAllAsync();
+                var categories = _uow.Repository<ProductCategory>().GetAll();
                 var supplier = _uow.Repository<Supplier>()
                     .GetDetail(s => s.SupplierId == supplierId);
                 
@@ -46,7 +46,7 @@ namespace Koop.Controllers
 
                 foreach (var product in supplierProductsMap)
                 {
-                    // product.CategoryName = product.SetCategoriesName(categories);
+                    product.CategoryName = product.SetCategoriesName(categories);
                     product.UnitName = units.FirstOrDefault(u => u.UnitId == product.UnitId)?.UnitName;
                     supplierMap.SupplierProductsList.Add(product);
                 }

@@ -54,7 +54,7 @@ namespace Koop.Controllers
         }
 
         [Authorize(Roles = "Admin,Koty")]
-        [HttpPost("Delete/OrderItem/{orderItemId}")]
+        [HttpDelete("Delete/OrderItem/{orderItemId}")]
         public async Task<IActionResult> DeleteOrderItem(Guid orderItemId)
         {
             try

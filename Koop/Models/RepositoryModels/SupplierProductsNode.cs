@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Models.RepositoryModels
 {
@@ -26,13 +27,14 @@ namespace Koop.Models.RepositoryModels
         public bool Available { get; set; }
         public bool Blocked { get; set; }
 
-        public string SetCategoriesName(List<Category> productCategories)
+        public string SetCategoriesName(IQueryable<ProductCategory> productCategories)
         {
-            // var categories = productCategories
-            //     .Where(c => c.ProductCategories
-            //         .Select(pc => pc.ProductId == ProductId));
+            var categories = productCategories
+                .Where(c => c.ProductId == ProductId)
+                .Include(c => c.Category)
+                .Select(x => x.Category.CategoryName);
 
-            return $"test";
+            return String.Join(", ", categories.ToArray());
         }
     }
 }

@@ -194,6 +194,44 @@ namespace Koop.Controllers
             }
         }
 
+        [HttpGet("categories")]
+        public IActionResult GetCategories()
+        {
+            return Ok(_uow.Repository<Category>().GetAll());
+        }
+
+        [HttpPost("categories/update")]
+        public IActionResult UpdateCategories(IEnumerable<Category> categories)
+        {
+            _uow.ShopRepository().UpdateCategories(categories);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Table Categories updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpDelete("categories/remove")]
+        public IActionResult RemoveCategories(IEnumerable<Category> categories)
+        {
+            _uow.ShopRepository().RemoveCategories(categories);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of Categories were removed successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
         [HttpGet("cooporder")]
         public IActionResult CoopOrder(Guid coopId, Guid orderId)
         {

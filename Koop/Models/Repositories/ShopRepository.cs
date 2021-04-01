@@ -168,7 +168,6 @@ namespace Koop.Models.Repositories
         public void RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity)
         {
             _koopDbContext.AvailableQuantities.RemoveRange(availableQuantity);
-            _koopDbContext.SaveChanges();
         }
 
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId)
@@ -224,6 +223,34 @@ namespace Koop.Models.Repositories
             }
             
             _koopDbContext.ProductCategories.RemoveRange(productCategoriesToRemove);
+        }
+
+        public void UpdateCategories(IEnumerable<Category> productCategories)
+        {
+            foreach (var item in productCategories)
+            {
+                var categoriesExist =
+                    _koopDbContext.Categories.SingleOrDefault(p =>
+                        p.CategoryId == item.CategoryId);
+
+                if (categoriesExist is not null)
+                {
+                    var categoriesUpdated = _mapper.Map(item, categoriesExist);
+
+                    _koopDbContext.Categories.Update(categoriesUpdated);
+                }
+                else
+                {
+                    Category categoryNew = new Category();
+                    var categoryUpdated = _mapper.Map(item, categoryNew);
+                    _koopDbContext.Categories.Add(categoryUpdated);
+                }
+            }
+        }
+
+        public void RemoveCategories(IEnumerable<Category> productCategories)
+        {
+            _koopDbContext.Categories.RemoveRange(productCategories);
         }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)

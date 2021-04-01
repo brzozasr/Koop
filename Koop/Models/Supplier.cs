@@ -21,6 +21,7 @@ namespace Koop.Models
         public string Picture { get; set; }
         public DateTime? OrderClosingDate { get; set; }
         public Guid OproId { get; set; }
+        public double Receivables { get; set; }
 
         public virtual User Opro { get; set; }
         public virtual ICollection<Product> Products { get; set; }

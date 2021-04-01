@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
@@ -115,6 +116,50 @@ namespace Koop.Controllers
         public IActionResult ProductEdit(Guid productId)
         {
             throw new NotImplementedException();
+        }
+
+        [HttpGet("product/categories")]
+        public IActionResult GetProductCatgeories(Guid productId)
+        {
+            return Ok(_uow.ShopRepository().GetCategories(productId));
+        }
+        
+        [HttpGet("product/availQuantities")]
+        public IActionResult GetProductAvailQuantities(Guid productId)
+        {
+            return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+        }
+
+        [HttpPost("product/availQuantities/update")]
+        public IActionResult UpdateAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
+        {
+            _uow.ShopRepository().UpdateAvailableQuantities(availableQuantities);
+
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Table AvailableQuantities updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpDelete("product/availQuantities/remove")]
+        public IActionResult RemoveAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
+        {
+            _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of AvailableQuantities were removed successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpGet("cooporder")]

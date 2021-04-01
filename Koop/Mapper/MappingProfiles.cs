@@ -28,6 +28,16 @@ namespace Koop.Mapper
             //             ProductName = src.ProductName
             //         }));
             CreateMap<UserEdit, User>();
+            
+            CreateMap<ProductsShop, Product>();
+            CreateMap<ProductsShop, ProductsShop>();
+            CreateMap<ProductsShop, Unit>();
+            CreateMap<ProductsShop, AvailableQuantity>();
+            CreateMap<ProductsShop, Supplier>();
+
+            CreateMap<ProductCategory, ProductCategoriesCombo>();
+            CreateMap<Category, ProductCategoriesCombo>();
+            CreateMap<AvailableQuantity, AvailableQuantity>();
         }
     }
 }

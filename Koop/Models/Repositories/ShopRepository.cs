@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography.X509Certificates;
+using AutoMapper;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,12 @@ namespace Koop.Models.Repositories
     public class ShopRepository : IShopRepository
     {
         private KoopDbContext _koopDbContext;
+        private IMapper _mapper;
 
-        public ShopRepository(KoopDbContext koopDbContext)
+        public ShopRepository(KoopDbContext koopDbContext, IMapper mapper)
         {
             _koopDbContext = koopDbContext;
+            _mapper = mapper;
         }
         
         public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start, int count,
@@ -106,6 +109,84 @@ namespace Koop.Models.Repositories
         public ProductsShop GetProductById(Guid productId)
         {
             return GetProductsShop(p => p.ProductName, 0, 1, productId: productId).SingleOrDefault();
+        }
+
+        public void EditProduct(Guid productId, ProductsShop newProductsShop)
+        {
+            var productShop = GetProductById(productId);
+            var productShopEdited = _mapper.Map(newProductsShop, productShop);
+
+            var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+            var productEdited = _mapper.Map(productShopEdited, product);
+            _koopDbContext.Products.Update(productEdited);
+
+            var availableQuantity = _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
+
+            int index = 0;
+            foreach (var item in availableQuantity)
+            {
+                
+            }
+            var availableQuantityEdited = _mapper.Map(productShopEdited, availableQuantity);
+
+            var unit = _koopDbContext.Products
+                .Where(p => p.ProductId == productId)
+                .Include(p => p.Unit)
+                .Select(p => p.Unit);
+            
+            
+        }
+
+        public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId)
+        {
+            return _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
+        }
+
+        public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity>availableQuantity)
+        {
+            foreach (var item in availableQuantity)
+            {
+                var availableQuantityExist =
+                    _koopDbContext.AvailableQuantities.SingleOrDefault(p =>
+                        p.AvailableQuantityId == item.AvailableQuantityId);
+
+                if (availableQuantityExist is not null)
+                {
+                    var availableQuantityUpdated = _mapper.Map(item, availableQuantityExist);
+
+                    _koopDbContext.AvailableQuantities.Update(availableQuantityUpdated);
+                }
+                else
+                {
+                    AvailableQuantity availableQuantityNew = new AvailableQuantity();
+                    var availableQuantityUpdated = _mapper.Map(item, availableQuantityNew);
+                    _koopDbContext.AvailableQuantities.Add(availableQuantityUpdated);
+                }
+            }
+        }
+
+        public void RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity)
+        {
+            _koopDbContext.AvailableQuantities.RemoveRange(availableQuantity);
+            _koopDbContext.SaveChanges();
+        }
+
+        public IEnumerable<ProductCategoriesCombo> GetCategories(Guid productId)
+        {
+            List<ProductCategoriesCombo> productCategoriesLists = new List<ProductCategoriesCombo>();
+            var categories = _koopDbContext.ProductCategories
+                .Where(p => p.ProductId == productId)
+                .Include(p => p.Category);
+
+            foreach (var item in categories)
+            {
+                ProductCategoriesCombo productCategoriesCombo = new ProductCategoriesCombo();
+                var productCategoriesComboPart1 = _mapper.Map(item, productCategoriesCombo);
+                var productCategoriesComboPart2 = _mapper.Map(item.Category, productCategoriesComboPart1);
+                productCategoriesLists.Add(productCategoriesComboPart2);
+            }
+
+            return productCategoriesLists;
         }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)

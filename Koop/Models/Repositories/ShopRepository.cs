@@ -171,7 +171,7 @@ namespace Koop.Models.Repositories
             _koopDbContext.SaveChanges();
         }
 
-        public IEnumerable<ProductCategoriesCombo> GetCategories(Guid productId)
+        public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId)
         {
             List<ProductCategoriesCombo> productCategoriesLists = new List<ProductCategoriesCombo>();
             var categories = _koopDbContext.ProductCategories
@@ -187,6 +187,43 @@ namespace Koop.Models.Repositories
             }
 
             return productCategoriesLists;
+        }
+        
+        public void UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        {
+            foreach (var item in productCategoriesCombos)
+            {
+                var productCatExist =
+                    _koopDbContext.ProductCategories.SingleOrDefault(p =>
+                        p.ProductCategoryId == item.ProductCategoryId);
+
+                if (productCatExist is not null)
+                {
+                    var productCatUpdated = _mapper.Map(item, productCatExist);
+
+                    _koopDbContext.ProductCategories.Update(productCatUpdated);
+                }
+                else
+                {
+                    ProductCategory productCategoryNew = new ProductCategory();
+                    var productCatUpdated = _mapper.Map(item, productCategoryNew);
+                    _koopDbContext.ProductCategories.Add(productCatUpdated);
+                }
+            }
+        }
+
+        public void RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        {
+            IEnumerable<ProductCategory> productCategories = new List<ProductCategory>();
+            var productCategoriesToRemove = _mapper.Map<IEnumerable<ProductCategoriesCombo>, IEnumerable<ProductCategory>>(productCategoriesCombos);
+
+            Console.WriteLine($"Len: {productCategoriesCombos.Count()}");
+            foreach (var item in productCategoriesToRemove)
+            {
+                Console.WriteLine($"Item: {item.ProductCategoryId}");
+            }
+            
+            _koopDbContext.ProductCategories.RemoveRange(productCategoriesToRemove);
         }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)

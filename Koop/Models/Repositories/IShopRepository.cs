@@ -25,9 +25,11 @@ namespace Koop.Models.Repositories
         Supplier GetSupplier(string abbr);
         IEnumerable<Order> GetBigOrders();
         public ProductsShop GetProductById(Guid productId);
-        public IEnumerable<ProductCategoriesCombo> GetCategories(Guid productId);
+        public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);
         public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
         public void RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
+        public void UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
+        public void RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
     }
 }

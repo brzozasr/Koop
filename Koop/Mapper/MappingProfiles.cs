@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
@@ -37,6 +38,8 @@ namespace Koop.Mapper
 
             CreateMap<ProductCategory, ProductCategoriesCombo>();
             CreateMap<Category, ProductCategoriesCombo>();
+            CreateMap<ProductCategoriesCombo, ProductCategory>();
+            //CreateMap<ProductCategoriesCombo, ProductCategory>();
             CreateMap<AvailableQuantity, AvailableQuantity>();
         }
     }

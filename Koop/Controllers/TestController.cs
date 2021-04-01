@@ -121,7 +121,39 @@ namespace Koop.Controllers
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {
-            return Ok(_uow.ShopRepository().GetCategories(productId));
+            return Ok(_uow.ShopRepository().GetProductCategories(productId));
+        }
+        
+        [HttpPost("product/categories/update")]
+        public IActionResult UpdateCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        {
+            _uow.ShopRepository().UpdateProductCategories(productCategoriesCombos);
+
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Table ProductCategories updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+        
+        [HttpDelete("product/categories/remove")]
+        public IActionResult RemoveCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        {
+            _uow.ShopRepository().RemoveProductCategories(productCategoriesCombos);
+
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of ProductCategories were removed successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
         
         [HttpGet("product/availQuantities")]

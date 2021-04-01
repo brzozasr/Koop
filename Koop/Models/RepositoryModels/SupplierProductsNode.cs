@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Koop.Models.RepositoryModels
@@ -23,5 +25,14 @@ namespace Koop.Models.RepositoryModels
         public string UnitName { get; set; }
         public bool Available { get; set; }
         public bool Blocked { get; set; }
+
+        public string SetCategoriesName(List<Category> productCategories)
+        {
+            // var categories = productCategories
+            //     .Where(c => c.ProductCategories
+            //         .Select(pc => pc.ProductId == ProductId));
+
+            return $"test";
+        }
     }
 }

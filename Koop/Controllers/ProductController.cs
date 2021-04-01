@@ -33,10 +33,52 @@ namespace Koop.Controllers
             try
             {
                 var units = await _uow.Repository<Unit>().GetAllAsync();
+                var categories = await _uow.Repository<Category>().GetAllAsync();
                 var supplier = _uow.Repository<Supplier>()
                     .GetDetail(s => s.SupplierId == supplierId);
+                
+                // TODO check the tru condition
                 var supplierProducts = _uow.Repository<Product>()
-                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == true);
+                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false);
+
+                var supplierMap = _mapper.Map<SupplierProducts>(supplier);
+                var supplierProductsMap = _mapper.Map<List<SupplierProductsNode>>(supplierProducts);
+
+                foreach (var product in supplierProductsMap)
+                {
+                    // product.CategoryName = product.SetCategoriesName(categories);
+                    product.UnitName = units.FirstOrDefault(u => u.UnitId == product.UnitId)?.UnitName;
+                    supplierMap.SupplierProductsList.Add(product);
+                }
+
+                if (supplierProducts.Any())
+                {
+                    return Ok(supplierMap);
+                }
+
+                return Ok(new {info = "No products available."});
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+            
+        }
+        
+        [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty,PoRo")]
+        [HttpPost("Magazine/")]
+        public async Task<IActionResult> ProductsInMagazine(Guid supplierId)
+        {
+            try
+            {
+                var units = await _uow.Repository<Unit>().GetAllAsync();
+                var supplier = _uow.Repository<Supplier>()
+                    .GetDetail(s => s.SupplierId == supplierId);
+                
+                // TODO check the tru condition
+                var supplierProducts = _uow.Repository<Product>()
+                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false);
 
                 var supplierMap = _mapper.Map<SupplierProducts>(supplier);
                 var supplierProductsMap = _mapper.Map<List<SupplierProductsNode>>(supplierProducts);
@@ -47,7 +89,12 @@ namespace Koop.Controllers
                     supplierMap.SupplierProductsList.Add(product);
                 }
 
-                return Ok(supplierMap);
+                if (supplierProducts.Any())
+                {
+                    return Ok(supplierMap);
+                }
+
+                return Ok(new {info = "No products available."});
             }
             catch (Exception e)
             {

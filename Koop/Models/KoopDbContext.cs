@@ -401,6 +401,7 @@ namespace Koop.Models
                     .HasColumnName("receivables")
                     .HasDefaultValueSql("0.00");
 
+                entity.HasIndex(e => e.SupplierAbbr).IsUnique();
                 entity.Property(e => e.SupplierAbbr)
                     .IsRequired()
                     .HasMaxLength(20)

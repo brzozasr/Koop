@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using AutoMapper;
 using Koop.Models;
@@ -26,6 +27,21 @@ namespace Koop.Mapper
             CreateMap<Product, SupplierProductsNode>();
 
             CreateMap<UserEdit, User>();
+            
+            CreateMap<ProductsShop, Product>();
+            CreateMap<ProductsShop, ProductsShop>();
+            CreateMap<ProductsShop, Unit>();
+            CreateMap<ProductsShop, AvailableQuantity>();
+            CreateMap<ProductsShop, Supplier>();
+
+            CreateMap<ProductCategory, ProductCategoriesCombo>();
+            CreateMap<Category, ProductCategoriesCombo>();
+            CreateMap<Category, Category>();
+            CreateMap<ProductCategoriesCombo, ProductCategory>();
+            //CreateMap<ProductCategoriesCombo, ProductCategory>();
+            CreateMap<AvailableQuantity, AvailableQuantity>();
+
+            CreateMap<Product, Product>();
         }
     }
 }

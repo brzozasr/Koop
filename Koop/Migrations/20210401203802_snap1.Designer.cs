@@ -10,13 +10,14 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    [Migration("20210328133703_init")]
-    partial class init
+    [Migration("20210401203802_snap1")]
+    partial class snap1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasPostgresExtension("uuid-ossp")
                 .HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
                 .HasAnnotation("ProductVersion", "5.0.4")
@@ -27,7 +28,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("AvailableQuantityId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("available_quantity_id");
+                        .HasColumnName("available_quantity_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
@@ -39,7 +41,7 @@ namespace Koop.Migrations
 
                     b.HasKey("AvailableQuantityId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex(new[] { "ProductId" }, "IX_available_quantities_product_id");
 
                     b.ToTable("available_quantities");
                 });
@@ -49,7 +51,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("BasketId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("basket_id");
+                        .HasColumnName("basket_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("BasketName")
                         .IsRequired()
@@ -59,12 +62,14 @@ namespace Koop.Migrations
                         .HasColumnName("basket_name");
 
                     b.Property<Guid?>("CoopId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("coop_id");
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CoopName")
+                        .HasColumnType("text");
 
                     b.HasKey("BasketId");
 
-                    b.HasIndex("CoopId");
+                    b.HasIndex(new[] { "CoopId" }, "IX_baskets_coop_id");
 
                     b.ToTable("baskets");
                 });
@@ -74,7 +79,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("CategoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("category_id");
+                        .HasColumnName("category_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
@@ -108,6 +114,9 @@ namespace Koop.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("last_name");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("OrderStatusName")
                         .HasMaxLength(100)
                         .IsUnicode(false)
@@ -115,7 +124,7 @@ namespace Koop.Migrations
                         .HasColumnName("order_status_name");
 
                     b.Property<DateTime?>("OrderStopDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("order_stop_date");
 
                     b.Property<string>("Price")
@@ -133,7 +142,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("FavoriteId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("favorite_id");
+                        .HasColumnName("favorite_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<Guid>("CoopId")
                         .HasColumnType("uuid")
@@ -148,7 +158,7 @@ namespace Koop.Migrations
 
                     b.HasIndex("CoopId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex(new[] { "ProductId" }, "IX_favorities_product_id");
 
                     b.ToTable("favorities");
                 });
@@ -158,7 +168,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("FundId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("fund_id");
+                        .HasColumnName("fund_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<byte>("Value")
                         .HasColumnType("smallint")
@@ -169,36 +180,29 @@ namespace Koop.Migrations
                     b.ToTable("funds");
                 });
 
-            modelBuilder.Entity("Koop.Models.ListForPackersView", b =>
-                {
-                    b.Property<string>("ProductName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("product_name");
-
-                    b.Property<string>("ProductsInBaskets")
-                        .HasColumnType("text")
-                        .HasColumnName("products_in_baskets");
-
-                    b.ToView("list_for_packers_view");
-                });
-
             modelBuilder.Entity("Koop.Models.Order", b =>
                 {
                     b.Property<Guid>("OrderId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("order_id");
+                        .HasColumnName("order_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<DateTime>("OrderStartDate")
                         .HasColumnType("timestamp")
                         .HasColumnName("order_start_date");
 
+                    b.Property<Guid>("OrderStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_status_id");
+
                     b.Property<DateTime>("OrderStopDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("order_stop_date");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("OrderStatusId");
 
                     b.ToTable("orders");
                 });
@@ -208,7 +212,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("OrderStatusId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("order_status_id");
+                        .HasColumnName("order_status_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("OrderStatusName")
                         .IsRequired()
@@ -222,12 +227,100 @@ namespace Koop.Migrations
                     b.ToTable("order_status");
                 });
 
+            modelBuilder.Entity("Koop.Models.OrderView", b =>
+                {
+                    b.Property<int?>("AmountInMagazine")
+                        .HasColumnType("integer")
+                        .HasColumnName("amount_in_magazine");
+
+                    b.Property<bool?>("Available")
+                        .HasColumnType("boolean")
+                        .HasColumnName("available");
+
+                    b.Property<string>("BasketName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("basket_name");
+
+                    b.Property<bool?>("Blocked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("blocked");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<short?>("FundValue")
+                        .HasColumnType("smallint")
+                        .HasColumnName("fund_value");
+
+                    b.Property<Guid?>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Info")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTime?>("OrderStartDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_start_date");
+
+                    b.Property<string>("OrderStatusName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("order_status_name");
+
+                    b.Property<DateTime?>("OrderStopDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_stop_date");
+
+                    b.Property<Guid?>("OrderedItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ordered_item_id");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<double?>("Price")
+                        .HasColumnType("double precision")
+                        .HasColumnName("price");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_name");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.ToView("order_view");
+                });
+
             modelBuilder.Entity("Koop.Models.OrderedItem", b =>
                 {
                     b.Property<Guid>("OrderedItemId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("ordered_item_id");
+                        .HasColumnName("ordered_item_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<Guid>("CoopId")
                         .HasColumnType("uuid")
@@ -257,7 +350,7 @@ namespace Koop.Migrations
 
                     b.HasIndex("OrderStatusId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex(new[] { "ProductId" }, "IX_ordered_items_product_id");
 
                     b.ToTable("ordered_items");
                 });
@@ -267,7 +360,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("ProductId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("product_id");
+                        .HasColumnName("product_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<int>("AmountInMagazine")
                         .HasColumnType("integer")
@@ -289,7 +383,7 @@ namespace Koop.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("deposit")
-                        .HasDefaultValueSql("((0))");
+                        .HasDefaultValueSql("0");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -303,7 +397,7 @@ namespace Koop.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
                         .HasColumnName("picture")
-                        .HasDefaultValueSql("('')");
+                        .HasDefaultValueSql("''::text");
 
                     b.Property<double>("Price")
                         .HasColumnType("double precision")
@@ -328,7 +422,7 @@ namespace Koop.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.HasIndex("UnitId");
+                    b.HasIndex(new[] { "UnitId" }, "IX_products_unit_id");
 
                     b.ToTable("products");
                 });
@@ -338,7 +432,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("ProductCategoryId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("product_category_id");
+                        .HasColumnName("product_category_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uuid")
@@ -352,9 +447,24 @@ namespace Koop.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex(new[] { "ProductId" }, "IX_product_categories_product_id");
 
                     b.ToTable("product_categories");
+                });
+
+            modelBuilder.Entity("Koop.Models.RepositoryModels.FnListForPacker", b =>
+                {
+                    b.Property<string>("ProductName")
+                        .HasColumnType("text")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductsInBaskets")
+                        .HasColumnType("text")
+                        .HasColumnName("products_in_baskets");
+
+                    b.ToTable("FnListForPackers");
+
+                    b.ToFunction("list_for_packer");
                 });
 
             modelBuilder.Entity("Koop.Models.Role", b =>
@@ -389,7 +499,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("SupplierId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("supplier_id");
+                        .HasColumnName("supplier_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -407,7 +518,7 @@ namespace Koop.Migrations
                         .HasColumnName("opro_id");
 
                     b.Property<DateTime?>("OrderClosingDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("order_closing_date");
 
                     b.Property<string>("Phone")
@@ -420,6 +531,12 @@ namespace Koop.Migrations
                     b.Property<string>("Picture")
                         .HasColumnType("text")
                         .HasColumnName("picture");
+
+                    b.Property<double>("Receivables")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasColumnName("receivables")
+                        .HasDefaultValueSql("0.00");
 
                     b.Property<string>("SupplierAbbr")
                         .IsRequired()
@@ -437,7 +554,10 @@ namespace Koop.Migrations
 
                     b.HasKey("SupplierId");
 
-                    b.HasIndex("OproId");
+                    b.HasIndex("SupplierAbbr")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "OproId" }, "IX_suppliers_opro_id");
 
                     b.ToTable("suppliers");
                 });
@@ -447,7 +567,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("UnitId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("unit_id");
+                        .HasColumnName("unit_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("UnitName")
                         .HasMaxLength(50)
@@ -550,7 +671,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("WorkId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("work_id");
+                        .HasColumnName("work_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<Guid>("CoopId")
                         .HasColumnType("uuid")
@@ -561,7 +683,7 @@ namespace Koop.Migrations
                         .HasColumnName("duration");
 
                     b.Property<DateTime>("WorkDate")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp without time zone")
                         .HasColumnName("work_date");
 
                     b.Property<Guid>("WorkTypeId")
@@ -572,7 +694,7 @@ namespace Koop.Migrations
 
                     b.HasIndex("CoopId");
 
-                    b.HasIndex("WorkTypeId");
+                    b.HasIndex(new[] { "WorkTypeId" }, "IX_works_work_type_id");
 
                     b.ToTable("works");
                 });
@@ -582,7 +704,8 @@ namespace Koop.Migrations
                     b.Property<Guid>("WorkTypeId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("work_type_id");
+                        .HasColumnName("work_type_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.Property<string>("WorkType1")
                         .IsRequired()
@@ -594,6 +717,37 @@ namespace Koop.Migrations
                     b.HasKey("WorkTypeId");
 
                     b.ToTable("work_types");
+                });
+
+            modelBuilder.Entity("Koop.models.UserOrdersHistoryView", b =>
+                {
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<string>("OrderStatusName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("order_status_name");
+
+                    b.Property<DateTime?>("OrderStopDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_stop_date");
+
+                    b.Property<string>("Price")
+                        .HasColumnType("text")
+                        .HasColumnName("price");
+
+                    b.ToView("user_orders_history_view");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -735,6 +889,17 @@ namespace Koop.Migrations
                     b.Navigation("Coop");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Koop.Models.Order", b =>
+                {
+                    b.HasOne("Koop.Models.OrderStatus", "OrderStatus")
+                        .WithMany("Orders")
+                        .HasForeignKey("OrderStatusId")
+                        .HasConstraintName("orders_order_status_order_status_id_fk")
+                        .IsRequired();
+
+                    b.Navigation("OrderStatus");
                 });
 
             modelBuilder.Entity("Koop.Models.OrderedItem", b =>
@@ -919,6 +1084,8 @@ namespace Koop.Migrations
             modelBuilder.Entity("Koop.Models.OrderStatus", b =>
                 {
                     b.Navigation("OrderedItems");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Koop.Models.Product", b =>

@@ -42,6 +42,8 @@ namespace Koop.Mapper
             CreateMap<ProductCategoriesCombo, ProductCategory>();
             //CreateMap<ProductCategoriesCombo, ProductCategory>();
             CreateMap<AvailableQuantity, AvailableQuantity>();
+
+            CreateMap<Product, Product>();
         }
     }
 }

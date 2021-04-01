@@ -112,12 +112,38 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetProductById(productId));
         }
 
-        [HttpPost("product/edit")]
-        public IActionResult ProductEdit(Guid productId)
+        [HttpPost("product/update")]
+        public IActionResult UpdateProduct(Product product)
         {
-            throw new NotImplementedException();
+            _uow.ShopRepository().UpdateProduct(product);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Table Product updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
+        [HttpDelete("product/remove")]
+        public IActionResult RemoveProduct(IEnumerable<Product> products)
+        {
+            _uow.ShopRepository().RemoveProduct(products);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of Product were removed successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+        
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {

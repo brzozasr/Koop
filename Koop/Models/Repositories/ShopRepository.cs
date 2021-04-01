@@ -106,35 +106,22 @@ namespace Koop.Models.Repositories
             return output;
         }
 
-        public ProductsShop GetProductById(Guid productId)
+        public Product GetProductById(Guid productId)
         {
-            return GetProductsShop(p => p.ProductName, 0, 1, productId: productId).SingleOrDefault();
+            return _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
         }
 
-        public void EditProduct(Guid productId, ProductsShop newProductsShop)
+        public void UpdateProduct(Product product)
         {
-            var productShop = GetProductById(productId);
-            var productShopEdited = _mapper.Map(newProductsShop, productShop);
-
-            var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
-            var productEdited = _mapper.Map(productShopEdited, product);
-            _koopDbContext.Products.Update(productEdited);
-
-            var availableQuantity = _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
-
-            int index = 0;
-            foreach (var item in availableQuantity)
-            {
-                
-            }
-            var availableQuantityEdited = _mapper.Map(productShopEdited, availableQuantity);
-
-            var unit = _koopDbContext.Products
-                .Where(p => p.ProductId == productId)
-                .Include(p => p.Unit)
-                .Select(p => p.Unit);
+            var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
+            var productUpdated = _mapper.Map(product, productExist);
             
-            
+            _koopDbContext.Products.Update(productUpdated);
+        }
+
+        public void RemoveProduct(IEnumerable<Product> product)
+        {
+            _koopDbContext.Products.RemoveRange(product);
         }
 
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId)

@@ -24,7 +24,9 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         Supplier GetSupplier(string abbr);
         IEnumerable<Order> GetBigOrders();
-        public ProductsShop GetProductById(Guid productId);
+        public Product GetProductById(Guid productId);
+        public void UpdateProduct(Product product);
+        public void RemoveProduct(IEnumerable<Product> product);
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);
         public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);

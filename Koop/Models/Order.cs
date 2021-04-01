@@ -15,7 +15,9 @@ namespace Koop.Models
         public Guid OrderId { get; set; }
         public DateTime OrderStartDate { get; set; }
         public DateTime OrderStopDate { get; set; }
+        public Guid OrderStatusId { get; set; }
         
+        public virtual OrderStatus OrderStatus { get; set; }
         // public Guid OrderStatusId { get; set; }
         //
         // public virtual OrderStatus OrderStatus { get; set; }

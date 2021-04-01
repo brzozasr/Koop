@@ -22,6 +22,11 @@ namespace Koop.Models.Repositories
         {
             return _objectSet;
         }
+        
+        public async Task<List<T>> GetAllAsync()
+        {
+            return await _objectSet.ToListAsync();
+        }
 
         public T GetDetail(Func<T, bool> predicate)
         {
@@ -31,6 +36,11 @@ namespace Koop.Models.Repositories
         public void Add(T entity)
         {
             _objectSet.Add(entity);
+        }
+        
+        public async Task AddAsync(T entity)
+        {
+            await _objectSet.AddAsync(entity);
         }
 
         public void Delete(T entity)

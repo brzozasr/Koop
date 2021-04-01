@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 #nullable disable
 
@@ -21,11 +22,13 @@ namespace Koop.Models
         public string Picture { get; set; }
         public DateTime? OrderClosingDate { get; set; }
         public Guid OproId { get; set; }
+        public double Receivables { get; set; }
 
         public virtual User Opro { get; set; }
         public virtual ICollection<Product> Products { get; set; }
 
         // public string OproName => $"{Opro.FirstName} {Opro.LastName}";
+        [NotMapped]
         public string OproName { get; set; }
     }
 }

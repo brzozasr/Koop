@@ -4,10 +4,13 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Koop.Migrations
 {
-    public partial class init : Migration
+    public partial class snap1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:PostgresExtension:uuid-ossp", ",,");
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -26,7 +29,7 @@ namespace Koop.Migrations
                 name: "categories",
                 columns: table => new
                 {
-                    category_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    category_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     category_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -35,10 +38,21 @@ namespace Koop.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FnListForPackers",
+                columns: table => new
+                {
+                    product_name = table.Column<string>(type: "text", nullable: true),
+                    products_in_baskets = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
                 name: "funds",
                 columns: table => new
                 {
-                    fund_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    fund_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     value = table.Column<byte>(type: "smallint", nullable: false)
                 },
                 constraints: table =>
@@ -50,7 +64,7 @@ namespace Koop.Migrations
                 name: "order_status",
                 columns: table => new
                 {
-                    order_status_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    order_status_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     order_status_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -59,23 +73,10 @@ namespace Koop.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "orders",
-                columns: table => new
-                {
-                    order_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    order_start_date = table.Column<DateTime>(type: "timestamp", nullable: false),
-                    order_stop_date = table.Column<DateTime>(type: "timestamp", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_orders", x => x.order_id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "units",
                 columns: table => new
                 {
-                    unit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    unit_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     unit_name = table.Column<string>(type: "character varying(50)", unicode: false, maxLength: 50, nullable: true)
                 },
                 constraints: table =>
@@ -87,7 +88,7 @@ namespace Koop.Migrations
                 name: "work_types",
                 columns: table => new
                 {
-                    work_type_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    work_type_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     work_type = table.Column<string>(type: "character varying(200)", unicode: false, maxLength: 200, nullable: false)
                 },
                 constraints: table =>
@@ -150,6 +151,26 @@ namespace Koop.Migrations
                         column: x => x.FundId,
                         principalTable: "funds",
                         principalColumn: "fund_id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "orders",
+                columns: table => new
+                {
+                    order_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    order_start_date = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    order_stop_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    order_status_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_orders", x => x.order_id);
+                    table.ForeignKey(
+                        name: "orders_order_status_order_status_id_fk",
+                        column: x => x.order_status_id,
+                        principalTable: "order_status",
+                        principalColumn: "order_status_id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -242,16 +263,17 @@ namespace Koop.Migrations
                 name: "baskets",
                 columns: table => new
                 {
-                    basket_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    coop_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    basket_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false)
+                    basket_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    CoopId = table.Column<Guid>(type: "uuid", nullable: true),
+                    basket_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false),
+                    CoopName = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_baskets", x => x.basket_id);
                     table.ForeignKey(
                         name: "fk_baskets_coop_id",
-                        column: x => x.coop_id,
+                        column: x => x.CoopId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -261,15 +283,16 @@ namespace Koop.Migrations
                 name: "suppliers",
                 columns: table => new
                 {
-                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     supplier_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false),
                     supplier_abbr = table.Column<string>(type: "character varying(20)", unicode: false, maxLength: 20, nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
                     email = table.Column<string>(type: "character varying(30)", unicode: false, maxLength: 30, nullable: false),
                     phone = table.Column<string>(type: "character varying(20)", unicode: false, maxLength: 20, nullable: false),
                     picture = table.Column<string>(type: "text", nullable: true),
-                    order_closing_date = table.Column<DateTime>(type: "timestamp", nullable: true),
-                    opro_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    order_closing_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    opro_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    receivables = table.Column<double>(type: "double precision", nullable: false, defaultValueSql: "0.00")
                 },
                 constraints: table =>
                 {
@@ -286,8 +309,8 @@ namespace Koop.Migrations
                 name: "works",
                 columns: table => new
                 {
-                    work_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    work_date = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    work_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    work_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     duration = table.Column<double>(type: "double precision", nullable: false),
                     coop_id = table.Column<Guid>(type: "uuid", nullable: false),
                     work_type_id = table.Column<Guid>(type: "uuid", nullable: false)
@@ -313,15 +336,15 @@ namespace Koop.Migrations
                 name: "products",
                 columns: table => new
                 {
-                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     product_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false),
                     price = table.Column<double>(type: "double precision", nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
                     amount_in_magazine = table.Column<int>(type: "integer", nullable: false),
                     magazine = table.Column<bool>(type: "boolean", nullable: false),
                     amount_max = table.Column<int>(type: "integer", nullable: true),
-                    deposit = table.Column<int>(type: "integer", nullable: true, defaultValueSql: "((0))"),
-                    picture = table.Column<string>(type: "text", nullable: true, defaultValueSql: "('')"),
+                    deposit = table.Column<int>(type: "integer", nullable: true, defaultValueSql: "0"),
+                    picture = table.Column<string>(type: "text", nullable: true, defaultValueSql: "''::text"),
                     unit_id = table.Column<Guid>(type: "uuid", nullable: false),
                     supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
                     available = table.Column<bool>(type: "boolean", nullable: false),
@@ -348,7 +371,7 @@ namespace Koop.Migrations
                 name: "available_quantities",
                 columns: table => new
                 {
-                    available_quantity_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    available_quantity_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     product_id = table.Column<Guid>(type: "uuid", nullable: false),
                     quantity = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -367,7 +390,7 @@ namespace Koop.Migrations
                 name: "favorities",
                 columns: table => new
                 {
-                    favorite_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    favorite_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     coop_id = table.Column<Guid>(type: "uuid", nullable: false),
                     product_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -392,7 +415,7 @@ namespace Koop.Migrations
                 name: "ordered_items",
                 columns: table => new
                 {
-                    ordered_item_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ordered_item_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     order_id = table.Column<Guid>(type: "uuid", nullable: false),
                     product_id = table.Column<Guid>(type: "uuid", nullable: false),
                     coop_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -432,7 +455,7 @@ namespace Koop.Migrations
                 name: "product_categories",
                 columns: table => new
                 {
-                    product_category_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_category_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
                     product_id = table.Column<Guid>(type: "uuid", nullable: false),
                     category_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -503,7 +526,7 @@ namespace Koop.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_baskets_coop_id",
                 table: "baskets",
-                column: "coop_id");
+                column: "CoopId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_favorities_coop_id",
@@ -536,6 +559,11 @@ namespace Koop.Migrations
                 column: "product_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_orders_order_status_id",
+                table: "orders",
+                column: "order_status_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_product_categories_category_id",
                 table: "product_categories",
                 column: "category_id");
@@ -559,6 +587,12 @@ namespace Koop.Migrations
                 name: "IX_suppliers_opro_id",
                 table: "suppliers",
                 column: "opro_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_suppliers_supplier_abbr",
+                table: "suppliers",
+                column: "supplier_abbr",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_works_coop_id",
@@ -598,6 +632,9 @@ namespace Koop.Migrations
                 name: "favorities");
 
             migrationBuilder.DropTable(
+                name: "FnListForPackers");
+
+            migrationBuilder.DropTable(
                 name: "ordered_items");
 
             migrationBuilder.DropTable(
@@ -613,9 +650,6 @@ namespace Koop.Migrations
                 name: "orders");
 
             migrationBuilder.DropTable(
-                name: "order_status");
-
-            migrationBuilder.DropTable(
                 name: "categories");
 
             migrationBuilder.DropTable(
@@ -623,6 +657,9 @@ namespace Koop.Migrations
 
             migrationBuilder.DropTable(
                 name: "work_types");
+
+            migrationBuilder.DropTable(
+                name: "order_status");
 
             migrationBuilder.DropTable(
                 name: "suppliers");

@@ -3,7 +3,6 @@ using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 
 #nullable disable
@@ -25,7 +24,6 @@ namespace Koop.Models
         public virtual DbSet<Basket> Baskets { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<CoopOrderHistoryView> CoopOrderHistoryViews { get; set; }
-        //public virtual DbSet<User> Cooperators { get; set; }
         public virtual DbSet<Favority> Favorities { get; set; }
         public virtual DbSet<Fund> Funds { get; set; }
         public virtual DbSet<Order> Orders { get; set; }
@@ -60,13 +58,18 @@ namespace Koop.Models
         {
             base.OnModelCreating(modelBuilder);
             
-            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+            modelBuilder.HasPostgresExtension("uuid-ossp")
+                .HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
 
             modelBuilder.Entity<AvailableQuantity>(entity =>
             {
                 entity.ToTable("available_quantities");
 
-                entity.Property(e => e.AvailableQuantityId).HasColumnName("available_quantity_id");
+                entity.HasIndex(e => e.ProductId, "IX_available_quantities_product_id");
+
+                entity.Property(e => e.AvailableQuantityId)
+                    .HasColumnName("available_quantity_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.ProductId).HasColumnName("product_id");
 
@@ -83,9 +86,12 @@ namespace Koop.Models
             {
                 entity.ToTable("baskets");
 
-                entity.Property(e => e.BasketId).HasColumnName("basket_id");
+                entity.HasIndex(e => e.CoopId, "IX_baskets_coop_id");
 
-                entity.Property(e => e.CoopId).HasColumnName("coop_id");
+                entity.Property(e => e.BasketId)
+                    .HasColumnName("basket_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
+
                 entity.Property(e => e.BasketName)
                     .IsRequired()
                     .HasMaxLength(100)
@@ -102,7 +108,9 @@ namespace Koop.Models
             {
                 entity.ToTable("categories");
 
-                entity.Property(e => e.CategoryId).HasColumnName("category_id");
+                entity.Property(e => e.CategoryId)
+                    .HasColumnName("category_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.CategoryName)
                     .IsRequired()
@@ -137,7 +145,7 @@ namespace Koop.Models
                     .HasColumnName("order_status_name");
 
                 entity.Property(e => e.OrderStopDate)
-                    .HasColumnType("timestamp")
+                    .HasColumnType("timestamp without time zone")
                     .HasColumnName("order_stop_date");
 
                 entity.Property(e => e.Price)
@@ -146,63 +154,7 @@ namespace Koop.Models
                     .IsUnicode(false)
                     .HasColumnName("price");
             });
-
-            /*modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.Id)
-                    .HasName("pk_cooperators");
-
-                entity.ToTable("cooperators");
-
-                entity.Property(e => e.Id).HasColumnName("coop_id");
-
-                entity.Property(e => e.BasketId).HasColumnName("basket_id");
-
-                entity.Property(e => e.Debt).HasColumnName("debt");
-
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasMaxLength(30)
-                    .IsUnicode(false)
-                    .HasColumnName("email");
-
-                entity.Property(e => e.FirstName)
-                    .IsRequired()
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("first_name");
-
-                entity.Property(e => e.FunctionId).HasColumnName("function_id");
-
-                entity.Property(e => e.FundId).HasColumnName("fund_id");
-
-                entity.Property(e => e.Info)
-                    .HasColumnType("text")
-                    .HasColumnName("info");
-
-                entity.Property(e => e.LastName)
-                    .IsRequired()
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("last_name");
-
-                entity.Property(e => e.PhoneNumber)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("phone");
-
-                entity.HasOne(d => d.Function)
-                    .WithMany(p => p.Cooperators)
-                    .HasForeignKey(d => d.FunctionId)
-                    .HasConstraintName("fk_cooperators_function_id");
-
-                entity.HasOne(d => d.Fund)
-                    .WithMany(p => p.Cooperators)
-                    .HasForeignKey(d => d.FundId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("fk_cooperators_fund_id");
-            });*/
-
+            
             modelBuilder.Entity<Favority>(entity =>
             {
                 entity.HasKey(e => e.FavoriteId)
@@ -210,7 +162,11 @@ namespace Koop.Models
 
                 entity.ToTable("favorities");
 
-                entity.Property(e => e.FavoriteId).HasColumnName("favorite_id");
+                entity.HasIndex(e => e.ProductId, "IX_favorities_product_id");
+
+                entity.Property(e => e.FavoriteId)
+                    .HasColumnName("favorite_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.CoopId).HasColumnName("coop_id");
 
@@ -233,7 +189,9 @@ namespace Koop.Models
             {
                 entity.ToTable("funds");
 
-                entity.Property(e => e.FundId).HasColumnName("fund_id");
+                entity.Property(e => e.FundId)
+                    .HasColumnName("fund_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.Value).HasColumnName("value");
             });
@@ -242,22 +200,34 @@ namespace Koop.Models
             {
                 entity.ToTable("orders");
 
-                entity.Property(e => e.OrderId).HasColumnName("order_id");
+                entity.Property(e => e.OrderId)
+                    .HasColumnName("order_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.OrderStartDate)
                     .HasColumnType("timestamp")
                     .HasColumnName("order_start_date");
 
+                entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
+
                 entity.Property(e => e.OrderStopDate)
-                    .HasColumnType("timestamp")
+                    .HasColumnType("timestamp without time zone")
                     .HasColumnName("order_stop_date");
+
+                entity.HasOne(d => d.OrderStatus)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.OrderStatusId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("orders_order_status_order_status_id_fk");
             });
 
             modelBuilder.Entity<OrderStatus>(entity =>
             {
                 entity.ToTable("order_status");
 
-                entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
+                entity.Property(e => e.OrderStatusId)
+                    .HasColumnName("order_status_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.OrderStatusName)
                     .IsRequired()
@@ -270,7 +240,11 @@ namespace Koop.Models
             {
                 entity.ToTable("ordered_items");
 
-                entity.Property(e => e.OrderedItemId).HasColumnName("ordered_item_id");
+                entity.HasIndex(e => e.ProductId, "IX_ordered_items_product_id");
+
+                entity.Property(e => e.OrderedItemId)
+                    .HasColumnName("ordered_item_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.CoopId).HasColumnName("coop_id");
 
@@ -311,7 +285,11 @@ namespace Koop.Models
             {
                 entity.ToTable("products");
 
-                entity.Property(e => e.ProductId).HasColumnName("product_id");
+                entity.HasIndex(e => e.UnitId, "IX_products_unit_id");
+
+                entity.Property(e => e.ProductId)
+                    .HasColumnName("product_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.AmountInMagazine).HasColumnName("amount_in_magazine");
 
@@ -323,7 +301,7 @@ namespace Koop.Models
 
                 entity.Property(e => e.Deposit)
                     .HasColumnName("deposit")
-                    .HasDefaultValueSql("((0))");
+                    .HasDefaultValueSql("0");
 
                 entity.Property(e => e.Description)
                     .HasColumnType("text")
@@ -334,7 +312,7 @@ namespace Koop.Models
                 entity.Property(e => e.Picture)
                     .HasColumnType("text")
                     .HasColumnName("picture")
-                    .HasDefaultValueSql("('')");
+                    .HasDefaultValueSql("''::text");
 
                 entity.Property(e => e.Price).HasColumnName("price");
 
@@ -364,7 +342,11 @@ namespace Koop.Models
             {
                 entity.ToTable("product_categories");
 
-                entity.Property(e => e.ProductCategoryId).HasColumnName("product_category_id");
+                entity.HasIndex(e => e.ProductId, "IX_product_categories_product_id");
+
+                entity.Property(e => e.ProductCategoryId)
+                    .HasColumnName("product_category_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.CategoryId).HasColumnName("category_id");
 
@@ -387,11 +369,13 @@ namespace Koop.Models
             {
                 entity.ToTable("suppliers");
 
-                entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
+                entity.HasIndex(e => e.OproId, "IX_suppliers_opro_id");
 
-                entity.Property(e => e.Description)
-                    .HasColumnType("text")
-                    .HasColumnName("description");
+                entity.Property(e => e.SupplierId)
+                    .HasColumnName("supplier_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
+
+                entity.Property(e => e.Description).HasColumnName("description");
 
                 entity.Property(e => e.Email)
                     .IsRequired()
@@ -402,7 +386,7 @@ namespace Koop.Models
                 entity.Property(e => e.OproId).HasColumnName("opro_id");
 
                 entity.Property(e => e.OrderClosingDate)
-                    .HasColumnType("timestamp")
+                    .HasColumnType("timestamp without time zone")
                     .HasColumnName("order_closing_date");
 
                 entity.Property(e => e.Phone)
@@ -411,10 +395,13 @@ namespace Koop.Models
                     .IsUnicode(false)
                     .HasColumnName("phone");
 
-                entity.Property(e => e.Picture)
-                    .HasColumnType("text")
-                    .HasColumnName("picture");
+                entity.Property(e => e.Picture).HasColumnName("picture");
 
+                entity.Property(e => e.Receivables)
+                    .HasColumnName("receivables")
+                    .HasDefaultValueSql("0.00");
+
+                entity.HasIndex(e => e.SupplierAbbr).IsUnique();
                 entity.Property(e => e.SupplierAbbr)
                     .IsRequired()
                     .HasMaxLength(20)
@@ -438,7 +425,9 @@ namespace Koop.Models
             {
                 entity.ToTable("units");
 
-                entity.Property(e => e.UnitId).HasColumnName("unit_id");
+                entity.Property(e => e.UnitId)
+                    .HasColumnName("unit_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.UnitName)
                     .HasMaxLength(50)
@@ -446,18 +435,41 @@ namespace Koop.Models
                     .HasColumnName("unit_name");
             });
 
+            modelBuilder.Entity<UserOrdersHistoryView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("user_orders_history_view");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_stop_date");
+
+                entity.Property(e => e.Price).HasColumnName("price");
+            });
+
             modelBuilder.Entity<Work>(entity =>
             {
                 entity.ToTable("works");
 
-                entity.Property(e => e.WorkId).HasColumnName("work_id");
+                entity.HasIndex(e => e.WorkTypeId, "IX_works_work_type_id");
+
+                entity.Property(e => e.WorkId)
+                    .HasColumnName("work_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.CoopId).HasColumnName("coop_id");
 
                 entity.Property(e => e.Duration).HasColumnName("duration");
 
                 entity.Property(e => e.WorkDate)
-                    .HasColumnType("timestamp")
+                    .HasColumnType("timestamp without time zone")
                     .HasColumnName("work_date");
 
                 entity.Property(e => e.WorkTypeId).HasColumnName("work_type_id");
@@ -479,7 +491,9 @@ namespace Koop.Models
             {
                 entity.ToTable("work_types");
 
-                entity.Property(e => e.WorkTypeId).HasColumnName("work_type_id");
+                entity.Property(e => e.WorkTypeId)
+                    .HasColumnName("work_type_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.WorkType1)
                     .IsRequired()
@@ -500,29 +514,12 @@ namespace Koop.Models
                 entity.Property(e => e.ProductsInBaskets)
                     .HasColumnName("products_in_baskets");
             });
-            
-            modelBuilder.Entity<UserOrdersHistoryView>(entity =>
-            {
-                entity.HasNoKey();
 
-                entity.ToTable("user_orders_history_view");
-
-                entity.Property(e => e.OrderId).HasColumnName("order_id");
-
-                entity.Property(e => e.OrderStatusName)
-                    .HasMaxLength(100)
-                    .HasColumnName("order_status_name");
-
-                entity.Property(e => e.OrderStopDate).HasColumnName("order_stop_date");
-
-                entity.Property(e => e.Price).HasColumnName("price");
-            });
-            
             modelBuilder.Entity<OrderView>(entity =>
             {
                 entity.HasNoKey();
 
-                entity.ToTable("order_view");
+                entity.ToView("order_view");
 
                 entity.Property(e => e.AmountInMagazine).HasColumnName("amount_in_magazine");
 
@@ -537,6 +534,8 @@ namespace Koop.Models
                 entity.Property(e => e.Description).HasColumnName("description");
 
                 entity.Property(e => e.Email).HasMaxLength(256);
+
+                entity.Property(e => e.FundValue).HasColumnName("fund_value");
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 

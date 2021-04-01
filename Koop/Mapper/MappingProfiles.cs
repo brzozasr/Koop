@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
@@ -14,20 +16,32 @@ namespace Koop.Mapper
 
             CreateMap<OrderView, CoopOrder>();
             CreateMap<OrderView, CoopOrderNode>()
-                .AfterMap((src, dest) => 
+                .AfterMap((src, dest) =>
                     dest.FundPrice = dest.CalculateFundPrice())
-                .AfterMap((src, dest) => 
+                .AfterMap((src, dest) =>
                     dest.TotalPrice = dest.CalculateTotalPrice())
-                .AfterMap((src, dest) => 
+                .AfterMap((src, dest) =>
                     dest.TotalFundPrice = dest.CalculateTotalFundPrice());
 
-            // CreateMap<OrderView, CoopOrder>()
-            //     .AfterMap((src, dest) =>
-            //         dest.CoopOrderNode.Add(new CoopOrderNode
-            //         {
-            //             ProductName = src.ProductName
-            //         }));
+            CreateMap<Supplier, SupplierProducts>();
+            CreateMap<Product, SupplierProductsNode>();
+
             CreateMap<UserEdit, User>();
+            
+            CreateMap<ProductsShop, Product>();
+            CreateMap<ProductsShop, ProductsShop>();
+            CreateMap<ProductsShop, Unit>();
+            CreateMap<ProductsShop, AvailableQuantity>();
+            CreateMap<ProductsShop, Supplier>();
+
+            CreateMap<ProductCategory, ProductCategoriesCombo>();
+            CreateMap<Category, ProductCategoriesCombo>();
+            CreateMap<Category, Category>();
+            CreateMap<ProductCategoriesCombo, ProductCategory>();
+            //CreateMap<ProductCategoriesCombo, ProductCategory>();
+            CreateMap<AvailableQuantity, AvailableQuantity>();
+
+            CreateMap<Product, Product>();
         }
     }
 }

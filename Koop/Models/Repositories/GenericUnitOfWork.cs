@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 
 namespace Koop.Models.Repositories
@@ -13,13 +14,15 @@ namespace Koop.Models.Repositories
         private Dictionary<Type, object> _repositories;
         private Dictionary<Type, object> _repositoriesView;
         private IShopRepository _shopRepository;
+        private IMapper _mapper;
 
-        public GenericUnitOfWork(KoopDbContext koopDbContext)
+        public GenericUnitOfWork(KoopDbContext koopDbContext, IMapper mapper)
         {
             _koopDbContext = koopDbContext;
+            _mapper = mapper;
             _repositories = new Dictionary<Type, object>();
             _repositoriesView = new Dictionary<Type, object>();
-            _shopRepository = new ShopRepository(_koopDbContext);
+            _shopRepository = new ShopRepository(_koopDbContext, mapper);
         }
 
         public IRepository<T> Repository<T>() where T : class

@@ -24,9 +24,8 @@ namespace Koop.Controllers
             _uow = uow;
             _mapper = mapper;
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty")]
+        
+        [Authorize(Roles = "Admin,Koty")]
         [HttpPost("Update/OrderItem/{orderItemId}/{quantity}")]
         public async Task<IActionResult> UpdateOrderItem(Guid orderItemId, int quantity)
         {

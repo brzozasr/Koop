@@ -20,9 +20,9 @@ namespace Koop.Models.Repositories
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
         
-        IEnumerable<Basket> GetBaskets();
+        IEnumerable<BasketsView> GetBaskets();
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
-        Supplier GetSupplier(string abbr);
+        SupplierView GetSupplier(string abbr);
         IEnumerable<Order> GetBigOrders();
         public Product GetProductById(Guid productId);
         public void UpdateProduct(Product product);

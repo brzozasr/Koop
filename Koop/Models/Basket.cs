@@ -11,8 +11,6 @@ namespace Koop.Models
         public Guid? CoopId { get; set; }
         public string BasketName { get; set; }
         
-        public string CoopName { get; set; }
-
         public virtual User Coop { get; set; }
         
         // public string CoopName => $"{Coop.FirstName} {Coop.LastName}";

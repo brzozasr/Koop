@@ -264,22 +264,19 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
         }
 
-        [HttpGet("supplier/{abbr}")]
-        public IActionResult Supplier(string abbr)
-        {
-            return Ok(_uow.ShopRepository().GetSupplier(abbr));
-        }
-        
-        
+        // [HttpGet("supplier/{abbr}")]
+        // public IActionResult Supplier(string abbr)
+        // {
+        //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
+        // }
 
         
-        [HttpGet("supplier/{abbr}/edit")]
-        public IActionResult EditSupplier(string abbr)
-        {
-            return Ok(_uow.ShopRepository().GetSupplier(abbr));
-        }
+        // [HttpGet("supplier/{abbr}/edit")]
+        // public IActionResult EditSupplier(string abbr)
+        // {
+        //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
+        // }
         
-        //TODO EWA: refactor!
 
         // [HttpGet("allsuppliers")]
         // public IActionResult AllSuppliers()
@@ -293,16 +290,16 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
         
-        [HttpGet("order/baskets")]
-        public IActionResult BasketName()
-        {
-            return Ok(_uow.ShopRepository().GetBaskets());
-        }
-        
-        [HttpGet("bigorders")]
-        public IActionResult BigOrders()
-        {
-            return Ok(_uow.Repository<Order>().GetAll());
-        }
+        // [HttpGet("order/baskets")]
+        // public IActionResult BasketName()
+        // {
+        //     return Ok(_uow.ShopRepository().GetBaskets());
+        // }
+        //
+        // [HttpGet("bigorders")]
+        // public IActionResult BigOrders()
+        // {
+        //     return Ok(_uow.Repository<Order>().GetAll());
+        // }
     }
 }

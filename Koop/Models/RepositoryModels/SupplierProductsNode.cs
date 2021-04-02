@@ -22,6 +22,8 @@ namespace Koop.Models.RepositoryModels
         public string Picture { get; set; }
         [JsonIgnore] 
         public Guid UnitId { get; set; }
+        [JsonIgnore]
+        public Guid SupplierId { get; set; }
         [NotMapped]
         public string UnitName { get; set; }
         public bool Available { get; set; }

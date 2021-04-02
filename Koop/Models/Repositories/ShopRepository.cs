@@ -262,6 +262,11 @@ namespace Koop.Models.Repositories
                 }
             }
         }
+        
+        public void RemoveUnits(IEnumerable<Unit> units)
+        {
+            _koopDbContext.Units.RemoveRange(units);
+        }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)
         {

@@ -246,8 +246,8 @@ namespace Koop.Controllers
         [HttpDelete("units/remove")]
         public IActionResult RemoveUnits(IEnumerable<Unit> units)
         {
-            _uow.DbContext.Units.RemoveRange(units);
-            
+            _uow.ShopRepository().RemoveUnits(units);
+
             try
             {
                 _uow.SaveChanges();

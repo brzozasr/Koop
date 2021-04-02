@@ -42,6 +42,7 @@ namespace Koop.Mapper
             CreateMap<AvailableQuantity, AvailableQuantity>();
 
             CreateMap<Product, Product>();
+            CreateMap<Unit, Unit>();
         }
     }
 }

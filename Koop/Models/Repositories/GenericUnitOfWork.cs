@@ -49,6 +49,8 @@ namespace Koop.Models.Repositories
             _koopDbContext.SaveChanges();
         }
 
+        public KoopDbContext DbContext => _koopDbContext;
+
         public async Task<int> SaveChangesAsync()
         {
             var success = await _koopDbContext.SaveChangesAsync();

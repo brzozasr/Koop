@@ -35,5 +35,6 @@ namespace Koop.Models.Repositories
         public void RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
         public void UpdateCategories(IEnumerable<Category> productCategories);
         public void RemoveCategories(IEnumerable<Category> productCategories);
+        public void UpdateUnits(IEnumerable<Unit> units);
     }
 }

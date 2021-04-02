@@ -11,6 +11,7 @@ using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Operation.Union;
 
 namespace Koop.Controllers
 {
@@ -218,6 +219,50 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message, null, 500);
             }
+        }
+
+        [HttpGet("allUnits")]
+        public IActionResult GetAllUnits()
+        {
+            return Ok(_uow.Repository<Unit>().GetAll());
+        }
+
+        [HttpPost("units/update")]
+        public IActionResult UnitsUpdate(IEnumerable<Unit> units)
+        {
+            _uow.ShopRepository().UpdateUnits(units);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of Unit were updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpDelete("units/remove")]
+        public IActionResult RemoveUnits(IEnumerable<Unit> units)
+        {
+            _uow.DbContext.Units.RemoveRange(units);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Entries of Unit were removed successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpGet("product/{productId}/unit")]
+        public IActionResult GetProductUnit(Guid productId)
+        {
+            return Ok(_uow.Repository<Product>().GetAll().Where(p => p.ProductId == productId).Select(p => p.Unit));
         }
 
         [HttpGet("categories")]

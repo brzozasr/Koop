@@ -2,7 +2,7 @@
 -- The query must be run only once
 -- UPDATE: the module is not needed yet
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Mock data
 INSERT INTO "AspNetRoles" ("Id", "Name", "NormalizedName", "ConcurrencyStamp") VALUES ('970f8db8-c583-4401-84a5-2c7e381f4e3d', 'Admin', 'ADMIN', 'fe14a191-936f-4cd3-be58-ff03174aa367');

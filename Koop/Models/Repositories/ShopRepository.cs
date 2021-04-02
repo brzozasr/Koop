@@ -240,6 +240,29 @@ namespace Koop.Models.Repositories
             _koopDbContext.Categories.RemoveRange(productCategories);
         }
 
+        public void UpdateUnits(IEnumerable<Unit> units)
+        {
+            foreach (var item in units)
+            {
+                var unitsExist =
+                    _koopDbContext.Units.SingleOrDefault(p =>
+                        p.UnitId == item.UnitId);
+
+                if (unitsExist is not null)
+                {
+                    var unitsUpdated = _mapper.Map(item, unitsExist);
+
+                    _koopDbContext.Units.Update(unitsUpdated);
+                }
+                else
+                {
+                    Unit unitNew = new Unit();
+                    var unitUpdated = _mapper.Map(item, unitNew);
+                    _koopDbContext.Units.Add(unitUpdated);
+                }
+            }
+        }
+
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)
         {
             var order = _koopDbContext.OrderedItems

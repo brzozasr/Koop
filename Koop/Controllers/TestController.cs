@@ -345,12 +345,28 @@ namespace Koop.Controllers
             }
         }
 
-        [HttpGet("cooporder")]
+        [HttpGet("user/{coopId}/order/{orderId}")]
         public IActionResult CoopOrder(Guid coopId, Guid orderId)
         {
             try
             {
                 return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpPost("order/{orderId}/setQuantity/{quantity}")]
+        public IActionResult UpdateUserOrderQuantity(Guid orderId, int quantity)
+        {
+            _uow.ShopRepository().UpdateUserOrderQuantity(orderId, quantity);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Order quantity updated successfully."});
             }
             catch (Exception e)
             {

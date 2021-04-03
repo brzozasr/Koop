@@ -284,6 +284,7 @@ namespace Koop.Models.Repositories
             {
                 CooperatorOrder cooperatorOrder = new CooperatorOrder()
                 {
+                    OrderedItemId = item.Products.OrderedItemId,
                     FirstName = item.User.FirstName,
                     LastName = item.User.LastName,
                     ProductName = item.Products.Product.ProductName,
@@ -298,6 +299,19 @@ namespace Koop.Models.Repositories
             }
 
             return output;
+        }
+
+        public void UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
+        {
+            var order = _koopDbContext.OrderedItems
+                .Include(p => p.OrderStatus)
+                .SingleOrDefault(p => p.OrderedItemId == orderedItemId);
+
+            if (order is not null && order.OrderStatus.OrderStatusName.Equals("Szkic"))
+            {
+                order.Quantity = quantity;
+                _koopDbContext.OrderedItems.Update(order);
+            }
         }
         
         public IEnumerable<Basket> GetBaskets()

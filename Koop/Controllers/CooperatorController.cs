@@ -89,7 +89,7 @@ namespace Koop.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(new {error = e.Message, source = e.Source});
+                return Problem(e.Message, null, null, e.Source);
             }
         }
         
@@ -162,7 +162,7 @@ namespace Koop.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(new {error = e.Message, source = e.Source});
+                return Problem(e.Message, null, null, e.Source);
             }
         }
     }

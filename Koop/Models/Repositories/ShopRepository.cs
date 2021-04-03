@@ -313,6 +313,17 @@ namespace Koop.Models.Repositories
                 _koopDbContext.OrderedItems.Update(order);
             }
         }
+
+        public void UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
+        {
+            var userOrders = _koopDbContext.OrderedItems
+                .Where(p => p.OrderId == orderId && p.CoopId == userId);
+
+            foreach (var item in userOrders)
+            {
+                item.OrderStatusId = statusId;
+            }
+        }
         
         public IEnumerable<Basket> GetBaskets()
         {

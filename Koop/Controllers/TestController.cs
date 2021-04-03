@@ -379,8 +379,22 @@ namespace Koop.Controllers
         {
             return Ok(_uow.ShopRepository().GetSupplier(abbr));
         }
-        
-        
+
+        [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
+        public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
+        {
+            _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(new {Message = "Order status updated successfully."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
 
         
         [HttpGet("supplier/{abbr}/edit")]

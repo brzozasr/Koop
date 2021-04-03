@@ -24,9 +24,8 @@ namespace Koop.Controllers
             _uow = uow;
             _mapper = mapper;
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty")]
+        
+        [Authorize(Roles = "Admin,Koty")]
         [HttpPost("Update/OrderItem/Quantity")]
         public async Task<IActionResult> UpdateOrderItem([FromBody] OrderedItemQuantityUpdate orderItem)
         {
@@ -93,9 +92,8 @@ namespace Koop.Controllers
                 return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty")]
+        
+        [Authorize(Roles = "Admin,Koty")]
         [HttpGet("{coopId}/Orders/Show")]
         public async Task<IActionResult> OrdersCoopView([FromRoute] Guid coopId)
         {

@@ -24,43 +24,64 @@ namespace Koop.Controllers
             _uow = uow;
             _mapper = mapper;
         }
-        
-        [Authorize(Roles = "Admin,Koty")]
-        [HttpPost("Update/OrderItem/{orderItemId}/{quantity}")]
-        public async Task<IActionResult> UpdateOrderItem(Guid orderItemId, int quantity)
+
+        [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty")]
+        [HttpPost("Update/OrderItem/Quantity")]
+        public async Task<IActionResult> UpdateOrderItem([FromBody] OrderedItemQuantityUpdate orderItem)
         {
             try
             {
-                if (quantity > 0)
+                if (orderItem.Quantity > 0)
                 {
                     var order = _uow.Repository<OrderedItem>()
-                        .GetDetail(rec => rec.OrderedItemId == orderItemId);
+                        .GetDetail(rec => rec.OrderedItemId == orderItem.OrderedItemId);
 
-                    order.Quantity = quantity;
-                
+                    if (order == null)
+                    {
+                        return Ok(
+                            new
+                            {
+                                info = $"There is no product ordered with the given ID: {orderItem.OrderedItemId}."
+                            });
+                    }
+
+                    order.Quantity = orderItem.Quantity;
+
                     await _uow.SaveChangesAsync();
                     return Ok(
                         new
                         {
-                            info = $"The quantity of the ordered product has been changed to {quantity} (order ID: {orderItemId})."
+                            info =
+                                $"The quantity of the ordered product has been changed to {orderItem.Quantity} (order ID: {orderItem.OrderedItemId})."
                         });
                 }
+
                 return BadRequest(new {error = "The entered quantity must be greater than 0."});
             }
             catch (Exception e)
             {
-                return BadRequest(new {error = e.Message, source = e.Source});
+                return Problem(e.Message, null, null, e.Source);
             }
         }
-
+        
         [Authorize(Roles = "Admin,Koty")]
         [HttpDelete("Delete/OrderItem/{orderItemId}")]
-        public async Task<IActionResult> DeleteOrderItem(Guid orderItemId)
+        public async Task<IActionResult> DeleteOrderItem([FromRoute] Guid orderItemId)
         {
             try
             {
                 var order = _uow.Repository<OrderedItem>()
                     .GetDetail(rec => rec.OrderedItemId == orderItemId);
+                
+                if (order == null)
+                {
+                    return Ok(
+                        new
+                        {
+                            info = $"There is no product ordered with the given ID: {orderItemId}."
+                        });
+                }
 
                 _uow.Repository<OrderedItem>().Delete(order);
 
@@ -73,16 +94,25 @@ namespace Koop.Controllers
             }
         }
 
-
-        [Authorize(Roles = "Admin,Koty")]
-        [HttpPost("{coopId}/Orders")]
-        public async Task<IActionResult> OrdersCoopView(Guid coopId)
+        [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty")]
+        [HttpGet("{coopId}/Orders/Show")]
+        public async Task<IActionResult> OrdersCoopView([FromRoute] Guid coopId)
         {
             try
             {
                 var orders = await _uow.Repository<OrderView>().GetAll()
                     .Where(coop => coop.Id == coopId)
                     .ToListAsync();
+                
+                if (orders == null || orders.Count == 0)
+                {
+                    return Ok(
+                        new
+                        {
+                            info = $"The co-operator with ID {coopId} does not have any orders."
+                        });
+                }
 
                 var coopOrders = _mapper.Map<List<CoopOrder>>(orders);
                 var coopOrderNodes = _mapper.Map<List<CoopOrderNode>>(orders);

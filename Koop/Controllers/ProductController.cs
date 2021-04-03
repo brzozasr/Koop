@@ -105,9 +105,8 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,OpRo")]
+        
+        [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("In/Stock/Update/Quantity/By/Id")]
         public async Task<IActionResult> ProductsInStockUpdate(
             [FromBody] ProductsQuantityUpdate stockQuantityUpdate)

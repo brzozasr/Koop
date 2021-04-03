@@ -110,7 +110,14 @@ namespace Koop.Controllers
         [HttpGet("product")]
         public IActionResult Product(Guid productId)
         {
-            return Ok(_uow.ShopRepository().GetProductById(productId));
+            try
+            {
+                return Ok(_uow.ShopRepository().GetProductById(productId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpPost("product/update")]
@@ -148,7 +155,14 @@ namespace Koop.Controllers
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {
-            return Ok(_uow.ShopRepository().GetProductCategories(productId));
+            try
+            {
+                return Ok(_uow.ShopRepository().GetProductCategories(productId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
         
         [HttpPost("product/categories/update")]
@@ -186,7 +200,14 @@ namespace Koop.Controllers
         [HttpGet("product/availQuantities")]
         public IActionResult GetProductAvailQuantities(Guid productId)
         {
-            return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+            try
+            {
+                return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpPost("product/availQuantities/update")]
@@ -224,7 +245,14 @@ namespace Koop.Controllers
         [HttpGet("allUnits")]
         public IActionResult GetAllUnits()
         {
-            return Ok(_uow.Repository<Unit>().GetAll());
+            try
+            {
+                return Ok(_uow.Repository<Unit>().GetAll());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpPost("units/update")]
@@ -262,13 +290,27 @@ namespace Koop.Controllers
         [HttpGet("product/{productId}/unit")]
         public IActionResult GetProductUnit(Guid productId)
         {
-            return Ok(_uow.Repository<Product>().GetAll().Where(p => p.ProductId == productId).Select(p => p.Unit));
+            try
+            {
+                return Ok(_uow.Repository<Product>().GetAll().Where(p => p.ProductId == productId).Select(p => p.Unit));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpGet("categories")]
         public IActionResult GetCategories()
         {
-            return Ok(_uow.Repository<Category>().GetAll());
+            try
+            {
+                return Ok(_uow.Repository<Category>().GetAll());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpPost("categories/update")]
@@ -306,7 +348,14 @@ namespace Koop.Controllers
         [HttpGet("cooporder")]
         public IActionResult CoopOrder(Guid coopId, Guid orderId)
         {
-            return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
+            try
+            {
+                return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpGet("supplier/{abbr}")]

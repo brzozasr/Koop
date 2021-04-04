@@ -37,7 +37,7 @@ namespace Koop.Models.Repositories
         public void RemoveCategories(IEnumerable<Category> productCategories);
         public void UpdateUnits(IEnumerable<Unit> units);
         public void RemoveUnits(IEnumerable<Unit> units);
-        public void UpdateUserOrderQuantity(Guid orderId, int quantity);
+        public ShopRepositoryResponse UpdateUserOrderQuantity(Guid orderId, int quantity);
         public void UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId);
     }
 }

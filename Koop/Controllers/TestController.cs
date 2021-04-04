@@ -361,17 +361,22 @@ namespace Koop.Controllers
         [HttpPost("order/{orderId}/setQuantity/{quantity}")]
         public IActionResult UpdateUserOrderQuantity(Guid orderId, int quantity)
         {
-            _uow.ShopRepository().UpdateUserOrderQuantity(orderId, quantity);
+            ShopRepositoryResponse response = _uow.ShopRepository().UpdateUserOrderQuantity(orderId, quantity);
             
-            try
+            if (response.ErrCode == 200)
             {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Order quantity updated successfully."});
+                try
+                {
+                    _uow.SaveChanges();
+                    return Ok(response);
+                }
+                catch (Exception e)
+                {
+                    return Problem(e.Message, null, 500);
+                }
             }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+
+            return Problem(response.Message, null, response.ErrCode);
         }
 
         [HttpGet("supplier/{abbr}")]

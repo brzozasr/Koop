@@ -126,7 +126,12 @@ namespace Koop.Models.Repositories
 
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId)
         {
-            return _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
+            // AsNoTracking - prevents Entity from including Products within AvailableQuantities 
+            var amountMax = _koopDbContext.Products.AsNoTracking().SingleOrDefault(p => p.ProductId == productId).AmountMax;
+            var availQuantities = _koopDbContext.AvailableQuantities
+                .Where(p => p.ProductId == productId && p.Quantity <= amountMax);
+            //return _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
+            return availQuantities;
         }
 
         public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity>availableQuantity)
@@ -285,6 +290,7 @@ namespace Koop.Models.Repositories
                 CooperatorOrder cooperatorOrder = new CooperatorOrder()
                 {
                     OrderedItemId = item.Products.OrderedItemId,
+                    ProductId = item.Products.ProductId,
                     FirstName = item.User.FirstName,
                     LastName = item.User.LastName,
                     ProductName = item.Products.Product.ProductName,
@@ -301,17 +307,51 @@ namespace Koop.Models.Repositories
             return output;
         }
 
-        public void UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
+        public ShopRepositoryResponse UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var order = _koopDbContext.OrderedItems
                 .Include(p => p.OrderStatus)
                 .SingleOrDefault(p => p.OrderedItemId == orderedItemId);
-
+            
             if (order is not null && order.OrderStatus.OrderStatusName.Equals("Szkic"))
             {
+                int quantityDiff = order.Quantity - quantity;
                 order.Quantity = quantity;
                 _koopDbContext.OrderedItems.Update(order);
+                
+                var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == order.ProductId);
+                if (product.Magazine)
+                {
+                    if (product.AmountInMagazine + quantityDiff >= 0)
+                    {
+                        product.AmountInMagazine += quantityDiff;
+                    }
+                }
+                
+                if (product.AmountMax + quantityDiff >= 0)
+                {
+                    product.AmountMax += quantityDiff;
+                    product.Available = product.AmountMax != 0;
+                    
+                    return new ShopRepositoryResponse
+                    {
+                        Message = "Order's quantity updated successfully.",
+                        ErrCode = 200
+                    };
+                }
+                
+                return new ShopRepositoryResponse
+                {
+                    Message = "Provided quantity is higher than available amount.",
+                    ErrCode = 500
+                };
             }
+            
+            return new ShopRepositoryResponse
+            {
+                Message = "You are not allowed to change the order's quantity.",
+                ErrCode = 500
+            };
         }
 
         public void UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)

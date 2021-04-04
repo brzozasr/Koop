@@ -107,7 +107,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpPost("In/Stock/Update/Quantity/By/Id")]
+        [HttpPost("In/Stock/Update/Quantity")]
         public async Task<IActionResult> ProductsInStockUpdate(
             [FromBody] ProductsQuantityUpdate stockQuantityUpdate)
         {
@@ -141,13 +141,8 @@ namespace Koop.Controllers
                     return BadRequest(new {error = "The 'Amount In Magazine' must not be greater than 'Amount Max'."});
                 }
 
-                var quantitiesMap = _mapper.Map(stockQuantityUpdate, product);
-
-                if (quantitiesMap == null)
-                {
-                    return BadRequest(new {error = "Product quantities have not been updated."});
-                }
-
+                _mapper.Map(stockQuantityUpdate, product);
+                
                 await _uow.SaveChangesAsync();
                 return Ok(new {info = "The quantity of the product has been changed."});
             }
@@ -155,6 +150,39 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message, null, null, e.Source);
             }
+        }
+        
+        [Authorize(Roles = "Admin,Koty,OpRo")]
+        [HttpPost("In/Supplier/Update/Availability")]
+        public async Task<IActionResult> ProductInSupplierUpdate([FromBody] ProductSupplierUpdate productUpdate)
+        {
+            try
+            {
+                var product = await _uow.Repository<Product>()
+                    .GetAll().FirstOrDefaultAsync(p => p.ProductId == productUpdate.ProductId && p.Magazine == false);
+            
+                if (product == null)
+                {
+                    return BadRequest(new {error = "Selected product does not exist."});
+                }
+
+                if (productUpdate.AmountMax < 0)
+                {
+                    return BadRequest(new
+                        {error = "The entered 'Amount Max' must be greater or equal than 0."});
+                }
+                
+                _mapper.Map(productUpdate, product);
+                product.AmountInMagazine = productUpdate.AmountMax ?? 0;
+            
+                await _uow.SaveChangesAsync();
+                return Ok(new {info = "The product has been updated."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+            
         }
     }
 }

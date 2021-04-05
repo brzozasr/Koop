@@ -43,6 +43,8 @@ namespace Koop.Mapper
 
             CreateMap<Product, Product>();
             CreateMap<Unit, Unit>();
+
+            CreateMap<User, UserEdit>();
         }
     }
 }

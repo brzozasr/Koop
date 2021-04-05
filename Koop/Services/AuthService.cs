@@ -10,6 +10,7 @@ using Koop.Models;
 using Koop.Models.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -65,12 +66,21 @@ namespace Koop.Services
             return null;
         }
 
-        public User GetUser(Guid userId)
+        public UserEdit GetUser(Guid userId)
         {
             var user = _userManager.Users
                 .SingleOrDefault(p => p.Id == userId);
 
-            return user;
+            if (user is not null)
+            {
+                UserEdit userEdit = new UserEdit();
+
+                var userOutput = _mapper.Map(user, userEdit);
+
+                return userOutput;
+            }
+
+            return null;
         }
         
         public Task<IdentityResult> EditUser([FromBody]UserEdit userEdit)

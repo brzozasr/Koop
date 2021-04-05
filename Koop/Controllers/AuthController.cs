@@ -74,13 +74,13 @@ namespace Koop.Controllers
             return Problem(result.Errors.First().Description, null, 500);
         }
 
-        [HttpGet("user/get")]
-        public IActionResult EditUser(Guid userId)
+        [HttpGet("user/{userId}/get")]
+        public IActionResult GetUser(Guid userId)
         {
             return Ok(_uow.AuthService().GetUser(userId));
         }
 
-        [HttpPost("user/edit")]
+        [HttpPost("user/{userId}/edit")]
         public async Task<IActionResult> EditUser(UserEdit userEdit)
         {
             var result = await _uow.AuthService().EditUser(userEdit);

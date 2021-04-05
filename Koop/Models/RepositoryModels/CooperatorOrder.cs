@@ -5,6 +5,7 @@ namespace Koop.Models.RepositoryModels
     public class CooperatorOrder
     {
         public Guid OrderedItemId { get; set; }
+        public Guid OrderId { get; set; }
         public Guid ProductId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }

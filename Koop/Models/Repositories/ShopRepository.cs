@@ -291,6 +291,7 @@ namespace Koop.Models.Repositories
                 CooperatorOrder cooperatorOrder = new CooperatorOrder()
                 {
                     OrderedItemId = item.Products.OrderedItemId,
+                    OrderId = item.Products.OrderId,
                     ProductId = item.Products.ProductId,
                     FirstName = item.User.FirstName,
                     LastName = item.User.LastName,

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
+using Koop.Extensions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 using Microsoft.EntityFrameworkCore;
@@ -418,6 +419,31 @@ namespace Koop.Models.Repositories
                 Message = "You cannot make an order.",
                 ErrCode = 500
             };
+        }
+
+        public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId)
+        {
+            var orderedItem = _koopDbContext.OrderedItems.SingleOrDefault(p => p.OrderedItemId == orderedItemId);
+
+            if (orderedItem is not null)
+            {
+                _koopDbContext.OrderedItems.Remove(orderedItem);
+                
+                var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == orderedItem.ProductId);
+                if (product.Magazine)
+                {
+                    product.AmountInMagazine += orderedItem.Quantity;
+                }
+                
+                product.AmountMax += orderedItem.Quantity;
+                product.Available = product.AmountMax != 0;
+                
+                _koopDbContext.Products.Update(product);
+
+                return ShopRepositoryReturn.RemoveUserOrderSucess;
+            }
+
+            return ShopRepositoryReturn.RemoveUserOrderErrEmptyObject;
         }
         
         public IEnumerable<Basket> GetBaskets()

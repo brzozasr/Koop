@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Koop.Extensions;
 using Koop.models;
 using Koop.Models;
 using Koop.Models.Repositories;
@@ -384,10 +385,10 @@ namespace Koop.Controllers
             }
         }
 
-        [HttpPost("order/{orderId}/setQuantity/{quantity}")]
-        public IActionResult UpdateUserOrderQuantity(Guid orderId, int quantity)
+        [HttpPost("orderedItem/{orderedItemId}/setQuantity/{quantity}")]
+        public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
-            ShopRepositoryResponse response = _uow.ShopRepository().UpdateUserOrderQuantity(orderId, quantity);
+            ShopRepositoryResponse response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
             
             if (response.ErrCode == 200)
             {
@@ -403,6 +404,22 @@ namespace Koop.Controllers
             }
 
             return Problem(response.Message, null, response.ErrCode);
+        }
+
+        [HttpPost("orderedItem/{orderedItemId}/remove")]
+        public IActionResult RemoveUserOrder(Guid orderedItemId)
+        {
+            ShopRepositoryReturn response = _uow.ShopRepository().RemoveUserOrder(orderedItemId);
+            
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(response.ToObject());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpGet("supplier/{abbr}")]

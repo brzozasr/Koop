@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Koop.Extensions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 
@@ -40,5 +41,6 @@ namespace Koop.Models.Repositories
         public ShopRepositoryResponse UpdateUserOrderQuantity(Guid orderId, int quantity);
         public void UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId);
         public ShopRepositoryResponse MakeOrder(Guid productId, Guid userId, int quantity);
+        public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId);
     }
 }

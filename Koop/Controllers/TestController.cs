@@ -110,7 +110,7 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetProductsShop(order, start, count, direction));
         }
 
-        [HttpGet("product")]
+        [HttpGet("product/{productId}/get")]
         public IActionResult Product(Guid productId)
         {
             try
@@ -123,36 +123,28 @@ namespace Koop.Controllers
             }
         }
 
+        [HttpPost("product/add")]
+        public IActionResult AddProduct(Product product)
+        {
+            var response = _uow.ShopRepository().AddProduct(product);
+            
+            return ToResult(response);
+        }
+
         [HttpPost("product/update")]
         public IActionResult UpdateProduct(Product product)
         {
-            _uow.ShopRepository().UpdateProduct(product);
+            var response = _uow.ShopRepository().UpdateProduct(product);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Table Product updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)
         {
-            _uow.ShopRepository().RemoveProduct(products);
+            var response = _uow.ShopRepository().RemoveProduct(products);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of Product were removed successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
         
         [HttpGet("product/categories")]
@@ -171,33 +163,17 @@ namespace Koop.Controllers
         [HttpPost("product/categories/update")]
         public IActionResult UpdateCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
-            _uow.ShopRepository().UpdateProductCategories(productCategoriesCombos);
+            var response = _uow.ShopRepository().UpdateProductCategories(productCategoriesCombos);
 
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Table ProductCategories updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
         
         [HttpDelete("product/categories/remove")]
         public IActionResult RemoveCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
-            _uow.ShopRepository().RemoveProductCategories(productCategoriesCombos);
+            var response = _uow.ShopRepository().RemoveProductCategories(productCategoriesCombos);
 
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of ProductCategories were removed successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
         
         [HttpGet("product/availQuantities")]
@@ -216,33 +192,17 @@ namespace Koop.Controllers
         [HttpPost("product/availQuantities/update")]
         public IActionResult UpdateAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
         {
-            _uow.ShopRepository().UpdateAvailableQuantities(availableQuantities);
+            var response = _uow.ShopRepository().UpdateAvailableQuantities(availableQuantities);
 
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Table AvailableQuantities updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpDelete("product/availQuantities/remove")]
         public IActionResult RemoveAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
         {
-            _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
+            var response = _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of AvailableQuantities were removed successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpGet("allUnits")]
@@ -261,33 +221,17 @@ namespace Koop.Controllers
         [HttpPost("units/update")]
         public IActionResult UnitsUpdate(IEnumerable<Unit> units)
         {
-            _uow.ShopRepository().UpdateUnits(units);
+            var response = _uow.ShopRepository().UpdateUnits(units);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of Unit were updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpDelete("units/remove")]
         public IActionResult RemoveUnits(IEnumerable<Unit> units)
         {
-            _uow.ShopRepository().RemoveUnits(units);
+            var response = _uow.ShopRepository().RemoveUnits(units);
 
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of Unit were removed successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpGet("product/{productId}/unit")]
@@ -319,33 +263,17 @@ namespace Koop.Controllers
         [HttpPost("categories/update")]
         public IActionResult UpdateCategories(IEnumerable<Category> categories)
         {
-            _uow.ShopRepository().UpdateCategories(categories);
+            var response = _uow.ShopRepository().UpdateCategories(categories);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Table Categories updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [HttpDelete("categories/remove")]
         public IActionResult RemoveCategories(IEnumerable<Category> categories)
         {
-            _uow.ShopRepository().RemoveCategories(categories);
+            var response = _uow.ShopRepository().RemoveCategories(categories);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Entries of Categories were removed successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         [Authorize]
@@ -356,17 +284,9 @@ namespace Koop.Controllers
 
             if (userId is not null)
             {
-                var result = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
+                var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
                 
-                try
-                {
-                    _uow.SaveChanges();
-                    return Ok(new {result.Message});
-                }
-                catch (Exception e)
-                {
-                    return Problem(e.Message, null, 500);
-                }
+                return ToResult(response);
             }
             
             return Problem("Your identity could not be verified.", null, 500);
@@ -388,38 +308,17 @@ namespace Koop.Controllers
         [HttpPost("orderedItem/{orderedItemId}/setQuantity/{quantity}")]
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
-            ShopRepositoryResponse response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
+            var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
             
-            if (response.ErrCode == 200)
-            {
-                try
-                {
-                    _uow.SaveChanges();
-                    return Ok(response);
-                }
-                catch (Exception e)
-                {
-                    return Problem(e.Message, null, 500);
-                }
-            }
-
-            return Problem(response.Message, null, response.ErrCode);
+            return ToResult(response);
         }
 
         [HttpPost("orderedItem/{orderedItemId}/remove")]
         public IActionResult RemoveUserOrder(Guid orderedItemId)
         {
             ShopRepositoryReturn response = _uow.ShopRepository().RemoveUserOrder(orderedItemId);
-            
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(response.ToObject());
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+
+            return ToResult(response);
         }
 
         [HttpGet("supplier/{abbr}")]
@@ -431,17 +330,9 @@ namespace Koop.Controllers
         [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
-            _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
+            var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
             
-            try
-            {
-                _uow.SaveChanges();
-                return Ok(new {Message = "Order status updated successfully."});
-            }
-            catch (Exception e)
-            {
-                return Problem(e.Message, null, 500);
-            }
+            return ToResult(response);
         }
 
         
@@ -475,6 +366,20 @@ namespace Koop.Controllers
         public IActionResult BigOrders()
         {
             return Ok(_uow.Repository<Order>().GetAll());
+        }
+        
+        [NonAction]
+        private IActionResult ToResult(ShopRepositoryReturn shopRepositoryReturn)
+        {
+            try
+            {
+                _uow.SaveChanges();
+                return Ok(shopRepositoryReturn.ToObject());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
     }
 }

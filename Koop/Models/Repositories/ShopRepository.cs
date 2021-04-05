@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
 using Koop.Extensions;
@@ -112,17 +113,30 @@ namespace Koop.Models.Repositories
             return _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
         }
 
-        public void UpdateProduct(Product product)
+        public ShopRepositoryReturn AddProduct(Product product)
+        {
+            Product newProductTmp = new Product();
+            var newProduct = _mapper.Map(product, newProductTmp);
+            _koopDbContext.Products.Add(newProduct);
+
+            return ShopRepositoryReturn.AddProductSuccess;
+        }
+
+        public ShopRepositoryReturn UpdateProduct(Product product)
         {
             var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
             var productUpdated = _mapper.Map(product, productExist);
             
             _koopDbContext.Products.Update(productUpdated);
+
+            return ShopRepositoryReturn.UpdateProductSuccess;
         }
 
-        public void RemoveProduct(IEnumerable<Product> product)
+        public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product)
         {
             _koopDbContext.Products.RemoveRange(product);
+
+            return ShopRepositoryReturn.RemoveProductSuccess;
         }
 
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId)
@@ -135,7 +149,7 @@ namespace Koop.Models.Repositories
             return availQuantities;
         }
 
-        public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity>availableQuantity)
+        public ShopRepositoryReturn UpdateAvailableQuantities(IEnumerable<AvailableQuantity>availableQuantity)
         {
             foreach (var item in availableQuantity)
             {
@@ -148,19 +162,27 @@ namespace Koop.Models.Repositories
                     var availableQuantityUpdated = _mapper.Map(item, availableQuantityExist);
 
                     _koopDbContext.AvailableQuantities.Update(availableQuantityUpdated);
+
+                    return ShopRepositoryReturn.UpdateAvailableQuantitiesSuccess;
                 }
                 else
                 {
                     AvailableQuantity availableQuantityNew = new AvailableQuantity();
                     var availableQuantityUpdated = _mapper.Map(item, availableQuantityNew);
                     _koopDbContext.AvailableQuantities.Add(availableQuantityUpdated);
+
+                    return ShopRepositoryReturn.AddAvailableQuantitiesSuccess;
                 }
             }
+
+            return ShopRepositoryReturn.UpdateAvailableQuantitiesNone;
         }
 
-        public void RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity)
+        public ShopRepositoryReturn RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity)
         {
             _koopDbContext.AvailableQuantities.RemoveRange(availableQuantity);
+
+            return ShopRepositoryReturn.RemoveAvailableQuantitiesSuccess;
         }
 
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId)
@@ -181,7 +203,7 @@ namespace Koop.Models.Repositories
             return productCategoriesLists;
         }
         
-        public void UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        public ShopRepositoryReturn UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
             foreach (var item in productCategoriesCombos)
             {
@@ -194,31 +216,33 @@ namespace Koop.Models.Repositories
                     var productCatUpdated = _mapper.Map(item, productCatExist);
 
                     _koopDbContext.ProductCategories.Update(productCatUpdated);
+
+                    return ShopRepositoryReturn.UpdateProductCategoriesSuccess;
                 }
                 else
                 {
                     ProductCategory productCategoryNew = new ProductCategory();
                     var productCatUpdated = _mapper.Map(item, productCategoryNew);
                     _koopDbContext.ProductCategories.Add(productCatUpdated);
+
+                    return ShopRepositoryReturn.AddProductCategoriesSuccess;
                 }
             }
+
+            return ShopRepositoryReturn.UpdateProductCategoriesNone;
         }
 
-        public void RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
+        public ShopRepositoryReturn RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
             IEnumerable<ProductCategory> productCategories = new List<ProductCategory>();
             var productCategoriesToRemove = _mapper.Map<IEnumerable<ProductCategoriesCombo>, IEnumerable<ProductCategory>>(productCategoriesCombos);
 
-            Console.WriteLine($"Len: {productCategoriesCombos.Count()}");
-            foreach (var item in productCategoriesToRemove)
-            {
-                Console.WriteLine($"Item: {item.ProductCategoryId}");
-            }
-            
             _koopDbContext.ProductCategories.RemoveRange(productCategoriesToRemove);
+
+            return ShopRepositoryReturn.RemoveProductCategoriesSuccess;
         }
 
-        public void UpdateCategories(IEnumerable<Category> productCategories)
+        public ShopRepositoryReturn UpdateCategories(IEnumerable<Category> productCategories)
         {
             foreach (var item in productCategories)
             {
@@ -231,22 +255,28 @@ namespace Koop.Models.Repositories
                     var categoriesUpdated = _mapper.Map(item, categoriesExist);
 
                     _koopDbContext.Categories.Update(categoriesUpdated);
+
+                    return ShopRepositoryReturn.UpdateCategoriesSuccess;
                 }
-                else
-                {
-                    Category categoryNew = new Category();
-                    var categoryUpdated = _mapper.Map(item, categoryNew);
-                    _koopDbContext.Categories.Add(categoryUpdated);
-                }
+                
+                Category categoryNew = new Category();
+                var categoryUpdated = _mapper.Map(item, categoryNew);
+                _koopDbContext.Categories.Add(categoryUpdated);
+                    
+                return ShopRepositoryReturn.AddCategoriesSuccess;
             }
+
+            return ShopRepositoryReturn.UpdateCategoriesNone;
         }
 
-        public void RemoveCategories(IEnumerable<Category> productCategories)
+        public ShopRepositoryReturn RemoveCategories(IEnumerable<Category> productCategories)
         {
             _koopDbContext.Categories.RemoveRange(productCategories);
+
+            return ShopRepositoryReturn.RemoveCategoriesSuccess;
         }
 
-        public void UpdateUnits(IEnumerable<Unit> units)
+        public ShopRepositoryReturn UpdateUnits(IEnumerable<Unit> units)
         {
             foreach (var item in units)
             {
@@ -259,19 +289,25 @@ namespace Koop.Models.Repositories
                     var unitsUpdated = _mapper.Map(item, unitsExist);
 
                     _koopDbContext.Units.Update(unitsUpdated);
+
+                    return ShopRepositoryReturn.UpdateUnitsSuccess;
                 }
-                else
-                {
-                    Unit unitNew = new Unit();
-                    var unitUpdated = _mapper.Map(item, unitNew);
-                    _koopDbContext.Units.Add(unitUpdated);
-                }
+                
+                Unit unitNew = new Unit();
+                var unitUpdated = _mapper.Map(item, unitNew);
+                _koopDbContext.Units.Add(unitUpdated);
+
+                return ShopRepositoryReturn.AddUnitsSuccess;
             }
+
+            return ShopRepositoryReturn.UpdateUnitsErrNone;
         }
         
-        public void RemoveUnits(IEnumerable<Unit> units)
+        public ShopRepositoryReturn RemoveUnits(IEnumerable<Unit> units)
         {
             _koopDbContext.Units.RemoveRange(units);
+
+            return ShopRepositoryReturn.RemoveUnitsSuccess;
         }
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId)
@@ -309,7 +345,7 @@ namespace Koop.Models.Repositories
             return output;
         }
 
-        public ShopRepositoryResponse UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
+        public ShopRepositoryReturn UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var order = _koopDbContext.OrderedItems
                 .Include(p => p.OrderStatus)
@@ -335,28 +371,16 @@ namespace Koop.Models.Repositories
                     product.AmountMax += quantityDiff;
                     product.Available = product.AmountMax != 0;
                     
-                    return new ShopRepositoryResponse
-                    {
-                        Message = "Order's quantity updated successfully.",
-                        ErrCode = 200
-                    };
+                    return ShopRepositoryReturn.UpdateUserOrderQuantitySuccess;
                 }
-                
-                return new ShopRepositoryResponse
-                {
-                    Message = "Provided quantity is higher than available amount.",
-                    ErrCode = 500
-                };
+
+                return ShopRepositoryReturn.UpdateUserOrderQuantityErrTooMuch;
             }
             
-            return new ShopRepositoryResponse
-            {
-                Message = "You are not allowed to change the order's quantity.",
-                ErrCode = 500
-            };
+            return ShopRepositoryReturn.UpdateUserOrderQuantityErrOther;
         }
 
-        public void UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
+        public ShopRepositoryReturn UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
             var userOrders = _koopDbContext.OrderedItems
                 .Where(p => p.OrderId == orderId && p.CoopId == userId);
@@ -365,9 +389,11 @@ namespace Koop.Models.Repositories
             {
                 item.OrderStatusId = statusId;
             }
+
+            return ShopRepositoryReturn.UpdateUserOrderStatusSuccess;
         }
 
-        public ShopRepositoryResponse MakeOrder(Guid productId, Guid userId, int quantity)
+        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity)
         {
             var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic");
 
@@ -400,26 +426,14 @@ namespace Koop.Models.Repositories
                     product.Available = product.AmountMax != 0;
 
                     _koopDbContext.Products.Update(product);
-                    
-                    return new ShopRepositoryResponse
-                    {
-                        Message = "Your order was accepted",
-                        ErrCode = 200
-                    };
+
+                    return ShopRepositoryReturn.MakeOrderSuccess;
                 }
-                
-                return new ShopRepositoryResponse
-                {
-                    Message = "The inventory is insufficient to fulfill the order.",
-                    ErrCode = 500
-                };
+
+                return ShopRepositoryReturn.MakeOrderErrTooMuch;
             }
-            
-            return new ShopRepositoryResponse
-            {
-                Message = "You cannot make an order.",
-                ErrCode = 500
-            };
+
+            return ShopRepositoryReturn.MakeOrderErrOther;
         }
 
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId)
@@ -441,7 +455,7 @@ namespace Koop.Models.Repositories
                 
                 _koopDbContext.Products.Update(product);
 
-                return ShopRepositoryReturn.RemoveUserOrderSucess;
+                return ShopRepositoryReturn.RemoveUserOrderSuccess;
             }
 
             return ShopRepositoryReturn.RemoveUserOrderErrEmptyObject;

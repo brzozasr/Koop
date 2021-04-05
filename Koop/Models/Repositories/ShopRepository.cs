@@ -364,6 +364,61 @@ namespace Koop.Models.Repositories
                 item.OrderStatusId = statusId;
             }
         }
+
+        public ShopRepositoryResponse MakeOrder(Guid productId, Guid userId, int quantity)
+        {
+            var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic");
+
+            if (activeOrderId is not null)
+            {
+                var orderedItem = new OrderedItem()
+                {
+                    OrderId = activeOrderId.OrderId,
+                    CoopId = userId,
+                    ProductId = productId,
+                    // TODO Add default value to database table order_status
+                    OrderStatusId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    Quantity = quantity
+                };
+
+                _koopDbContext.OrderedItems.Add(orderedItem);
+                
+                var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+                if (product.Magazine)
+                {
+                    if (product.AmountInMagazine - quantity >= 0)
+                    {
+                        product.AmountInMagazine -= quantity;
+                    }
+                }
+                
+                if (product.AmountMax - quantity >= 0)
+                {
+                    product.AmountMax -= quantity;
+                    product.Available = product.AmountMax != 0;
+
+                    _koopDbContext.Products.Update(product);
+                    
+                    return new ShopRepositoryResponse
+                    {
+                        Message = "Your order was accepted",
+                        ErrCode = 200
+                    };
+                }
+                
+                return new ShopRepositoryResponse
+                {
+                    Message = "The inventory is insufficient to fulfill the order.",
+                    ErrCode = 500
+                };
+            }
+            
+            return new ShopRepositoryResponse
+            {
+                Message = "You cannot make an order.",
+                ErrCode = 500
+            };
+        }
         
         public IEnumerable<Basket> GetBaskets()
         {

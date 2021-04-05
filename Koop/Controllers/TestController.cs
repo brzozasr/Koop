@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Koop.models;
 using Koop.Models;
@@ -11,6 +12,7 @@ using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
 using NetTopologySuite.Operation.Union;
 
 namespace Koop.Controllers
@@ -343,6 +345,30 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message, null, 500);
             }
+        }
+
+        [Authorize]
+        [HttpGet("order/make/")]
+        public IActionResult MakeOrder(Guid productId, int quantity)
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is not null)
+            {
+                var result = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
+                
+                try
+                {
+                    _uow.SaveChanges();
+                    return Ok(new {result.Message});
+                }
+                catch (Exception e)
+                {
+                    return Problem(e.Message, null, 500);
+                }
+            }
+            
+            return Problem("Your identity could not be verified.", null, 500);
         }
 
         [HttpGet("user/{coopId}/order/{orderId}")]

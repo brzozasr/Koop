@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Koop.Services;
 
 namespace Koop.Models.Repositories
 {
@@ -11,5 +12,6 @@ namespace Koop.Models.Repositories
         Task<int> SaveChangesAsync();
         void Dispose(bool disposing);
         IShopRepository ShopRepository();
+        IAuthService AuthService();
     }
 }

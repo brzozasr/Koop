@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
 using Koop.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,18 +13,18 @@ namespace Koop.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private IGenericUnitOfWork _uow;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IGenericUnitOfWork genericUnitOfWork)
         {
-            _authService = authService;
+            _uow = genericUnitOfWork;
         }
         
         [AllowAnonymous]
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp([FromBody]UserSignUp userSignUp)
         {
-            var userCreateResult = await _authService.SignUp(userSignUp);
+            var userCreateResult = await _uow.AuthService().SignUp(userSignUp);
             
             if (userCreateResult.Succeeded)
             {
@@ -37,7 +38,7 @@ namespace Koop.Controllers
         [HttpPost("signin")]
         public IActionResult SignIn(UserLogIn userLogIn)
         {
-            var token = _authService.SignIn(userLogIn);
+            var token = _uow.AuthService().SignIn(userLogIn);
 
             if (token is null)
             {
@@ -50,7 +51,7 @@ namespace Koop.Controllers
         [HttpPost("newrole")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
-            var roleResult = await _authService.CreateRole(roleName);
+            var roleResult = await _uow.AuthService().CreateRole(roleName);
             
             if (roleResult.Succeeded)
             {
@@ -63,7 +64,7 @@ namespace Koop.Controllers
         [HttpPost("user/addrole")]
         public async Task<IActionResult> AddUserToRole(UserAddRole userAddRole)
         {
-            var result = await _authService.AddUserToRole(userAddRole.Id, userAddRole.RoleName);
+            var result = await _uow.AuthService().AddUserToRole(userAddRole.Id, userAddRole.RoleName);
             
             if (result.Succeeded)
             {
@@ -76,13 +77,13 @@ namespace Koop.Controllers
         [HttpGet("user/get")]
         public IActionResult EditUser(Guid userId)
         {
-            return Ok(_authService.GetUser(userId));
+            return Ok(_uow.AuthService().GetUser(userId));
         }
 
         [HttpPost("user/edit")]
         public async Task<IActionResult> EditUser(UserEdit userEdit)
         {
-            var result = await _authService.EditUser(userEdit);
+            var result = await _uow.AuthService().EditUser(userEdit);
 
             if (result.Succeeded)
             {

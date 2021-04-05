@@ -15,7 +15,7 @@ namespace Koop.Models.Repositories
     
     public interface IShopRepository
     {
-        public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start,
+        public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start,
             int count,
             OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid));
 

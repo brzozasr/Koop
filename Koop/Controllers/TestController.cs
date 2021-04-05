@@ -84,9 +84,11 @@ namespace Koop.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet("products")]
         public IActionResult Products(string orderBy = "name", int start = 1, int count = 10, string orderDir = "asc")
         {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
             orderBy = orderBy.ToLower();
             Expression<Func<ProductsShop, object>> order = orderBy switch
             {
@@ -107,7 +109,7 @@ namespace Koop.Controllers
                 _ => OrderDirection.Asc
             };
 
-            return Ok(_uow.ShopRepository().GetProductsShop(order, start, count, direction));
+            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction));
         }
 
         [HttpGet("product/{productId}/get")]

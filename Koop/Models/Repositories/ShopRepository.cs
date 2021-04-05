@@ -24,9 +24,14 @@ namespace Koop.Models.Repositories
             _mapper = mapper;
         }
         
-        public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start, int count,
+        public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start, int count,
             OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid))
         {
+            var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic")?.OrderId ?? Guid.Empty;
+            
+            var orderedProducts = _koopDbContext.OrderedItems
+                .Where(p => p.CoopId == userId && p.OrderId == activeOrderId)
+                .Select(p => p.ProductId);
             /*var products = from pr in koopContext.Products
                     join pc in koopContext.ProductCategories on pr.ProductId equals pc.ProductId into
                         productCategoriesGroup
@@ -74,7 +79,8 @@ namespace Koop.Models.Repositories
                     CategoryNames = p.Product.ProductCategories.Select(p => p.Category.CategoryName),
                     Quantities = p.Product.AvailableQuantities.Select(p => p.Quantity),
                     Magazine = p.Product.Magazine,
-                    Deposit = p.Product.Deposit
+                    Deposit = p.Product.Deposit,
+                    Ordered = orderedProducts.Any(o => o == p.Product.ProductId)
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
@@ -99,7 +105,8 @@ namespace Koop.Models.Repositories
                     CategoryNames = data.CategoryNames,
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
-                    Deposit = data.Deposit
+                    Deposit = data.Deposit,
+                    Ordered = data.Ordered
                 };
                 
                 output.Add(tmp);

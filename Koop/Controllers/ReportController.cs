@@ -8,6 +8,7 @@ using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Controllers
 {
@@ -37,7 +38,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-        
+       
         [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/Last/Grande")]
         public async Task<IActionResult> ReportPackersLastGrande()
@@ -53,10 +54,10 @@ namespace Koop.Controllers
                     return Ok(new {info = "There are no grande orders."});
                 }
 
-                var allOrders = await _uow.Repository<OrderView>().GetAllAsync();
+                var allOrders = await _uow.Repository<OrderView>().GetAll()
+                    .Where(x => x.OrderId == lastOrderGrandeId).ToListAsync();
 
                 var lastOrderGrande = allOrders
-                    .Where(x => x.OrderId == lastOrderGrandeId)
                     .GroupBy(x => x.ProductId).AsQueryable();
 
                 if (!lastOrderGrande.Any())
@@ -64,7 +65,7 @@ namespace Koop.Controllers
                     return Ok(new {info = "There are no orders in the grande order."});
                 }
 
-                var tmpDict = new Dictionary<string, string>();
+                var tmpDict = new Dictionary<Guid, string>();
 
                 foreach (var group in lastOrderGrande)
                 {
@@ -73,13 +74,13 @@ namespace Koop.Controllers
                     {
                         if (groupKey.HasValue)
                         {
-                            if (!tmpDict.ContainsKey(groupItem.ProductName))
+                            if (!tmpDict.ContainsKey((Guid) groupKey))
                             {
-                                tmpDict[groupItem.ProductName] = $"{groupItem.BasketName}: {groupItem.Quantity}";
+                                tmpDict[(Guid) groupKey] = $"{groupItem.BasketName}: {groupItem.Quantity}";
                             }
                             else
                             {
-                                tmpDict[groupItem.ProductName] = $"{tmpDict[groupItem.ProductName]}, {groupItem.BasketName}: {groupItem.Quantity}";
+                                tmpDict[(Guid) groupKey] = $"{tmpDict[(Guid) groupKey]}, {groupItem.BasketName}: {groupItem.Quantity}";
                             }
                         }
                     }
@@ -92,12 +93,13 @@ namespace Koop.Controllers
 
                 var listForPackers = new List<FnListForPacker>();
 
-                foreach (var (name, value) in tmpDict)
+                foreach (var (productId, baskets) in tmpDict)
                 {
+                    var productName = allOrders.FirstOrDefault(x => x.ProductId == productId)?.ProductName;
                     listForPackers.Add(new FnListForPacker
                     {
-                        ProductName = name,
-                        ProductsInBaskets = value
+                        ProductName = productName,
+                        ProductsInBaskets = baskets
                     });
                 }
 

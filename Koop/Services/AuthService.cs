@@ -39,10 +39,16 @@ namespace Koop.Services
             _jwtSettings = jwtSettings.Value;
         }
         
-        public Task<IdentityResult> SignUp([FromBody]UserSignUp userSignUp)
+        /*public Task<IdentityResult> SignUp([FromBody]UserSignUp userSignUp)
         {
             var user = _mapper.Map<User>(userSignUp);
             return _userManager.CreateAsync(user, userSignUp.Password);
+        }*/
+        
+        public Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        {
+            var user = _mapper.Map<User>(newUser);
+            return _userManager.CreateAsync(user, newUser.NewPassword);
         }
 
         public string SignIn(UserLogIn userLogIn)
@@ -91,9 +97,23 @@ namespace Koop.Services
 
                 if (user is not null)
                 {
-                    await _userManager.SetEmailAsync(user, userEdit.Email);
-                    await _userManager.SetUserNameAsync(user, userEdit.UserName);
-                    await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
+                    var setEmailResult = _userManager.SetEmailAsync(user, userEdit.Email).Result;
+                    if (!setEmailResult.Succeeded)
+                    {
+                        return setEmailResult;
+                    }
+                    
+                    var setUserNameResult = _userManager.SetUserNameAsync(user, userEdit.UserName).Result;
+                    if (!setUserNameResult.Succeeded)
+                    {
+                        return setUserNameResult;
+                    }
+                    
+                    var setPhoneNumberResult = _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber).Result;
+                    if (!setPhoneNumberResult.Succeeded)
+                    {
+                        return setPhoneNumberResult;
+                    }
 
                     user.BasketId = userEdit.BasketId;
                     user.FundId = userEdit.FundId;
@@ -101,6 +121,15 @@ namespace Koop.Services
                     user.Info = userEdit.Info;
                     user.FirstName = userEdit.FirstName;
                     user.LastName = userEdit.LastName;
+
+                    if (userEdit.OldPassword is not null)
+                    {
+                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword, userEdit.NewPassword);
+                        if (!changePasswordResult.Succeeded)
+                        {
+                            return changePasswordResult;
+                        }
+                    }
                 }
             
                 return await _userManager.UpdateAsync(user);

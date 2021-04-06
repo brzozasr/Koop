@@ -23,9 +23,9 @@ namespace Koop.Controllers
         
         [AllowAnonymous]
         [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody]UserSignUp userSignUp)
+        public async Task<IActionResult> SignUp([FromBody]UserEdit newUser)
         {
-            var userCreateResult = await _uow.AuthService().SignUp(userSignUp);
+            var userCreateResult = await _uow.AuthService().SignUp(newUser);
             
             if (userCreateResult.Succeeded)
             {

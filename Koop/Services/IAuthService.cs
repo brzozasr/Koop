@@ -10,7 +10,7 @@ namespace Koop.Services
 {
     public interface IAuthService
     {
-        Task<IdentityResult> SignUp([FromBody] UserSignUp userSignUp);
+        Task<IdentityResult> SignUp([FromBody]UserEdit newUser);
         string SignIn([FromBody] UserLogIn userLogIn);
         Task<IdentityResult> CreateRole(string roleName);
         Task<IdentityResult> AddUserToRole(Guid id, [FromBody] string roleName);

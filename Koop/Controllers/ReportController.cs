@@ -25,7 +25,7 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/{daysBack}")]
-        public async Task<IActionResult> ReportPackers(int daysBack)
+        public async Task<IActionResult> ReportPackers([FromRoute] int daysBack)
         {
             try
             {
@@ -109,6 +109,43 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message, null, null, e.Source);
             }
+        }
+
+        [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        [HttpGet("Orders/From/Supplier/{supplierId}")]
+        public async Task<IActionResult> ReportOrdersFromSupplier([FromRoute] Guid supplierId)
+        {
+            var supplier = await _uow.Repository<Supplier>().GetAll()
+                .FirstOrDefaultAsync(s => s.SupplierId == supplierId);
+
+            var productsSupplier = _uow.Repository<Order>().GetAll()
+                .Join(_uow.Repository<OrderedItem>().GetAll(), order => order.OrderId,
+                    item => item.OrderId,
+                    (order, item) => new
+                    {
+                        OrderId = order.OrderId,
+                        OrderedItemId = item.OrderedItemId,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity
+                    })
+                .Join(_uow.Repository<Product>().GetAll(), 
+                    orderItem => orderItem.ProductId,
+                    product => product.ProductId,
+                    (orderItem, product) => new
+                    {
+                        OrderId = orderItem.OrderId,
+                        OrderedItemId = orderItem.OrderedItemId,
+                        ProductId = orderItem.ProductId,
+                        Quantity = orderItem.Quantity,
+                        ProductName = product.ProductName,
+                        Price = product.Price,
+                        UnitName = product.Unit.UnitName,
+                        SupplierId = product.SupplierId
+                    })
+                .Where(x => x.SupplierId == supplierId);
+
+            return Ok(productsSupplier);
         }
     }
 }

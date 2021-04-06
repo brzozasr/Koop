@@ -21,9 +21,8 @@ namespace Koop.Controllers
         {
             _uow = uow;
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,Paczkers")]
+        
+        [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/{daysBack}")]
         public async Task<IActionResult> ReportPackers(int daysBack)
         {
@@ -38,9 +37,8 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,Paczkers")]
+        
+        [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/Last/Grande")]
         public async Task<IActionResult> ReportPackersLastGrande()
         {

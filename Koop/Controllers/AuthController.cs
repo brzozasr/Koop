@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
@@ -80,17 +81,31 @@ namespace Koop.Controllers
             return Ok(_uow.AuthService().GetUser(userId));
         }
 
+        [Authorize]
         [HttpPost("user/{userId}/edit")]
-        public async Task<IActionResult> EditUser(UserEdit userEdit)
+        public async Task<IActionResult> EditUser(UserEdit userEdit, Guid userId)
         {
-            var result = await _uow.AuthService().EditUser(userEdit);
-
-            if (result.Succeeded)
+            var authUserId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            var authUserRoles = HttpContext.User.Claims.Where(p => p.Type == ClaimTypes.Role).Select(p => p.Value);
+            
+            if (authUserId is not null)
             {
-                return Ok(userEdit);
+                var result = await _uow.AuthService().EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
+
+                if (result is null)
+                {
+                    return Problem("Not enough privileges to edit user's credentials.", null, 500);
+                }
+                
+                if (result.Succeeded)
+                {
+                    return Ok(userEdit);
+                }
+                
+                return Problem(result.Errors.First().Description, null, 500);
             }
             
-            return Problem(result.Errors.First().Description, null, 500);
+            return Problem("User is not authenticated.", null, 500);
         }
     }
 }

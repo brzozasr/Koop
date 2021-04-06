@@ -83,14 +83,30 @@ namespace Koop.Services
             return null;
         }
         
-        public Task<IdentityResult> EditUser([FromBody]UserEdit userEdit)
+        public async Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
         {
-            var user = _userManager.Users
-                .SingleOrDefault(p => p.Id == userEdit.Id);
+            if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
 
-            var updatedUser = _mapper.Map(userEdit, user);
+                if (user is not null)
+                {
+                    await _userManager.SetEmailAsync(user, userEdit.Email);
+                    await _userManager.SetUserNameAsync(user, userEdit.UserName);
+                    await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
+
+                    user.BasketId = userEdit.BasketId;
+                    user.FundId = userEdit.FundId;
+                    user.Debt = userEdit.Debt;
+                    user.Info = userEdit.Info;
+                    user.FirstName = userEdit.FirstName;
+                    user.LastName = userEdit.LastName;
+                }
             
-            return _userManager.UpdateAsync(updatedUser);
+                return await _userManager.UpdateAsync(user);
+            }
+
+            return null;
         }
         
         public Task<IdentityResult> CreateRole(string roleName)

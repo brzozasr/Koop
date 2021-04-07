@@ -344,13 +344,13 @@ namespace Koop.Controllers
             return ToResult(response);
         }
         
-        [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
+        /*[HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
             var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
             
             return ToResult(response);
-        }
+        }*/
         
 
         // [HttpGet("allsuppliers")]

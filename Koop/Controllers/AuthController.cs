@@ -50,7 +50,7 @@ namespace Koop.Controllers
             return Ok(token);
         }
 
-        [HttpPost("newrole")]
+        [HttpPost("newRole/{roleName}")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
             var roleResult = await _uow.AuthService().CreateRole(roleName);
@@ -63,10 +63,28 @@ namespace Koop.Controllers
             return Problem(roleResult.Errors.First().Description, null, 500);
         }
 
-        [HttpPost("user/addrole")]
-        public async Task<IActionResult> AddUserToRole(UserAddRole userAddRole)
+        [HttpPost("user/{userId}/addRole/{roleName}")]
+        public async Task<IActionResult> AddRoleToUser(Guid userId, string roleName)
         {
-            var result = await _uow.AuthService().AddUserToRole(userAddRole.Id, userAddRole.RoleName);
+            if (!_uow.DbContext.Roles.Any(p => p.NormalizedName.Equals(roleName.ToUpper())))
+            {
+                return Problem($"There is no such role like '{roleName}'.", null, 500);
+            }
+            
+            var result = await _uow.AuthService().AddRoleToUser(userId, roleName);
+            
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+            
+            return Problem(result.Errors.First().Description, null, 500);
+        }
+        
+        [HttpDelete("user/{userId}/removeRole/{roleName}")]
+        public async Task<IActionResult> RemoveRoleFromUser(Guid userId, string roleName)
+        {
+            var result = await _uow.AuthService().RemoveRoleFromUser(userId, roleName);
             
             if (result.Succeeded)
             {

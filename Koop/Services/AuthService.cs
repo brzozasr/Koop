@@ -153,11 +153,18 @@ namespace Koop.Services
             return _roleManager.CreateAsync(newRole);
         }
 
-        public Task<IdentityResult> AddUserToRole(Guid id, string roleName)
+        public Task<IdentityResult> AddRoleToUser(Guid userId, string roleName)
         {
-            var user = _userManager.Users.SingleOrDefault(u => u.Id == id);
+            var user = _userManager.FindByIdAsync(userId.ToString());
 
-            return _userManager.AddToRoleAsync(user, roleName);
+            return _userManager.AddToRoleAsync(user.Result, roleName);
+        }
+        
+        public Task<IdentityResult> RemoveRoleFromUser(Guid userId, string roleName)
+        {
+            var user = _userManager.FindByIdAsync(userId.ToString());
+
+            return _userManager.RemoveFromRoleAsync(user.Result, roleName);
         }
         
         private string GenerateJwt(User user, IList<string> roles)

@@ -16,5 +16,6 @@ namespace Koop.Services
         Task<IdentityResult> AddUserToRole(Guid id, [FromBody] string roleName);
         public Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles);
         public UserEdit GetUser(Guid userId);
+        public Task<IdentityResult> RemoveUser(Guid userId);
     }
 }

@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
+using Koop.Models.RepositoryModels;
 using Koop.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -106,6 +107,20 @@ namespace Koop.Controllers
             }
             
             return Problem("User is not authenticated.", null, 500);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("user/{userId}/remove")]
+        public async Task<IActionResult> RemoveUser(Guid userId)
+        {
+            var result = await _uow.AuthService().RemoveUser(userId);
+
+            if (result.Succeeded)
+            {
+                return Ok(new ShopRepositoryResponse() {Message = "User removed.", StatusCode = 200});
+            }
+            
+            return Problem(result.Errors.First().Description, null, 500); 
         }
     }
 }

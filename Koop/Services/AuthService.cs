@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -136,6 +137,13 @@ namespace Koop.Services
             }
 
             return null;
+        }
+        
+        public Task<IdentityResult> RemoveUser(Guid userId)
+        {
+            var user = _userManager.FindByIdAsync(userId.ToString());
+
+            return _userManager.DeleteAsync(user.Result);
         }
         
         public Task<IdentityResult> CreateRole(string roleName)

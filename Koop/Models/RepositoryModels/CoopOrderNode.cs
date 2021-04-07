@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Koop.Models.RepositoryModels
 {
@@ -9,7 +10,7 @@ namespace Koop.Models.RepositoryModels
         public Guid? OrderedItemId { get; set; }
         public Guid? ProductId { get; set; }
         public string ProductName { get; set; }
-        public short? FundValue { get; set; }
+        [JsonIgnore] public short? FundValue { get; set; }
         public double? Price { get; set; }
         [NotMapped] public decimal? FundPrice { get; set; }
         public int? Quantity { get; set; }

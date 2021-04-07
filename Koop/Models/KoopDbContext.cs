@@ -35,9 +35,11 @@ namespace Koop.Models
         public virtual DbSet<Unit> Units { get; set; }
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
-        public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryView { get; set; }
+        public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryViews { get; set; }
         public virtual DbSet<OrderView> OrderViews { get; set; }
         public virtual DbSet<FnListForPacker> FnListForPackers { get; set; }
+        public virtual DbSet<SupplierView> SupplierViews { get; set; }
+        public virtual DbSet<BasketsView> BasketViews { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -564,6 +566,58 @@ namespace Koop.Models
                 entity.Property(e => e.Quantity).HasColumnName("quantity");
 
                 entity.Property(e => e.FundValue).HasColumnName("fund_value");
+            });
+            
+            modelBuilder.Entity<SupplierView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("supplier_view");
+
+                entity.Property(e => e.Description).HasColumnName("description");
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(30)
+                    .HasColumnName("email");
+
+                entity.Property(e => e.OproFirstName).HasColumnName("opro_first_name");
+
+                entity.Property(e => e.OproId).HasColumnName("opro_id");
+
+                entity.Property(e => e.OproLastName).HasColumnName("opro_last_name");
+
+                entity.Property(e => e.OrderClosingDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_closing_date");
+
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(20)
+                    .HasColumnName("phone");
+
+                entity.Property(e => e.Picture).HasColumnName("picture");
+
+                entity.Property(e => e.SupplierAbbr)
+                    .HasMaxLength(20)
+                    .HasColumnName("supplier_abbr");
+
+                entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
+
+                entity.Property(e => e.SupplierName)
+                    .HasMaxLength(100)
+                    .HasColumnName("supplier_name");
+            });
+            
+            modelBuilder.Entity<BasketsView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("baskets_view");
+
+                entity.Property(e => e.BasketName)
+                    .HasMaxLength(100)
+                    .HasColumnName("basket_name");
+
+                entity.Property(e => e.Cooperator).HasColumnName("cooperator");
             });
 
             OnModelCreatingPartial(modelBuilder);

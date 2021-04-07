@@ -468,49 +468,41 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.RemoveUserOrderErrEmptyObject;
         }
         
-        public IEnumerable<Basket> GetBaskets()
+        public IEnumerable<BasketsView> GetBaskets()
         {
-            var baskets = _koopDbContext.Baskets
-                .Include(b => b.Coop)
-                .Where(b=>b.CoopId != null)
-                .Select(b => new Basket()
-                {
-                    BasketId = b.BasketId,
-                    BasketName = b.BasketName,
-                    CoopName = $"{b.Coop.FirstName} {b.Coop.LastName}",
-                    CoopId = b.CoopId
-                });
-            
-            return baskets;
+            return _koopDbContext.BasketViews.ToList();
         }
 
         public IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName)
         {
-            return _koopDbContext.UserOrdersHistoryView.Where(c =>
+            return _koopDbContext.UserOrdersHistoryViews.Where(c =>
                 c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
         }
 
-        public Supplier GetSupplier(string abbr)
+        public SupplierView GetSupplier(string abbr)
         {
-            var supplier = _koopDbContext.Suppliers
-                .Include(s => s.Opro)
-                // .Include(s=>s.Products)
-                .Select(s=> new Supplier()
-                {
-                    SupplierId = s.SupplierId,
-                    SupplierName = s.SupplierName,
-                    SupplierAbbr = s.SupplierAbbr,
-                    Description = s.Description,
-                    Email = s.Email,
-                    Phone = s.Phone,
-                    Picture = s.Picture,
-                    OrderClosingDate = s.OrderClosingDate,
-                    OproId = s.OproId,
-                    OproName = $"{s.Opro.FirstName} {s.Opro.LastName}",
-                })
-                .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
+            // var supplier = _koopDbContext.SupplierViews
+            //     .Include(s => s.Opro)
+            //     // .Include(s=>s.Products)
+            //     .Select(s=> new SupplierView()
+            //     {
+            //         SupplierId = s.SupplierId,
+            //         SupplierName = s.SupplierName,
+            //         SupplierAbbr = s.SupplierAbbr,
+            //         Description = s.Description,
+            //         Email = s.Email,
+            //         Phone = s.Phone,
+            //         Picture = s.Picture,
+            //         OrderClosingDate = s.OrderClosingDate,
+            //         OproId = s.OproId,
+            //         OproFirstName = s.Opro.FirstName,
+            //         OproLastName = s.Opro.LastName
+            //     })
+            //     .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
+
+            // return supplier;
             
-            return supplier;
+            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierAbbr.ToLower() == abbr);
         }
 
         public IEnumerable<Order> GetBigOrders()

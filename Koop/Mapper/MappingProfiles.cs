@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using AutoMapper;
+using Koop.Extensions;
 using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
@@ -26,8 +27,11 @@ namespace Koop.Mapper
             CreateMap<Supplier, SupplierProducts>();
             CreateMap<Product, SupplierProductsNode>();
 
+            CreateMap<Product, StockStatus>();
+            CreateMap<Supplier, StockStatus>();
+
             CreateMap<UserEdit, User>();
-            
+
             CreateMap<ProductsShop, Product>();
             CreateMap<ProductsShop, ProductsShop>();
             CreateMap<ProductsShop, Unit>();
@@ -42,6 +46,14 @@ namespace Koop.Mapper
             CreateMap<AvailableQuantity, AvailableQuantity>();
 
             CreateMap<Product, Product>();
+
+            CreateMap<OrderedItemQuantityUpdate, OrderedItem>();
+            CreateMap<ProductsQuantityUpdate, Product>();
+            CreateMap<ProductSupplierUpdate, Product>();
+
+            CreateMap<User, CoopDeptReport>();
+            CreateMap<Supplier, DebtsToSuppliersReport>();
+            
             CreateMap<Unit, Unit>();
 
             CreateMap<User, UserEdit>();

@@ -230,9 +230,8 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        
+        [Authorize(Roles = "Admin,Koty,Skarbnik")]
         [HttpGet("Cooperators/Debt")]
         public async Task<IActionResult> ReportCooperatorsDebt()
         {
@@ -251,6 +250,34 @@ namespace Koop.Controllers
                 var coopDebtMap = _mapper.Map<List<CoopDeptReport>>(coopDept);
 
                 return Ok(coopDebtMap);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+            
+        }
+
+        [AllowAnonymous]
+        [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        [HttpGet("Debts/To/Suppliers")]
+        public async Task<IActionResult> DebtsToSuppliers()
+        {
+            try
+            {
+                var suppliers = await _uow.Repository<Supplier>().GetAll()
+                    .Where(x => x.Receivables > 0)
+                    .OrderByDescending(x => x.Receivables)
+                    .ToListAsync();
+
+                if (!suppliers.Any())
+                {
+                    return Ok(new {info = "There are no debts to suppliers."});
+                }
+
+                var suppliersMap = _mapper.Map<List<DebtsToSuppliersReport>>(suppliers);
+
+                return Ok(suppliersMap);
             }
             catch (Exception e)
             {

@@ -52,6 +52,7 @@ namespace Koop.Mapper
             CreateMap<ProductSupplierUpdate, Product>();
 
             CreateMap<User, CoopDeptReport>();
+            CreateMap<Supplier, DebtsToSuppliersReport>();
         }
     }
 }

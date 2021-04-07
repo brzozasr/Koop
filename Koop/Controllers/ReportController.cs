@@ -18,10 +18,12 @@ namespace Koop.Controllers
     public class ReportController : ControllerBase
     {
         private IGenericUnitOfWork _uow;
+        private IMapper _mapper;
 
-        public ReportController(IGenericUnitOfWork uow)
+        public ReportController(IGenericUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
+            _mapper = mapper;
         }
 
         [Authorize(Roles = "Admin,Koty,Paczkers")]
@@ -227,6 +229,34 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message, null, null, e.Source);
             }
+        }
+
+        [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        [HttpGet("Cooperators/Debt")]
+        public async Task<IActionResult> ReportCooperatorsDebt()
+        {
+            try
+            {
+                var coopDept = await _uow.Repository<User>().GetAll()
+                    .Where(x => x.Debt < 0)
+                    .OrderBy(x => x.Debt)
+                    .ToListAsync();
+
+                if (!coopDept.Any())
+                {
+                    return Ok(new {info = "There are no indebted cooperators."});
+                }
+
+                var coopDebtMap = _mapper.Map<List<CoopDeptReport>>(coopDept);
+
+                return Ok(coopDebtMap);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+            
         }
     }
 }

@@ -50,6 +50,8 @@ namespace Koop.Mapper
             CreateMap<OrderedItemQuantityUpdate, OrderedItem>();
             CreateMap<ProductsQuantityUpdate, Product>();
             CreateMap<ProductSupplierUpdate, Product>();
+
+            CreateMap<User, CoopDeptReport>();
         }
     }
 }

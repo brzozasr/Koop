@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Koop.Extensions;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
@@ -22,7 +23,7 @@ namespace Koop.Controllers
         {
             _uow = uow;
         }
-        
+
         [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/{daysBack}")]
         public async Task<IActionResult> ReportPackers([FromRoute] int daysBack)
@@ -38,7 +39,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-       
+
         [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("Packers/Last/Grande")]
         public async Task<IActionResult> ReportPackersLastGrande()
@@ -80,7 +81,8 @@ namespace Koop.Controllers
                             }
                             else
                             {
-                                tmpDict[(Guid) groupKey] = $"{tmpDict[(Guid) groupKey]}, {groupItem.BasketName}: {groupItem.Quantity}";
+                                tmpDict[(Guid) groupKey] =
+                                    $"{tmpDict[(Guid) groupKey]}, {groupItem.BasketName}: {groupItem.Quantity}";
                             }
                         }
                     }
@@ -110,42 +112,121 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,Skarbnik")]
-        [HttpGet("Orders/From/Supplier/{supplierId}")]
+        
+        [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        [HttpGet("Orders/By/Grande/From/Supplier/{supplierId}")]
         public async Task<IActionResult> ReportOrdersFromSupplier([FromRoute] Guid supplierId)
         {
-            var supplier = await _uow.Repository<Supplier>().GetAll()
-                .FirstOrDefaultAsync(s => s.SupplierId == supplierId);
+            try
+            {
+                var supplier = await _uow.Repository<Supplier>().GetAll()
+                    .FirstOrDefaultAsync(s => s.SupplierId == supplierId);
 
-            var productsSupplier = _uow.Repository<Order>().GetAll()
-                .Join(_uow.Repository<OrderedItem>().GetAll(), order => order.OrderId,
-                    item => item.OrderId,
-                    (order, item) => new
-                    {
-                        OrderId = order.OrderId,
-                        OrderedItemId = item.OrderedItemId,
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity
-                    })
-                .Join(_uow.Repository<Product>().GetAll(), 
-                    orderItem => orderItem.ProductId,
-                    product => product.ProductId,
-                    (orderItem, product) => new
-                    {
-                        OrderId = orderItem.OrderId,
-                        OrderedItemId = orderItem.OrderedItemId,
-                        ProductId = orderItem.ProductId,
-                        Quantity = orderItem.Quantity,
-                        ProductName = product.ProductName,
-                        Price = product.Price,
-                        UnitName = product.Unit.UnitName,
-                        SupplierId = product.SupplierId
-                    })
-                .Where(x => x.SupplierId == supplierId);
+                if (supplier == null)
+                {
+                    return Ok(new {info = "There is no such supplier."});
+                }
 
-            return Ok(productsSupplier);
+                var productsSupplier = _uow.Repository<Order>().GetAll()
+                    .Join(_uow.Repository<OrderedItem>().GetAll(), order => order.OrderId,
+                        item => item.OrderId,
+                        (order, item) => new
+                        {
+                            OrderId = order.OrderId,
+                            OrderStartDate = order.OrderStartDate,
+                            OrderStopDate = order.OrderStopDate,
+                            OrderedItemId = item.OrderedItemId,
+                            ProductId = item.ProductId,
+                            Quantity = item.Quantity
+                        })
+                    .Join(_uow.Repository<Product>().GetAll(),
+                        orderItem => orderItem.ProductId,
+                        product => product.ProductId,
+                        (orderItem, product) => new
+                        {
+                            OrderId = orderItem.OrderId,
+                            OrderStartDate = orderItem.OrderStartDate,
+                            OrderStopDate = orderItem.OrderStopDate,
+                            OrderedItemId = orderItem.OrderedItemId,
+                            ProductId = orderItem.ProductId,
+                            Quantity = orderItem.Quantity,
+                            ProductName = product.ProductName,
+                            Price = product.Price,
+                            UnitName = product.Unit.UnitName,
+                            SupplierId = product.SupplierId
+                        })
+                    .Where(x => x.SupplierId == supplierId);
+
+                if (!productsSupplier.Any())
+                {
+                    return Ok(new {info = "The supplier did not sell any products."});
+                }
+
+                var groupOrder = productsSupplier
+                    .AsEnumerable()
+                    .GroupBy(x => x.OrderId);
+
+                var supplierReport = new SupplierReport
+                {
+                    SupplierId = supplier.SupplierId,
+                    SupplierName = supplier.SupplierName,
+                    SupplierAbbr = supplier.SupplierAbbr,
+                    Email = supplier.Email
+                };
+
+                foreach (var group in groupOrder)
+                {
+                    var groupKey = group.Key;
+                    var supplierOrder = new SupplierReportOrder
+                    {
+                        OrderId = groupKey,
+                    };
+
+                    foreach (var groupItem in group)
+                    {
+                        if (supplierOrder.OrderId == groupItem.OrderId)
+                        {
+                            supplierOrder.OrderStartDate = groupItem.OrderStartDate;
+                            supplierOrder.OrderStopDate = groupItem.OrderStopDate;
+                            supplierOrder.SupplierReport = supplierReport;
+                        }
+
+                        var supplierItem = new SupplierReportItem
+                        {
+                            ProductId = groupItem.ProductId,
+                            ProductName = groupItem.ProductName,
+                            Price = groupItem.Price,
+                            Quantity = groupItem.Quantity,
+                            UnitName = groupItem.UnitName,
+                            SupplierReportOrder = supplierOrder,
+                            TotalPrice = Math.Round((decimal) groupItem.Price * groupItem.Quantity, 2,
+                                MidpointRounding.AwayFromZero)
+                        };
+
+                        supplierOrder.OrderTotalPrice += supplierItem.TotalPrice;
+
+                        if (supplierOrder.SupplierReportItems.AreEquals(supplierItem) is var index && index > -1)
+                        {
+                            supplierOrder.SupplierReportItems[index].Quantity += groupItem.Quantity;
+                            supplierOrder.SupplierReportItems[index].TotalPrice += supplierItem.TotalPrice;
+                        }
+                        else
+                        {
+                            supplierOrder.SupplierReportItems.Add(supplierItem);
+                        }
+                    }
+
+                    supplierReport.SupplierReportOrder.Add(supplierOrder);
+
+                    supplierReport.TotalProfit += supplierOrder.OrderTotalPrice;
+                }
+
+                return Ok(supplierReport);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
         }
     }
 }

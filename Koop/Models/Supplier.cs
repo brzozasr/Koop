@@ -14,6 +14,8 @@ namespace Koop.Models
         }
 
         public Guid SupplierId { get; set; }
+        public bool Blocked { get; set; }
+        public bool Available { get; set; }
         public string SupplierName { get; set; }
         public string SupplierAbbr { get; set; }
         public string Description { get; set; }

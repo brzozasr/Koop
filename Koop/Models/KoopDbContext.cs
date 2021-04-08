@@ -40,6 +40,7 @@ namespace Koop.Models
         public virtual DbSet<FnListForPacker> FnListForPackers { get; set; }
         public virtual DbSet<SupplierView> SupplierViews { get; set; }
         public virtual DbSet<BasketsView> BasketViews { get; set; }
+        public virtual DbSet<OrderGrandeHistoryView> OrderGrandeHistoryViews { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -88,7 +89,10 @@ namespace Koop.Models
             {
                 entity.ToTable("baskets");
 
-                entity.HasIndex(e => e.CoopId, "IX_baskets_coop_id");
+                // entity.HasIndex(e => e.CoopId, "IX_baskets_coop_id");
+                entity.Property(e => e.CoopId)
+                    .HasColumnName("coop_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.BasketId)
                     .HasColumnName("basket_id")
@@ -370,6 +374,11 @@ namespace Koop.Models
             modelBuilder.Entity<Supplier>(entity =>
             {
                 entity.ToTable("suppliers");
+                
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
 
                 entity.HasIndex(e => e.OproId, "IX_suppliers_opro_id");
 
@@ -573,6 +582,10 @@ namespace Koop.Models
                 entity.HasNoKey();
 
                 entity.ToTable("supplier_view");
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
 
                 entity.Property(e => e.Description).HasColumnName("description");
 
@@ -618,6 +631,29 @@ namespace Koop.Models
                     .HasColumnName("basket_name");
 
                 entity.Property(e => e.Cooperator).HasColumnName("cooperator");
+            });
+            
+            modelBuilder.Entity<OrderGrandeHistoryView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("order_grande_history_view");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStartDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_start_date");
+
+                entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_stop_date");
             });
 
             OnModelCreatingPartial(modelBuilder);

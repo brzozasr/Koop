@@ -374,6 +374,11 @@ namespace Koop.Models
             modelBuilder.Entity<Supplier>(entity =>
             {
                 entity.ToTable("suppliers");
+                
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
 
                 entity.HasIndex(e => e.OproId, "IX_suppliers_opro_id");
 
@@ -577,6 +582,10 @@ namespace Koop.Models
                 entity.HasNoKey();
 
                 entity.ToTable("supplier_view");
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
 
                 entity.Property(e => e.Description).HasColumnName("description");
 

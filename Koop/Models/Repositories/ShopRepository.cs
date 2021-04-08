@@ -323,10 +323,9 @@ namespace Koop.Models.Repositories
 
         public void ToggleSupplierAvailability(Supplier supplier)
         {
-            throw new Exception();
-            // supplier.Available = !supplier.Available;
-            // _koopDbContext.Suppliers.Update(supplier);
-            // _koopDbContext.SaveChanges();
+            supplier.Available = !supplier.Available;
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
         }
         
         public void ToggleProductAvailability(Product product)
@@ -338,10 +337,9 @@ namespace Koop.Models.Repositories
         
         public void ToggleSupplierBlocked(Supplier supplier)
         {
-            throw new Exception();
-            // supplier.Blocked = !supplier.Blocked;
-            // _koopDbContext.Suppliers.Update(supplier);
-            // _koopDbContext.SaveChanges();
+            supplier.Blocked = !supplier.Blocked;
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
         }
         
         public void ToggleProductBlocked(Product product)

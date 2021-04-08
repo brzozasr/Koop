@@ -175,39 +175,39 @@ namespace Koop.Controllers
             }
         }
         
-        // [Authorize(Roles = "Admin,Koty,OpRo")]
-        // [HttpGet("supplier/{supplierId}/toggleAvail/")]
-        // public IActionResult ToggleSupplierAvailability(Guid supplierId)
-        // {
-        //     try
-        //     {
-        //         Supplier supplier= _uow.Repository<Supplier>().GetDetail(s => s.SupplierId == supplierId);
-        //         _uow.ShopRepository().ToggleSupplierAvailability(supplier);
-        //         return Ok(new {info = "The supplier availability has been changed."});
-        //
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return BadRequest(new {error = e.Message, source = e.Source});
-        //     }
-        // }
-        //
-        // [Authorize(Roles = "Admin,Koty,OpRo")]
-        // [HttpGet("supplier/{supplierId}/toggleBlocked/")]
-        // public IActionResult ToggleSupplierBlocked(Guid supplierId)
-        // {
-        //     try
-        //     {
-        //         Supplier supplier= _uow.Repository<Supplier>().GetDetail(s => s.SupplierId == supplierId);
-        //         _uow.ShopRepository().ToggleSupplierBlocked(supplier);
-        //         return Ok(new {info = "The supplier blocked status has been changed."});
-        //
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return BadRequest(new {error = e.Message, source = e.Source});
-        //     }
-        // }
+        [Authorize(Roles = "Admin,Koty,OpRo")]
+        [HttpGet("supplier/{supplierId}/toggleAvail/")]
+        public IActionResult ToggleSupplierAvailability(Guid supplierId)
+        {
+            try
+            {
+                Supplier supplier= _uow.Repository<Supplier>().GetDetail(s => s.SupplierId == supplierId);
+                _uow.ShopRepository().ToggleSupplierAvailability(supplier);
+                return Ok(new {info = "The supplier availability has been changed."});
+        
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+        
+        [Authorize(Roles = "Admin,Koty,OpRo")]
+        [HttpGet("supplier/{supplierId}/toggleBlocked/")]
+        public IActionResult ToggleSupplierBlocked(Guid supplierId)
+        {
+            try
+            {
+                Supplier supplier= _uow.Repository<Supplier>().GetDetail(s => s.SupplierId == supplierId);
+                _uow.ShopRepository().ToggleSupplierBlocked(supplier);
+                return Ok(new {info = "The supplier blocked status has been changed."});
+        
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
 
     }
 }

@@ -282,109 +282,125 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
-        [AllowAnonymous]
-        // [Authorize(Roles = "Admin,Koty,Skarbnik")]
-        [HttpGet("Last/Order/Grande")]
-        public async Task<IActionResult> LastOrderGrande()
+        
+        [Authorize(Roles = "Admin,Koty,Skarbnik")]
+        [HttpGet("Order/Grande/{dateStart:datetime?}")]
+        public IActionResult OrderGrandeReport([FromRoute] DateTime? dateStart = null)
         {
-            var lastGrandeDate = _uow.Repository<Order>().GetAll()
-                .OrderByDescending(x => x.OrderStartDate).FirstOrDefault()?
-                .OrderStartDate;
-
-            if (lastGrandeDate is null)
+            try
             {
-                return Ok(new {info = "There are no grande orders."});
-            }
+                DateTime? lastGrandeDate;
 
-            var orderGrande = _uow.Repository<Order>().GetAll()
-                .Join(_uow.Repository<OrderedItem>().GetAll(), order => order.OrderId,
-                    item => item.OrderId,
-                    (order, item) => new
-                    {
-                        OrderId = order.OrderId,
-                        OrderStartDate = order.OrderStartDate,
-                        OrderStopDate = order.OrderStopDate,
-                        OrderStatus = order.OrderStatus.OrderStatusName,
-                        OrderedItemId = item.OrderedItemId,
-                        ProductId = item.ProductId,
-                        ProductName = item.Product.ProductName,
-                        Price = item.Product.Price,
-                        Quantity = item.Quantity,
-                        UnitName = item.Product.Unit.UnitName,
-                        CoopId = item.CoopId,
-                        CoopFirstName = item.Coop.FirstName,
-                        CoopLastName = item.Coop.LastName,
-                        CoopFundValue = item.Coop.Fund.Value,
-                        SupplierId = item.Product.Supplier.SupplierId,
-                        SupplierName = item.Product.Supplier.SupplierName,
-                        SupplierAbbr = item.Product.Supplier.SupplierAbbr
-                    })
-                .Where(x => x.OrderStartDate == lastGrandeDate)
-                .AsEnumerable()
-                .GroupBy(x => new
+                if (dateStart is null)
                 {
-                    x.OrderId,
-                    x.OrderStartDate,
-                    x.OrderStopDate,
-                    x.OrderStatus
-                }).ToList();
-
-            if (!orderGrande.Any())
-            {
-                return Ok(new {info = "There are no orders in the grande order."});
-            }
-
-            var order = new GrandeOrderReport();
-
-            foreach (var group in orderGrande)
-            {
-                var groupKey = group.Key;
-
-                order.OrderId = groupKey.OrderId;
-                order.OrderStartDate = groupKey.OrderStartDate;
-                order.OrderStopDate = groupKey.OrderStopDate;
-                order.OrderStatus = groupKey.OrderStatus;
-
-                foreach (var groupItem in group)
-                {
-                    var grandeOrderItems = new GrandeOrderItemReport
-                    {
-                        OrderedItemId = groupItem.OrderedItemId,
-                        ProductId = groupItem.ProductId,
-                        ProductName = groupItem.ProductName,
-                        Price = groupItem.Price,
-                        FundPrice = Math.Round(
-                            (decimal) groupItem.Price +
-                            (decimal) groupItem.Price * ((decimal) groupItem.CoopFundValue / 100), 2,
-                            MidpointRounding.AwayFromZero),
-                        TotalPrice = Math.Round((decimal) groupItem.Price * groupItem.Quantity, 2,
-                            MidpointRounding.AwayFromZero),
-                        TotalFundPrice =
-                            Math.Round(
-                                (decimal) groupItem.Price + (decimal) groupItem.Price *
-                                ((decimal) groupItem.CoopFundValue / 100), 2, MidpointRounding.AwayFromZero) *
-                            groupItem.Quantity,
-                        Quantity = groupItem.Quantity,
-                        UnitName = groupItem.UnitName,
-                        CoopId = groupItem.CoopId,
-                        CoopFirstName = groupItem.CoopFirstName,
-                        CoopLastName = groupItem.CoopLastName,
-                        CoopFundValue = groupItem.CoopFundValue,
-                        SupplierId = groupItem.SupplierId,
-                        SupplierName = groupItem.SupplierName,
-                        SupplierAbbr = groupItem.SupplierAbbr,
-                        GrandeOrderReport = order
-                    };
-
-                    order.TotalGrandePrice += grandeOrderItems.TotalPrice;
-                    order.TotalGrandeFundPrice += grandeOrderItems.TotalFundPrice;
-
-                    order.GrandeOrderItem.Add(grandeOrderItems);
+                    lastGrandeDate = _uow.Repository<Order>().GetAll()
+                        .OrderByDescending(x => x.OrderStartDate).FirstOrDefault()?
+                        .OrderStartDate;
                 }
-            }
+                else
+                {
+                    lastGrandeDate = dateStart;
+                }
 
-            return Ok(order);
+
+                if (lastGrandeDate is null)
+                {
+                    return Ok(new {info = "There are no grande orders."});
+                }
+
+                var orderGrande = _uow.Repository<Order>().GetAll()
+                    .Join(_uow.Repository<OrderedItem>().GetAll(), order => order.OrderId,
+                        item => item.OrderId,
+                        (order, item) => new
+                        {
+                            OrderId = order.OrderId,
+                            OrderStartDate = order.OrderStartDate,
+                            OrderStopDate = order.OrderStopDate,
+                            OrderStatus = order.OrderStatus.OrderStatusName,
+                            OrderedItemId = item.OrderedItemId,
+                            ProductId = item.ProductId,
+                            ProductName = item.Product.ProductName,
+                            Price = item.Product.Price,
+                            Quantity = item.Quantity,
+                            UnitName = item.Product.Unit.UnitName,
+                            CoopId = item.CoopId,
+                            CoopFirstName = item.Coop.FirstName,
+                            CoopLastName = item.Coop.LastName,
+                            CoopFundValue = item.Coop.Fund.Value,
+                            SupplierId = item.Product.Supplier.SupplierId,
+                            SupplierName = item.Product.Supplier.SupplierName,
+                            SupplierAbbr = item.Product.Supplier.SupplierAbbr
+                        })
+                    .Where(x => x.OrderStartDate == lastGrandeDate)
+                    .AsEnumerable()
+                    .GroupBy(x => new
+                    {
+                        x.OrderId,
+                        x.OrderStartDate,
+                        x.OrderStopDate,
+                        x.OrderStatus
+                    }).ToList();
+
+                if (!orderGrande.Any())
+                {
+                    return Ok(new {info = "There are no orders in the grande order."});
+                }
+
+                var grandeOrderReport = new GrandeOrderReport();
+
+                foreach (var group in orderGrande)
+                {
+                    var groupKey = group.Key;
+
+                    grandeOrderReport.OrderId = groupKey.OrderId;
+                    grandeOrderReport.OrderStartDate = groupKey.OrderStartDate;
+                    grandeOrderReport.OrderStopDate = groupKey.OrderStopDate;
+                    grandeOrderReport.OrderStatus = groupKey.OrderStatus;
+
+                    foreach (var groupItem in group)
+                    {
+                        var grandeOrderItems = new GrandeOrderItemReport
+                        {
+                            OrderedItemId = groupItem.OrderedItemId,
+                            ProductId = groupItem.ProductId,
+                            ProductName = groupItem.ProductName,
+                            Price = groupItem.Price,
+                            FundPrice = Math.Round(
+                                (decimal) groupItem.Price +
+                                (decimal) groupItem.Price * ((decimal) groupItem.CoopFundValue / 100), 2,
+                                MidpointRounding.AwayFromZero),
+                            TotalPrice = Math.Round((decimal) groupItem.Price * groupItem.Quantity, 2,
+                                MidpointRounding.AwayFromZero),
+                            TotalFundPrice =
+                                Math.Round(
+                                    (decimal) groupItem.Price + (decimal) groupItem.Price *
+                                    ((decimal) groupItem.CoopFundValue / 100), 2, MidpointRounding.AwayFromZero) *
+                                groupItem.Quantity,
+                            Quantity = groupItem.Quantity,
+                            UnitName = groupItem.UnitName,
+                            CoopId = groupItem.CoopId,
+                            CoopFirstName = groupItem.CoopFirstName,
+                            CoopLastName = groupItem.CoopLastName,
+                            CoopFundValue = groupItem.CoopFundValue,
+                            SupplierId = groupItem.SupplierId,
+                            SupplierName = groupItem.SupplierName,
+                            SupplierAbbr = groupItem.SupplierAbbr,
+                            GrandeOrderReport = grandeOrderReport
+                        };
+
+                        grandeOrderReport.TotalGrandePrice += grandeOrderItems.TotalPrice;
+                        grandeOrderReport.TotalGrandeFundPrice += grandeOrderItems.TotalFundPrice;
+
+                        grandeOrderReport.GrandeOrderItem.Add(grandeOrderItems);
+                    }
+                }
+
+                return Ok(grandeOrderReport);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
         }
     }
 }

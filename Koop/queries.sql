@@ -127,18 +127,17 @@ from suppliers as s
      inner join "AspNetUsers" c on s.opro_id = c."Id";
 
 -- order grande history (ewa)
-drop view order_grande_history_view;
 create or replace view order_grande_history_view as
-select o.order_id, order_start_date, order_stop_date
+select o.order_id, order_start_date, order_stop_date, o.order_status_id, os.order_status_name
 from orders as o
-         left join order_status os on o.order_status_id = os.order_status_id
-;
+         left join order_status os on o.order_status_id = os.order_status_id;
 -- 
 -- order basket & name (ewa)
 create or replace view baskets_view as
 select b.basket_name, concat(u."FirstName", ' ', u."LastName") as Cooperator
 from baskets as b
     inner join "AspNetUsers" as u on b.coop_id = u."Id";
+
 
 
 

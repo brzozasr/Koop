@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
 using Koop.models;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -283,7 +284,7 @@ namespace Koop.Models.Repositories
                 c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
         }
 
-        public SupplierView GetSupplier(string abbr)
+        public SupplierView GetSupplier(Guid supplierId)
         {
             // var supplier = _koopDbContext.SupplierViews
             //     .Include(s => s.Opro)
@@ -306,12 +307,94 @@ namespace Koop.Models.Repositories
 
             // return supplier;
             
-            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierAbbr.ToLower() == abbr);
+            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierId == supplierId);
         }
 
-        public IEnumerable<Order> GetBigOrders()
+        public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)
         {
-            throw new NotImplementedException();
+            return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
+        
+        public void UpdateSupplier(Supplier supplier)
+        {
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
+        }
+
+        public void ToggleSupplierAvailability(Supplier supplier)
+        {
+            throw new Exception();
+            // supplier.Available = !supplier.Available;
+            // _koopDbContext.Suppliers.Update(supplier);
+            // _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleProductAvailability(Product product)
+        {
+            product.Available = !product.Available;
+            _koopDbContext.Products.Update(product);
+            _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleSupplierBlocked(Supplier supplier)
+        {
+            throw new Exception();
+            // supplier.Blocked = !supplier.Blocked;
+            // _koopDbContext.Suppliers.Update(supplier);
+            // _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleProductBlocked(Product product)
+        {
+            product.Blocked = !product.Blocked;
+            _koopDbContext.Products.Update(product);
+            _koopDbContext.SaveChanges();
+        }
+
+        public void ChangeOrderStatus(Order order, OrderStatuses newStatus)
+        { 
+            var newStatusId = _koopDbContext.OrderStatuses.SingleOrDefault(s=>s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
+            
+            switch (newStatus)
+            {
+                case OrderStatuses.Otwarte:
+                    ClearBaskets();
+                    // more logic to write   
+                    break;
+                case OrderStatuses.Zamknięte:
+                    //logic
+                    break;
+                case OrderStatuses.Anulowane:
+                    //logic
+                    break;
+            }
+
+            if (newStatusId != null)
+            {
+                order.OrderStatusId = (Guid) newStatusId;
+                _koopDbContext.Orders.Update(order);
+                _koopDbContext.SaveChanges();
+            }
+        }
+
+        public void ClearBaskets()
+        {
+            var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            foreach (var user in users)
+            {
+                user.BasketId = null;
+                _koopDbContext.Users.Update(user);
+            }
+            
+            var baskets = _koopDbContext.Baskets.Where(b => b.CoopId != null).ToList();
+            foreach (var b in baskets)
+            {
+                b.CoopId = null;
+                _koopDbContext.Baskets.Update(b);
+            }
+            
+            _koopDbContext.SaveChanges();
+        }
+
     }
 }

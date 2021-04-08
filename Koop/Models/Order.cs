@@ -18,9 +18,6 @@ namespace Koop.Models
         public Guid OrderStatusId { get; set; }
         
         public virtual OrderStatus OrderStatus { get; set; }
-        // public Guid OrderStatusId { get; set; }
-        //
-        // public virtual OrderStatus OrderStatus { get; set; }
         public virtual ICollection<OrderedItem> OrderedItems { get; set; }
     }
 }

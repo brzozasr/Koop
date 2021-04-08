@@ -14,7 +14,7 @@ namespace Koop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : Controller
+    public class ProductController : ControllerBase
     {
         private IGenericUnitOfWork _uow;
         private IMapper _mapper;
@@ -66,7 +66,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
+        
         [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("In/Stock")]
         public async Task<IActionResult> ProductsInStock()

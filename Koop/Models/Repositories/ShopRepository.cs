@@ -357,13 +357,13 @@ namespace Koop.Models.Repositories
             {
                 case OrderStatuses.Otwarte:
                     ClearBaskets();
-                    // more logic to write   
+                    // more logic to write: open shop with available suppliers & products
                     break;
                 case OrderStatuses.Zamknięte:
-                    //logic
+                    //logic: close shop
                     break;
                 case OrderStatuses.Anulowane:
-                    //logic
+                    //logic: close shop
                     break;
             }
 

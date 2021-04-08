@@ -66,7 +66,8 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-        
+
+        [AllowAnonymous]
         [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("In/Stock")]
         public async Task<IActionResult> ProductsInStock()

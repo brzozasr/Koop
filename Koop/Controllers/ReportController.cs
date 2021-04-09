@@ -9,6 +9,7 @@ using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 
 namespace Koop.Controllers
@@ -27,7 +28,7 @@ namespace Koop.Controllers
         }
 
         [Authorize(Roles = "Admin,Koty,Paczkers")]
-        [HttpGet("Packers/{daysBack}")]
+        [HttpGet("Packers/{daysBack:int}")]
         public async Task<IActionResult> ReportPackers([FromRoute] int daysBack)
         {
             try
@@ -116,7 +117,8 @@ namespace Koop.Controllers
         }
 
         [Authorize(Roles = "Admin,Koty,Skarbnik")]
-        [HttpGet("Orders/By/Grande/From/Supplier/{supplierId}")]
+        [HttpGet("Orders/Grande/By/Supplier/{supplierId:guid}", Name = "OrdersGrande")]
+        [HttpGet("Last/Order/Grande/By/Supplier/{supplierId:guid}", Name = "LastOrderGrande")]
         public async Task<IActionResult> ReportOrdersFromSupplier([FromRoute] Guid supplierId)
         {
             try
@@ -158,6 +160,14 @@ namespace Koop.Controllers
                             SupplierId = product.SupplierId
                         })
                     .Where(x => x.SupplierId == supplierId);
+
+                if (ControllerContext.ActionDescriptor.AttributeRouteInfo?.Name == "LastOrderGrande")
+                {
+                    var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                        .OrderByDescending(x => x.OrderStopDate)
+                        .FirstOrDefault()?.OrderId;
+                    productsSupplier = productsSupplier.Where(x => x.OrderId == lastOrderGrandeId);
+                }
 
                 if (!productsSupplier.Any())
                 {
@@ -282,7 +292,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-        
+
         [Authorize(Roles = "Admin,Koty,Skarbnik")]
         [HttpGet("Order/Grande/{dateStart:datetime?}")]
         public IActionResult OrderGrandeReport([FromRoute] DateTime? dateStart = null)

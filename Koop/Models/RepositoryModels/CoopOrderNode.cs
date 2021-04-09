@@ -6,6 +6,7 @@ namespace Koop.Models.RepositoryModels
 {
     public class CoopOrderNode
     {
+        [JsonIgnore]
         public Guid? OrderId { get; set; }
         public Guid? OrderedItemId { get; set; }
         public Guid? ProductId { get; set; }

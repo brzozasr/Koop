@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
+using Koop.Models.RepositoryModels;
 using Koop.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,18 +15,18 @@ namespace Koop.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private IGenericUnitOfWork _uow;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IGenericUnitOfWork genericUnitOfWork)
         {
-            _authService = authService;
+            _uow = genericUnitOfWork;
         }
         
         [AllowAnonymous]
         [HttpPost("signup")]
-        public async Task<IActionResult> SignUp([FromBody]UserSignUp userSignUp)
+        public async Task<IActionResult> SignUp([FromBody]UserEdit newUser)
         {
-            var userCreateResult = await _authService.SignUp(userSignUp);
+            var userCreateResult = await _uow.AuthService().SignUp(newUser);
             
             if (userCreateResult.Succeeded)
             {
@@ -37,7 +40,7 @@ namespace Koop.Controllers
         [HttpPost("signin")]
         public IActionResult SignIn(UserLogIn userLogIn)
         {
-            var token = _authService.SignIn(userLogIn);
+            var token = _uow.AuthService().SignIn(userLogIn);
 
             if (token is null)
             {
@@ -47,10 +50,10 @@ namespace Koop.Controllers
             return Ok(token);
         }
 
-        [HttpPost("newrole")]
+        [HttpPost("newRole/{roleName}")]
         public async Task<IActionResult> CreateRole(string roleName)
         {
-            var roleResult = await _authService.CreateRole(roleName);
+            var roleResult = await _uow.AuthService().CreateRole(roleName);
             
             if (roleResult.Succeeded)
             {
@@ -60,10 +63,28 @@ namespace Koop.Controllers
             return Problem(roleResult.Errors.First().Description, null, 500);
         }
 
-        [HttpPost("user/addrole")]
-        public async Task<IActionResult> AddUserToRole(UserAddRole userAddRole)
+        [HttpPost("user/{userId}/addRole/{roleName}")]
+        public async Task<IActionResult> AddRoleToUser(Guid userId, string roleName)
         {
-            var result = await _authService.AddUserToRole(userAddRole.Id, userAddRole.RoleName);
+            if (!_uow.DbContext.Roles.Any(p => p.NormalizedName.Equals(roleName.ToUpper())))
+            {
+                return Problem($"There is no such role like '{roleName}'.", null, 500);
+            }
+            
+            var result = await _uow.AuthService().AddRoleToUser(userId, roleName);
+            
+            if (result.Succeeded)
+            {
+                return Ok();
+            }
+            
+            return Problem(result.Errors.First().Description, null, 500);
+        }
+        
+        [HttpDelete("user/{userId}/removeRole/{roleName}")]
+        public async Task<IActionResult> RemoveRoleFromUser(Guid userId, string roleName)
+        {
+            var result = await _uow.AuthService().RemoveRoleFromUser(userId, roleName);
             
             if (result.Succeeded)
             {
@@ -73,23 +94,51 @@ namespace Koop.Controllers
             return Problem(result.Errors.First().Description, null, 500);
         }
 
-        [HttpGet("user/get")]
-        public IActionResult EditUser(Guid userId)
+        [HttpGet("user/{userId}/get")]
+        public IActionResult GetUser(Guid userId)
         {
-            return Ok(_authService.GetUser(userId));
+            return Ok(_uow.AuthService().GetUser(userId));
         }
 
-        [HttpPost("user/edit")]
-        public async Task<IActionResult> EditUser(UserEdit userEdit)
+        [Authorize]
+        [HttpPost("user/{userId}/edit")]
+        public async Task<IActionResult> EditUser(UserEdit userEdit, Guid userId)
         {
-            var result = await _authService.EditUser(userEdit);
+            var authUserId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            var authUserRoles = HttpContext.User.Claims.Where(p => p.Type == ClaimTypes.Role).Select(p => p.Value);
+            
+            if (authUserId is not null)
+            {
+                var result = await _uow.AuthService().EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
+
+                if (result is null)
+                {
+                    return Problem("Not enough privileges to edit user's credentials.", null, 500);
+                }
+                
+                if (result.Succeeded)
+                {
+                    return Ok(userEdit);
+                }
+                
+                return Problem(result.Errors.First().Description, null, 500);
+            }
+            
+            return Problem("User is not authenticated.", null, 500);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("user/{userId}/remove")]
+        public async Task<IActionResult> RemoveUser(Guid userId)
+        {
+            var result = await _uow.AuthService().RemoveUser(userId);
 
             if (result.Succeeded)
             {
-                return Ok(userEdit);
+                return Ok(new ShopRepositoryResponse() {Message = "User removed.", StatusCode = 200});
             }
             
-            return Problem(result.Errors.First().Description, null, 500);
+            return Problem(result.Errors.First().Description, null, 500); 
         }
     }
 }

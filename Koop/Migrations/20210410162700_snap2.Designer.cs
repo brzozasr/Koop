@@ -3,15 +3,17 @@ using System;
 using Koop.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    partial class KoopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210410162700_snap2")]
+    partial class snap2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

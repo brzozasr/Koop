@@ -359,7 +359,7 @@ namespace Koop.Models.Repositories
                 .Include(p => p.OrderStatus)
                 .SingleOrDefault(p => p.OrderedItemId == orderedItemId);
             
-            if (order is not null && order.OrderStatus.OrderStatusName.Equals("Szkic"))
+            if (order is not null && order.OrderStatus.OrderStatusName.Equals(OrderStatuses.Zaplanowane.ToString()))
             {
                 int quantityDiff = order.Quantity - quantity;
                 order.Quantity = quantity;

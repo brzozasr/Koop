@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using AutoMapper;
+using Koop.Services;
 using Microsoft.AspNetCore.Identity;
 
 namespace Koop.Models.Repositories
@@ -13,13 +15,17 @@ namespace Koop.Models.Repositories
         private Dictionary<Type, object> _repositories;
         private Dictionary<Type, object> _repositoriesView;
         private IShopRepository _shopRepository;
+        private IMapper _mapper;
+        private IAuthService _authService;
 
-        public GenericUnitOfWork(KoopDbContext koopDbContext)
+        public GenericUnitOfWork(KoopDbContext koopDbContext, IMapper mapper, IAuthService authService)
         {
             _koopDbContext = koopDbContext;
+            _mapper = mapper;
             _repositories = new Dictionary<Type, object>();
             _repositoriesView = new Dictionary<Type, object>();
-            _shopRepository = new ShopRepository(_koopDbContext);
+            _shopRepository = new ShopRepository(_koopDbContext, mapper);
+            _authService = authService;
         }
 
         public IRepository<T> Repository<T>() where T : class
@@ -46,6 +52,8 @@ namespace Koop.Models.Repositories
             _koopDbContext.SaveChanges();
         }
 
+        public KoopDbContext DbContext => _koopDbContext;
+
         public async Task<int> SaveChangesAsync()
         {
             var success = await _koopDbContext.SaveChangesAsync();
@@ -68,6 +76,11 @@ namespace Koop.Models.Repositories
         public IShopRepository ShopRepository()
         {
             return _shopRepository;
+        }
+
+        public IAuthService AuthService()
+        {
+            return _authService;
         }
 
         public void Dispose()

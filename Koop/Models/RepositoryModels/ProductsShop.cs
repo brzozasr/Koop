@@ -15,5 +15,8 @@ namespace Koop.Models.RepositoryModels
         public string SupplierAbbr { get; set; }
         public IEnumerable<string> CategoryNames { get; set; }
         public IEnumerable<int> Quantities { get; set; }
+        public bool Magazine { get; set; }
+        public int? Deposit { get; set; }
+        public bool Ordered { get; set; }
     }
 }

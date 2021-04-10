@@ -1,21 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
-#nullable disable
-
-namespace Koop.Models
+namespace Koop.Models.RepositoryModels
 {
-    public partial class Supplier
+    public class SupplierProducts
     {
-        public Supplier()
+        public SupplierProducts()
         {
-            Products = new HashSet<Product>();
+            SupplierProductsList = new List<SupplierProductsNode>();
         }
-
+        
         public Guid SupplierId { get; set; }
-        public bool Blocked { get; set; }
-        public bool Available { get; set; }
         public string SupplierName { get; set; }
         public string SupplierAbbr { get; set; }
         public string Description { get; set; }
@@ -23,10 +18,8 @@ namespace Koop.Models
         public string Phone { get; set; }
         public string Picture { get; set; }
         public DateTime? OrderClosingDate { get; set; }
-        public Guid OproId { get; set; }
         public double Receivables { get; set; }
-
-        public virtual User Opro { get; set; }
-        public virtual ICollection<Product> Products { get; set; }
+        
+        public virtual ICollection<SupplierProductsNode> SupplierProductsList { get; set; }
     }
 }

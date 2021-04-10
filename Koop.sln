@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Koop", "Koop\Koop.csproj", "{CFFF5EE1-11BD-4BC3-BC76-122030DCBC60}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KoopTests", "KoopTests\KoopTests.csproj", "{F96F81B4-E5BC-4BBC-A5A2-E2B2E6CC091C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{CFFF5EE1-11BD-4BC3-BC76-122030DCBC60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFFF5EE1-11BD-4BC3-BC76-122030DCBC60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFFF5EE1-11BD-4BC3-BC76-122030DCBC60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F96F81B4-E5BC-4BBC-A5A2-E2B2E6CC091C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F96F81B4-E5BC-4BBC-A5A2-E2B2E6CC091C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F96F81B4-E5BC-4BBC-A5A2-E2B2E6CC091C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F96F81B4-E5BC-4BBC-A5A2-E2B2E6CC091C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

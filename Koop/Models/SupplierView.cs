@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
+using NodaTime;
 
 #nullable disable
 
-namespace Koop.Models
+namespace Koop.models
 {
-    public partial class Supplier
+    public partial class SupplierView
     {
-        public Supplier()
-        {
-            Products = new HashSet<Product>();
-        }
-
         public Guid SupplierId { get; set; }
         public bool Blocked { get; set; }
         public bool Available { get; set; }
@@ -24,9 +19,9 @@ namespace Koop.Models
         public string Picture { get; set; }
         public DateTime? OrderClosingDate { get; set; }
         public Guid OproId { get; set; }
-        public double Receivables { get; set; }
+        public string OproFirstName { get; set; }
+        public string OproLastName { get; set; }
 
-        public virtual User Opro { get; set; }
-        public virtual ICollection<Product> Products { get; set; }
+        public string OproFullName => $"{OproFirstName} {OproLastName}";
     }
 }

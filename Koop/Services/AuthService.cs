@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -38,10 +40,16 @@ namespace Koop.Services
             _jwtSettings = jwtSettings.Value;
         }
         
-        public Task<IdentityResult> SignUp([FromBody]UserSignUp userSignUp)
+        /*public Task<IdentityResult> SignUp([FromBody]UserSignUp userSignUp)
         {
             var user = _mapper.Map<User>(userSignUp);
             return _userManager.CreateAsync(user, userSignUp.Password);
+        }*/
+        
+        public Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        {
+            var user = _mapper.Map<User>(newUser);
+            return _userManager.CreateAsync(user, newUser.NewPassword);
         }
 
         public string SignIn(UserLogIn userLogIn)
@@ -65,22 +73,77 @@ namespace Koop.Services
             return null;
         }
 
-        public User GetUser(Guid userId)
+        public UserEdit GetUser(Guid userId)
         {
             var user = _userManager.Users
                 .SingleOrDefault(p => p.Id == userId);
 
-            return user;
+            if (user is not null)
+            {
+                UserEdit userEdit = new UserEdit();
+
+                var userOutput = _mapper.Map(user, userEdit);
+
+                return userOutput;
+            }
+
+            return null;
         }
         
-        public Task<IdentityResult> EditUser([FromBody]UserEdit userEdit)
+        public async Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
         {
-            var user = _userManager.Users
-                .SingleOrDefault(p => p.Id == userEdit.Id);
+            if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
+            {
+                var user = await _userManager.FindByIdAsync(userId.ToString());
 
-            var updatedUser = _mapper.Map(userEdit, user);
+                if (user is not null)
+                {
+                    var setEmailResult = _userManager.SetEmailAsync(user, userEdit.Email).Result;
+                    if (!setEmailResult.Succeeded)
+                    {
+                        return setEmailResult;
+                    }
+                    
+                    var setUserNameResult = _userManager.SetUserNameAsync(user, userEdit.UserName).Result;
+                    if (!setUserNameResult.Succeeded)
+                    {
+                        return setUserNameResult;
+                    }
+                    
+                    var setPhoneNumberResult = _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber).Result;
+                    if (!setPhoneNumberResult.Succeeded)
+                    {
+                        return setPhoneNumberResult;
+                    }
+
+                    user.BasketId = userEdit.BasketId;
+                    user.FundId = userEdit.FundId;
+                    user.Debt = userEdit.Debt;
+                    user.Info = userEdit.Info;
+                    user.FirstName = userEdit.FirstName;
+                    user.LastName = userEdit.LastName;
+
+                    if (userEdit.OldPassword is not null)
+                    {
+                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword, userEdit.NewPassword);
+                        if (!changePasswordResult.Succeeded)
+                        {
+                            return changePasswordResult;
+                        }
+                    }
+                }
             
-            return _userManager.UpdateAsync(updatedUser);
+                return await _userManager.UpdateAsync(user);
+            }
+
+            return null;
+        }
+        
+        public Task<IdentityResult> RemoveUser(Guid userId)
+        {
+            var user = _userManager.FindByIdAsync(userId.ToString());
+
+            return _userManager.DeleteAsync(user.Result);
         }
         
         public Task<IdentityResult> CreateRole(string roleName)
@@ -90,11 +153,18 @@ namespace Koop.Services
             return _roleManager.CreateAsync(newRole);
         }
 
-        public Task<IdentityResult> AddUserToRole(Guid id, string roleName)
+        public Task<IdentityResult> AddRoleToUser(Guid userId, string roleName)
         {
-            var user = _userManager.Users.SingleOrDefault(u => u.Id == id);
+            var user = _userManager.FindByIdAsync(userId.ToString());
 
-            return _userManager.AddToRoleAsync(user, roleName);
+            return _userManager.AddToRoleAsync(user.Result, roleName);
+        }
+        
+        public Task<IdentityResult> RemoveRoleFromUser(Guid userId, string roleName)
+        {
+            var user = _userManager.FindByIdAsync(userId.ToString());
+
+            return _userManager.RemoveFromRoleAsync(user.Result, roleName);
         }
         
         private string GenerateJwt(User user, IList<string> roles)

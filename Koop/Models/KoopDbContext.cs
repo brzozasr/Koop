@@ -35,9 +35,12 @@ namespace Koop.Models
         public virtual DbSet<Unit> Units { get; set; }
         public virtual DbSet<Work> Works { get; set; }
         public virtual DbSet<WorkType> WorkTypes { get; set; }
-        public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryView { get; set; }
+        public virtual DbSet<UserOrdersHistoryView> UserOrdersHistoryViews { get; set; }
         public virtual DbSet<OrderView> OrderViews { get; set; }
         public virtual DbSet<FnListForPacker> FnListForPackers { get; set; }
+        public virtual DbSet<SupplierView> SupplierViews { get; set; }
+        public virtual DbSet<BasketsView> BasketViews { get; set; }
+        public virtual DbSet<OrderGrandeHistoryView> OrderGrandeHistoryViews { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -86,7 +89,10 @@ namespace Koop.Models
             {
                 entity.ToTable("baskets");
 
-                entity.HasIndex(e => e.CoopId, "IX_baskets_coop_id");
+                // entity.HasIndex(e => e.CoopId, "IX_baskets_coop_id");
+                entity.Property(e => e.CoopId)
+                    .HasColumnName("coop_id")
+                    .HasDefaultValueSql("uuid_generate_v4()");
 
                 entity.Property(e => e.BasketId)
                     .HasColumnName("basket_id")
@@ -368,6 +374,11 @@ namespace Koop.Models
             modelBuilder.Entity<Supplier>(entity =>
             {
                 entity.ToTable("suppliers");
+                
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
 
                 entity.HasIndex(e => e.OproId, "IX_suppliers_opro_id");
 
@@ -564,6 +575,85 @@ namespace Koop.Models
                 entity.Property(e => e.Quantity).HasColumnName("quantity");
 
                 entity.Property(e => e.FundValue).HasColumnName("fund_value");
+            });
+            
+            modelBuilder.Entity<SupplierView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("supplier_view");
+                
+                entity.Property(e => e.Available).HasColumnName("available");
+
+                entity.Property(e => e.Blocked).HasColumnName("blocked");
+
+                entity.Property(e => e.Description).HasColumnName("description");
+
+                entity.Property(e => e.Email)
+                    .HasMaxLength(30)
+                    .HasColumnName("email");
+
+                entity.Property(e => e.OproFirstName).HasColumnName("opro_first_name");
+
+                entity.Property(e => e.OproId).HasColumnName("opro_id");
+
+                entity.Property(e => e.OproLastName).HasColumnName("opro_last_name");
+
+                entity.Property(e => e.OrderClosingDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_closing_date");
+
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(20)
+                    .HasColumnName("phone");
+
+                entity.Property(e => e.Picture).HasColumnName("picture");
+
+                entity.Property(e => e.SupplierAbbr)
+                    .HasMaxLength(20)
+                    .HasColumnName("supplier_abbr");
+
+                entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
+
+                entity.Property(e => e.SupplierName)
+                    .HasMaxLength(100)
+                    .HasColumnName("supplier_name");
+            });
+            
+            modelBuilder.Entity<BasketsView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("baskets_view");
+
+                entity.Property(e => e.BasketName)
+                    .HasMaxLength(100)
+                    .HasColumnName("basket_name");
+
+                entity.Property(e => e.Cooperator).HasColumnName("cooperator");
+            });
+            
+            modelBuilder.Entity<OrderGrandeHistoryView>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("order_grande_history_view");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.OrderStartDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_start_date");
+
+                entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
+
+                entity.Property(e => e.OrderStatusName)
+                    .HasMaxLength(100)
+                    .HasColumnName("order_status_name");
+
+                entity.Property(e => e.OrderStopDate)
+                    .HasColumnType("timestamp without time zone")
+                    .HasColumnName("order_stop_date");
             });
 
             OnModelCreatingPartial(modelBuilder);

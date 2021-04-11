@@ -8,6 +8,7 @@ using AutoMapper;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -358,7 +359,7 @@ namespace Koop.Models.Repositories
                 .Include(p => p.OrderStatus)
                 .SingleOrDefault(p => p.OrderedItemId == orderedItemId);
             
-            if (order is not null && order.OrderStatus.OrderStatusName.Equals("Szkic"))
+            if (order is not null && order.OrderStatus.OrderStatusName.Equals(OrderStatuses.Zaplanowane.ToString()))
             {
                 int quantityDiff = order.Quantity - quantity;
                 order.Quantity = quantity;
@@ -468,54 +469,126 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.RemoveUserOrderErrEmptyObject;
         }
         
-        public IEnumerable<Basket> GetBaskets()
+        public IEnumerable<BasketsView> GetBaskets()
         {
-            var baskets = _koopDbContext.Baskets
-                .Include(b => b.Coop)
-                .Where(b=>b.CoopId != null)
-                .Select(b => new Basket()
-                {
-                    BasketId = b.BasketId,
-                    BasketName = b.BasketName,
-                    CoopName = $"{b.Coop.FirstName} {b.Coop.LastName}",
-                    CoopId = b.CoopId
-                });
-            
-            return baskets;
+            return _koopDbContext.BasketViews.ToList();
         }
 
         public IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName)
         {
-            return _koopDbContext.UserOrdersHistoryView.Where(c =>
+            return _koopDbContext.UserOrdersHistoryViews.Where(c =>
                 c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
         }
 
-        public Supplier GetSupplier(string abbr)
+        public SupplierView GetSupplier(Guid supplierId)
         {
-            var supplier = _koopDbContext.Suppliers
-                .Include(s => s.Opro)
-                // .Include(s=>s.Products)
-                .Select(s=> new Supplier()
-                {
-                    SupplierId = s.SupplierId,
-                    SupplierName = s.SupplierName,
-                    SupplierAbbr = s.SupplierAbbr,
-                    Description = s.Description,
-                    Email = s.Email,
-                    Phone = s.Phone,
-                    Picture = s.Picture,
-                    OrderClosingDate = s.OrderClosingDate,
-                    OproId = s.OproId,
-                    OproName = $"{s.Opro.FirstName} {s.Opro.LastName}",
-                })
-                .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
+            // var supplier = _koopDbContext.SupplierViews
+            //     .Include(s => s.Opro)
+            //     // .Include(s=>s.Products)
+            //     .Select(s=> new SupplierView()
+            //     {
+            //         SupplierId = s.SupplierId,
+            //         SupplierName = s.SupplierName,
+            //         SupplierAbbr = s.SupplierAbbr,
+            //         Description = s.Description,
+            //         Email = s.Email,
+            //         Phone = s.Phone,
+            //         Picture = s.Picture,
+            //         OrderClosingDate = s.OrderClosingDate,
+            //         OproId = s.OproId,
+            //         OproFirstName = s.Opro.FirstName,
+            //         OproLastName = s.Opro.LastName
+            //     })
+            //     .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
+
+            // return supplier;
             
-            return supplier;
+            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierId == supplierId);
         }
 
-        public IEnumerable<Order> GetBigOrders()
+        public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)
         {
-            throw new NotImplementedException();
+            return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
+        
+        public void UpdateSupplier(Supplier supplier)
+        {
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
+        }
+
+        public void ToggleSupplierAvailability(Supplier supplier)
+        {
+            supplier.Available = !supplier.Available;
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleProductAvailability(Product product)
+        {
+            product.Available = !product.Available;
+            _koopDbContext.Products.Update(product);
+            _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleSupplierBlocked(Supplier supplier)
+        {
+            supplier.Blocked = !supplier.Blocked;
+            _koopDbContext.Suppliers.Update(supplier);
+            _koopDbContext.SaveChanges();
+        }
+        
+        public void ToggleProductBlocked(Product product)
+        {
+            product.Blocked = !product.Blocked;
+            _koopDbContext.Products.Update(product);
+            _koopDbContext.SaveChanges();
+        }
+
+        public void ChangeOrderStatus(Order order, OrderStatuses newStatus)
+        { 
+            var newStatusId = _koopDbContext.OrderStatuses.SingleOrDefault(s=>s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
+            
+            switch (newStatus)
+            {
+                case OrderStatuses.Otwarte:
+                    ClearBaskets();
+                    // more logic to write: open shop with available suppliers & products
+                    break;
+                case OrderStatuses.Zamknięte:
+                    //logic: close shop
+                    break;
+                case OrderStatuses.Anulowane:
+                    //logic: close shop
+                    break;
+            }
+
+            if (newStatusId != null)
+            {
+                order.OrderStatusId = (Guid) newStatusId;
+                _koopDbContext.Orders.Update(order);
+                _koopDbContext.SaveChanges();
+            }
+        }
+
+        public void ClearBaskets()
+        {
+            var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            foreach (var user in users)
+            {
+                user.BasketId = null;
+                _koopDbContext.Users.Update(user);
+            }
+            
+            var baskets = _koopDbContext.Baskets.Where(b => b.CoopId != null).ToList();
+            foreach (var b in baskets)
+            {
+                b.CoopId = null;
+                _koopDbContext.Baskets.Update(b);
+            }
+            
+            _koopDbContext.SaveChanges();
+        }
+
     }
 }

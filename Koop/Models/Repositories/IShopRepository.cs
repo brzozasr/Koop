@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 
 namespace Koop.Models.Repositories
 {
@@ -21,10 +22,9 @@ namespace Koop.Models.Repositories
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
         
-        IEnumerable<Basket> GetBaskets();
+        IEnumerable<BasketsView> GetBaskets();
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
-        Supplier GetSupplier(string abbr);
-        IEnumerable<Order> GetBigOrders();
+        SupplierView GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
         public ShopRepositoryReturn UpdateProduct(Product product);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
@@ -43,5 +43,18 @@ namespace Koop.Models.Repositories
         public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity);
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId);
         public ShopRepositoryReturn AddProduct(Product product);
+        public IEnumerable<Product> GetProductsBySupplier(Guid supplierId);
+        public void UpdateSupplier(Supplier supplier);
+        public void ToggleSupplierAvailability(Supplier supplier);
+
+        public void ToggleProductAvailability(Product product);
+        
+        public void ToggleSupplierBlocked(Supplier supplier);
+
+        public void ToggleProductBlocked(Product product);
+        
+        public void ChangeOrderStatus(Order order, OrderStatuses status);
+
+        public void ClearBaskets();
     }
 }

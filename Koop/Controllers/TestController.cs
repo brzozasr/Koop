@@ -323,12 +323,19 @@ namespace Koop.Controllers
             return ToResult(response);
         }
 
-        [HttpGet("supplier/{abbr}")]
-        public IActionResult Supplier(string abbr)
-        {
-            return Ok(_uow.ShopRepository().GetSupplier(abbr));
-        }
+        // [HttpGet("supplier/{abbr}")]
+        // public IActionResult Supplier(string abbr)
+        // {
+        //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
+        // }
+        
 
+        // [HttpGet("supplier/{abbr}/edit")]
+        // public IActionResult EditSupplier(string abbr)
+        // {
+        //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
+        // }
+        
         [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
@@ -336,15 +343,15 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }
-
         
-        [HttpGet("supplier/{abbr}/edit")]
-        public IActionResult EditSupplier(string abbr)
+        /*[HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
+        public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
-            return Ok(_uow.ShopRepository().GetSupplier(abbr));
-        }
+            var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
+            
+            return ToResult(response);
+        }*/
         
-        //TODO EWA: refactor!
 
         // [HttpGet("allsuppliers")]
         // public IActionResult AllSuppliers()
@@ -358,17 +365,17 @@ namespace Koop.Controllers
             return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
         
-        [HttpGet("order/baskets")]
-        public IActionResult BasketName()
-        {
-            return Ok(_uow.ShopRepository().GetBaskets());
-        }
-        
-        [HttpGet("bigorders")]
-        public IActionResult BigOrders()
-        {
-            return Ok(_uow.Repository<Order>().GetAll());
-        }
+        // [HttpGet("order/baskets")]
+        // public IActionResult BasketName()
+        // {
+        //     return Ok(_uow.ShopRepository().GetBaskets());
+        // }
+        //
+        // [HttpGet("bigorders")]
+        // public IActionResult BigOrders()
+        // {
+        //     return Ok(_uow.Repository<Order>().GetAll());
+        // }
         
         [NonAction]
         private IActionResult ToResult(ShopRepositoryReturn shopRepositoryReturn)
@@ -381,6 +388,29 @@ namespace Koop.Controllers
             catch (Exception e)
             {
                 return Problem(e.Message, null, 500);
+            }
+        }
+        
+        [Authorize(Roles = "Admin,Koty")]
+        [HttpDelete("supplier/{supplierId}/remove")]
+        public async Task<IActionResult> RemoveSupplier(Guid supplierId)
+        {
+            try
+            {
+                // IEnumerable<Product> products = _uow.ShopRepository().GetProductsBySupplier(supplierId);
+                // _uow.ShopRepository().RemoveProduct(products);
+                
+                var supplier = _uow.Repository<Supplier>()
+                    .GetDetail(s => s.SupplierId == supplierId);
+                
+                _uow.Repository<Supplier>().Delete(supplier);
+                
+                await _uow.SaveChangesAsync();
+                return Ok(new {info = $"The supplier has been deleted (supplier ABBR: {supplier.SupplierAbbr})."});
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
     }

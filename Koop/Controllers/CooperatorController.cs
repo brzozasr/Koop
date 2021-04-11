@@ -65,7 +65,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Admin,Koty")]
-        [HttpDelete("Delete/OrderItem/{orderItemId}")]
+        [HttpDelete("Delete/OrderItem/{orderItemId:guid}")]
         public async Task<IActionResult> DeleteOrderItem([FromRoute] Guid orderItemId)
         {
             try
@@ -94,7 +94,8 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Admin,Koty")]
-        [HttpGet("{coopId}/Orders/Show")]
+        [HttpGet("{coopId:guid}/Orders/Grande", Name = "CoopOrdersGrande")]
+        [HttpGet("{coopId:guid}/Last/Order/Grande", Name = "CoopLastOrderGrande")]
         public async Task<IActionResult> OrdersCoopView([FromRoute] Guid coopId)
         {
             try
@@ -102,6 +103,15 @@ namespace Koop.Controllers
                 var orders = await _uow.Repository<OrderView>().GetAll()
                     .Where(coop => coop.Id == coopId)
                     .ToListAsync();
+                
+                if (ControllerContext.ActionDescriptor.AttributeRouteInfo?.Name == "CoopLastOrderGrande")
+                {
+                    var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                        .OrderByDescending(x => x.OrderStopDate)
+                        .FirstOrDefault()?.OrderId;
+                    
+                    orders = orders.Where(x => x.OrderId == lastOrderGrandeId).ToList();
+                }
                 
                 if (orders == null || orders.Count == 0)
                 {

@@ -390,5 +390,28 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
+        
+        [Authorize(Roles = "Admin,Koty")]
+        [HttpDelete("supplier/{supplierId}/remove")]
+        public async Task<IActionResult> RemoveSupplier(Guid supplierId)
+        {
+            try
+            {
+                // IEnumerable<Product> products = _uow.ShopRepository().GetProductsBySupplier(supplierId);
+                // _uow.ShopRepository().RemoveProduct(products);
+                
+                var supplier = _uow.Repository<Supplier>()
+                    .GetDetail(s => s.SupplierId == supplierId);
+                
+                _uow.Repository<Supplier>().Delete(supplier);
+                
+                await _uow.SaveChangesAsync();
+                return Ok(new {info = $"The supplier has been deleted (supplier ABBR: {supplier.SupplierAbbr})."});
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
     }
 }

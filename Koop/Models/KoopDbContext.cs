@@ -42,7 +42,6 @@ namespace Koop.Models
         public virtual DbSet<BasketsView> BasketViews { get; set; }
         public virtual DbSet<OrderGrandeHistoryView> OrderGrandeHistoryViews { get; set; }
 
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)

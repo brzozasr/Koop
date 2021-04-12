@@ -589,6 +589,5 @@ namespace Koop.Models.Repositories
             
             _koopDbContext.SaveChanges();
         }
-
     }
 }

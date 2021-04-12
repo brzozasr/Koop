@@ -3,15 +3,17 @@ using System;
 using Koop.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    partial class KoopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210412114651_snap3_refreshTokens")]
+    partial class snap3_refreshTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -450,6 +452,28 @@ namespace Koop.Migrations
                     b.ToTable("product_categories");
                 });
 
+            modelBuilder.Entity("Koop.Models.RefreshToken", b =>
+                {
+                    b.Property<Guid>("RefreshTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("refresh_token_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
+
+                    b.Property<Guid>("Token")
+                        .HasColumnType("uuid")
+                        .HasColumnName("refresh_token");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("RefreshTokenId")
+                        .HasName("pk_refreshtokens");
+
+                    b.ToTable("refresh_tokens");
+                });
+
             modelBuilder.Entity("Koop.Models.RepositoryModels.FnListForPacker", b =>
                 {
                     b.Property<string>("ProductName")
@@ -647,12 +671,6 @@ namespace Koop.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("RefreshTokenExp")
-                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");

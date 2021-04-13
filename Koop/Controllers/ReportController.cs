@@ -266,7 +266,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-
+        
         [Authorize(Roles = "Admin,Koty,Skarbnik")]
         [HttpGet("Debts/To/Suppliers")]
         public async Task<IActionResult> DebtsToSuppliers()

@@ -207,6 +207,7 @@ namespace Koop.Controllers
             return ToResult(response);
         }
 
+        [Authorize]
         [HttpGet("allUnits")]
         public IActionResult GetAllUnits()
         {

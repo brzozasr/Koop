@@ -23,6 +23,10 @@ namespace Koop.Models
         public double? Debt { get; set; }
         public Guid? FundId { get; set; }
         public Guid? BasketId { get; set; }
+
+        public string RefreshToken { get; set; }
+
+        public DateTime RefreshTokenExp { get; set; }
         
         public virtual Fund Fund { get; set; }
         public virtual ICollection<Basket> Baskets { get; set; }

@@ -648,6 +648,12 @@ namespace Koop.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RefreshTokenExp")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 

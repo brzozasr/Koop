@@ -53,7 +53,6 @@ namespace Koop
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
             
-
             services.Configure<JwtSettings>(Configuration.GetSection("Jwt"));
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();
 

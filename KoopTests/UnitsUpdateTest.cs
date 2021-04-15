@@ -23,7 +23,7 @@ namespace KoopTests
             });
             IMapper mapper = mapperConfig.CreateMapper();
 
-            _uow = new GenericUnitOfWork(new KoopDbContext(), mapper);
+            _uow = new GenericUnitOfWork(new KoopDbContext(), mapper, null);
         }
 
         [Order(1)]

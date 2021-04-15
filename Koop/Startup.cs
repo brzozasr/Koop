@@ -53,14 +53,26 @@ namespace Koop
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
             
-
             services.Configure<JwtSettings>(Configuration.GetSection("Jwt"));
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();
 
             services.AddAuth(jwtSettings);
             services.AddIdentityPasswordPolicy();
-            
+
             services.AddSwaggerExt();
+
+            services.AddControllers().AddNewtonsoftJson(o =>
+                o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+            
+            // CORS POLICY
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: "MyPolicy",
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:4200");
+                    });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -76,8 +88,10 @@ namespace Koop
             
             app.UseRouting();
             
-            app.UseAuth();
+            app.UseCors("MyPolicy");
             
+            app.UseAuth();
+
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }

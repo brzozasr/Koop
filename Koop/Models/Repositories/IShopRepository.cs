@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Koop.Extensions;
 using Koop.models;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
@@ -15,7 +16,7 @@ namespace Koop.Models.Repositories
     
     public interface IShopRepository
     {
-        public IEnumerable<ProductsShop> GetProductsShop(Expression<Func<ProductsShop, object>> orderBy, int start,
+        public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start,
             int count,
             OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid));
 
@@ -25,16 +26,23 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         SupplierView GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
-        public void UpdateProduct(Product product);
-        public void RemoveProduct(IEnumerable<Product> product);
+        public ShopRepositoryReturn UpdateProduct(Product product);
+        public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);
-        public void UpdateAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
-        public void RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
-        public void UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
-        public void RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
-        public void UpdateCategories(IEnumerable<Category> productCategories);
-        public void RemoveCategories(IEnumerable<Category> productCategories);
+        public ShopRepositoryReturn UpdateAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
+        public ShopRepositoryReturn RemoveAvailableQuantities(IEnumerable<AvailableQuantity> availableQuantity);
+        public ShopRepositoryReturn UpdateProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
+        public ShopRepositoryReturn RemoveProductCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos);
+        public ShopRepositoryReturn UpdateCategories(IEnumerable<Category> productCategories);
+        public ShopRepositoryReturn RemoveCategories(IEnumerable<Category> productCategories);
+        public ShopRepositoryReturn UpdateUnits(IEnumerable<Unit> units);
+        public ShopRepositoryReturn RemoveUnits(IEnumerable<Unit> units);
+        public ShopRepositoryReturn UpdateUserOrderQuantity(Guid orderId, int quantity);
+        public ShopRepositoryReturn UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId);
+        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity);
+        public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId);
+        public ShopRepositoryReturn AddProduct(Product product);
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId);
         public void UpdateSupplier(Supplier supplier);
         public void ToggleSupplierAvailability(Supplier supplier);
@@ -48,6 +56,5 @@ namespace Koop.Models.Repositories
         public void ChangeOrderStatus(Order order, OrderStatuses status);
 
         public void ClearBaskets();
-
     }
 }

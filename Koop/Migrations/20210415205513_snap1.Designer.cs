@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    [Migration("20210412174510_snap6_addRefreshTokenToUser")]
-    partial class snap6_addRefreshTokenToUser
+    [Migration("20210415205513_snap1")]
+    partial class snap1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

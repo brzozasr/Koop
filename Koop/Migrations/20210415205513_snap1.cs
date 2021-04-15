@@ -26,6 +26,17 @@ namespace Koop.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "baskets_view",
+                columns: table => new
+                {
+                    basket_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    cooperator = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
                 name: "categories",
                 columns: table => new
                 {
@@ -61,6 +72,20 @@ namespace Koop.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "order_grande_history_view",
+                columns: table => new
+                {
+                    order_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    order_start_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    order_stop_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    order_status_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    order_status_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                });
+
+            migrationBuilder.CreateTable(
                 name: "order_status",
                 columns: table => new
                 {
@@ -70,6 +95,28 @@ namespace Koop.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_order_status", x => x.order_status_id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "supplier_view",
+                columns: table => new
+                {
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    blocked = table.Column<bool>(type: "boolean", nullable: false),
+                    available = table.Column<bool>(type: "boolean", nullable: false),
+                    supplier_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    supplier_abbr = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    description = table.Column<string>(type: "text", nullable: true),
+                    email = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    picture = table.Column<string>(type: "text", nullable: true),
+                    order_closing_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    opro_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    opro_first_name = table.Column<string>(type: "text", nullable: true),
+                    opro_last_name = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
                 });
 
             migrationBuilder.CreateTable(
@@ -128,6 +175,8 @@ namespace Koop.Migrations
                     Debt = table.Column<double>(type: "double precision", nullable: true),
                     FundId = table.Column<Guid>(type: "uuid", nullable: true),
                     BasketId = table.Column<Guid>(type: "uuid", nullable: true),
+                    RefreshToken = table.Column<string>(type: "text", nullable: true),
+                    RefreshTokenExp = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -264,16 +313,15 @@ namespace Koop.Migrations
                 columns: table => new
                 {
                     basket_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
-                    CoopId = table.Column<Guid>(type: "uuid", nullable: true),
-                    basket_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false),
-                    CoopName = table.Column<string>(type: "text", nullable: true)
+                    coop_id = table.Column<Guid>(type: "uuid", nullable: true, defaultValueSql: "uuid_generate_v4()"),
+                    basket_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_baskets", x => x.basket_id);
                     table.ForeignKey(
                         name: "fk_baskets_coop_id",
-                        column: x => x.CoopId,
+                        column: x => x.coop_id,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -284,6 +332,8 @@ namespace Koop.Migrations
                 columns: table => new
                 {
                     supplier_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    blocked = table.Column<bool>(type: "boolean", nullable: false),
+                    available = table.Column<bool>(type: "boolean", nullable: false),
                     supplier_name = table.Column<string>(type: "character varying(100)", unicode: false, maxLength: 100, nullable: false),
                     supplier_abbr = table.Column<string>(type: "character varying(20)", unicode: false, maxLength: 20, nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
@@ -526,7 +576,7 @@ namespace Koop.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_baskets_coop_id",
                 table: "baskets",
-                column: "CoopId");
+                column: "coop_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_favorities_coop_id",
@@ -629,16 +679,25 @@ namespace Koop.Migrations
                 name: "baskets");
 
             migrationBuilder.DropTable(
+                name: "baskets_view");
+
+            migrationBuilder.DropTable(
                 name: "favorities");
 
             migrationBuilder.DropTable(
                 name: "FnListForPackers");
 
             migrationBuilder.DropTable(
+                name: "order_grande_history_view");
+
+            migrationBuilder.DropTable(
                 name: "ordered_items");
 
             migrationBuilder.DropTable(
                 name: "product_categories");
+
+            migrationBuilder.DropTable(
+                name: "supplier_view");
 
             migrationBuilder.DropTable(
                 name: "works");

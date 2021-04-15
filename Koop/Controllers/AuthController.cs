@@ -1,13 +1,16 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Koop.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 
 namespace Koop.Controllers
 {
@@ -38,16 +41,25 @@ namespace Koop.Controllers
         }
 
         [HttpPost("signin")]
-        public IActionResult SignIn(UserLogIn userLogIn)
+        public async Task<IActionResult> SignIn([FromBody]UserLogIn userLogIn)
         {
-            var token = _uow.AuthService().SignIn(userLogIn);
+            var refreshToken = await _uow.AuthService().SignIn(userLogIn);
 
-            if (token is null)
+            if (refreshToken is null)
             {
                 return BadRequest("Email or password incorrect");
             }
 
-            return Ok(token);
+            try
+            {
+                _uow.SaveChanges();
+                
+                return Ok(refreshToken);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         [HttpPost("newRole/{roleName}")]
@@ -139,6 +151,78 @@ namespace Koop.Controllers
             }
             
             return Problem(result.Errors.First().Description, null, 500); 
+        }
+
+        [HttpPost("user/refreshToken")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var refreshToken = HttpContext.Request.Headers["TokenRefresh"].ToString();
+
+            Console.WriteLine($"Token: {token}");
+            Console.WriteLine($"RefreshToken: {refreshToken}");
+            
+            ClaimsPrincipal principal;
+            try
+            {
+                principal = _uow.AuthService().GetPrincipalFromExpiredToken(token);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+            
+            // var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            var userId = principal.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null)
+            {
+                return Problem("Could not get the user Id from the token.", null, 401);
+            }
+            
+            /*string refreshTokenFromHeader = "";
+            if (HttpContext.Request.Cookies.ContainsKey("refresh_token"))
+            {
+                Console.WriteLine($"Cookie: {HttpContext.Request.Cookies["refresh_token"]}");
+                refreshTokenFromHeader = HttpContext.Request.Cookies["refresh_token"];
+            }
+            else
+            {
+                return Problem("Could not get the refresh token from the header.", null, 401);
+            }*/
+
+            var user = await _uow.AuthService().GetUserRaw(Guid.Parse(userId));
+            
+            /*var refreshToken = _uow.Repository<RefreshToken>().GetAll()
+                .SingleOrDefault(p => p.UserId == Guid.Parse(userId));*/
+
+            if (user is null)
+            {
+                return Problem("Could not get the user from the database.", null, 401);
+            }
+
+            if (user.RefreshTokenExp < DateTime.Now)
+            {
+                return Problem("Refresh token was expired.", null, 401);
+            }
+            
+            if (user.RefreshToken.Equals(refreshToken))
+            {
+                var response = await _uow.AuthService().GetNewToken(Guid.Parse(userId));
+                
+                try
+                {
+                    _uow.SaveChanges();
+                
+                    return Ok(response);
+                }
+                catch (Exception e)
+                {
+                    return Problem(e.Message, null, 500);
+                }
+            }
+            
+            return Problem("Refresh token from the header is not equal to the token in the database.", null, 401);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,6 +10,8 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
+using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -290,6 +293,19 @@ namespace Koop.Services
                 throw new SecurityTokenException("Invalid token");
 
             return principal;
+        }
+
+        public IEnumerable<UserEdit> GetAllUsers(Expression<Func<User, object>> orderBy, int start, int count,
+            OrderDirection orderDirection = OrderDirection.Asc)
+        {
+            var users = _userManager.Users;
+            
+            var usersSorted = orderDirection == OrderDirection.Asc ? users.OrderBy(orderBy) : users.OrderByDescending(orderBy);
+            var usersGrouped = usersSorted.Skip(start).Take(count);
+
+            var usersOutput = _mapper.Map<IEnumerable<User>, IEnumerable<UserEdit>>(usersGrouped);
+            
+            return usersOutput;
         }
     }
 }

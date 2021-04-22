@@ -72,26 +72,8 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("supplier/update")]
-        public IActionResult UpdateSupplier(SupplierView sup) 
+        public IActionResult UpdateSupplier([FromBody] SupplierView sup) 
         {
-            // //TEST
-            // SupplierViewMap sup = new SupplierViewMap()
-            // {
-            //     SupplierId = Guid.Parse("12414db7-aae9-42a4-afb4-ff4ec756ae29"),
-            //     SupplierAbbr = "TESTEDIT",
-            //     SupplierName = "Testowy Dostawca",
-            //     Description = "Teścik smaczny",
-            //     Email = "abc@abc.pl",
-            //     Phone = "12323456789",
-            //     OrderClosingDate = DateTime.Parse("2021-03-24 00:00:00"),
-            //     OproFirstName = "Tadeusz",
-            //     OproLastName = "Batko",
-            //     Blocked = false,
-            //     Available =  false,
-            //     Receivables = 0
-            // };
-            // //test end
-            
             try
             {
                 Guid? oproId = _uow.Repository<User>()
@@ -119,26 +101,8 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,Opro")]
         [HttpPost("supplier/add")]
-        public async Task<IActionResult> AddSupplier(SupplierView sup)
+        public async Task<IActionResult> AddSupplier([FromBody] SupplierView sup)
         {
-            // //TEST
-            // SupplierViewMap sup = new SupplierViewMap()
-            // {
-            //     SupplierAbbr = "TEST2",
-            //     SupplierName = "Testowany",
-            //     Description = "Pycha",
-            //     Email = "abc@abc.pl",
-            //     Phone = "123234",
-            //     OrderClosingDate = DateTime.Parse("2021-03-24 00:00:00"),
-            //     OproFirstName = "Henryk",
-            //     OproLastName = "Sienkiewicz",
-            //     Receivables = 100.50,
-            //     Blocked = true,
-            //     Available = false,
-            //     Picture = null
-            // };
-            // // test end
-
             try
             {
                 Guid? oproId = _uow.Repository<User>()

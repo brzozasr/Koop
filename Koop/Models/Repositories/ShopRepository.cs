@@ -511,7 +511,7 @@ namespace Koop.Models.Repositories
             return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
         
-        public void UpdateSupplier(Supplier supplier)
+        public void UpdateSupplier(Supplier supplier) 
         {
             _koopDbContext.Suppliers.Update(supplier);
             _koopDbContext.SaveChanges();
@@ -557,6 +557,7 @@ namespace Koop.Models.Repositories
                     break;
                 case OrderStatuses.Zamknięte:
                     //logic: close shop
+                    AssignBaskets(order.OrderId);
                     break;
                 case OrderStatuses.Anulowane:
                     //logic: close shop
@@ -588,6 +589,35 @@ namespace Koop.Models.Repositories
             }
             
             _koopDbContext.SaveChanges();
+        }
+
+        public void AssignBaskets(Guid orderId)
+        {
+            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o=>o.CoopId).Distinct().ToList();
+            // var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            var baskets = _koopDbContext.Baskets.ToList();
+            
+            int i = 0;
+            foreach (var id in usersIds)
+            {
+                var user = _koopDbContext.Users.SingleOrDefault(u => u.Id == id);
+                if (user != null)
+                {
+                    if (i >= baskets.Count)
+                    {
+                        Basket newBasket = new Basket()
+                        {
+                            BasketName = $"basket{i + 1}"
+                        };
+                        _koopDbContext.Baskets.Add(newBasket);
+                        _koopDbContext.SaveChanges();
+                    }
+                
+                    user.BasketId = baskets[i].BasketId;
+                    baskets[i].CoopId = user.Id;
+                    i++;
+                }
+            }
         }
     }
 }

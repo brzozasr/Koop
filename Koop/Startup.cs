@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Koop.Extensions;
@@ -39,6 +40,8 @@ namespace Koop
                     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     opts.JsonSerializerOptions.IgnoreNullValues = true;
                 });
+            
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddDbContext<KoopDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));

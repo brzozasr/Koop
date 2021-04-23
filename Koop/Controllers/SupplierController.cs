@@ -72,46 +72,22 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("supplier/update")]
-        public async Task<IActionResult> UpdateSupplier() //SupplierView sup
+        public IActionResult UpdateSupplier([FromBody] SupplierView sup) 
         {
-            //TEST
-            SupplierView sup = new SupplierView()
-            {
-                SupplierId = Guid.Parse("32594638-c2f2-413b-aedc-6041f9467b20"),
-                SupplierAbbr = "TEST",
-                SupplierName = "Testowy Supp",
-                Description = "Teścik smaczny",
-                Email = "abc@abcd.pl",
-                Phone = "123234",
-                OrderClosingDate = DateTime.Parse("2021-03-24 00:00:00"),
-                OproFirstName = "Tadeusz",
-                OproLastName = "Batko"
-            };
-            //test end
-            
             try
             {
-                User opro = _uow.Repository<User>()
-                    .GetDetail(u => u.FirstName == sup.OproFirstName && u.LastName == sup.OproLastName);
+                Guid? oproId = _uow.Repository<User>()
+                    .GetDetail(u => u.FirstName == sup.OproFirstName && u.LastName == sup.OproLastName)?.Id;
         
-                if (opro == null)
+                if (oproId == null)
                 {
                     return BadRequest(new {error = "OpRo name is invalid."});
                 }
 
-                Supplier supplier = new Supplier()
-                {
-                    SupplierAbbr = sup.SupplierAbbr,
-                    SupplierId = sup.SupplierId,
-                    SupplierName = sup.SupplierName,
-                    Description = sup.Description,
-                    Email = sup.Email,
-                    Phone = sup.Phone,
-                    Picture = sup.Picture,
-                    OrderClosingDate = sup.OrderClosingDate,
-                    OproId = opro.Id
-                };
-                _uow.ShopRepository().UpdateSupplier(supplier);
+                sup.OproId = (Guid) oproId;
+                var supplierMap = _mapper.Map<Supplier>(sup);
+
+                _uow.ShopRepository().UpdateSupplier(supplierMap);
                 
                 return Ok(new {info = $"The supplier has been updated (supplier ABBR: {sup.SupplierAbbr})."});
 
@@ -125,46 +101,23 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,Opro")]
         [HttpPost("supplier/add")]
-        public async Task<IActionResult> AddSupplier() //SupplierView sup
+        public async Task<IActionResult> AddSupplier([FromBody] SupplierView sup)
         {
-            //TEST
-            SupplierView sup = new SupplierView()
-            {
-                SupplierAbbr = "TEST",
-                SupplierName = "Testowy Dostawca",
-                Description = "Teścik smaczny",
-                Email = "abc@abc.pl",
-                Phone = "123234",
-                OrderClosingDate = DateTime.Parse("2021-03-24 00:00:00"),
-                OproFirstName = "Henryk",
-                OproLastName = "Sienkiewicz"
-            };
-            // test end
-
             try
             {
-                 User opro = _uow.Repository<User>()
-                    .GetDetail(u => u.FirstName == sup.OproFirstName && u.LastName == sup.OproLastName);
+                Guid? oproId = _uow.Repository<User>()
+                    .GetDetail(u => u.FirstName == sup.OproFirstName && u.LastName == sup.OproLastName)?.Id;
         
-                 if (opro == null)
-                 {
+                if (oproId == null)
+                {
                     return BadRequest(new {error = "OpRo name is invalid."});
-                 }
-        
-                 Supplier supplier = new Supplier()
-                 {
-                     SupplierAbbr = sup.SupplierAbbr,
-                     // SupplierId = sup.SupplierId,
-                     SupplierName = sup.SupplierName,
-                     Description = sup.Description,
-                     Email = sup.Email,
-                     Phone = sup.Phone,
-                     Picture = sup.Picture,
-                     // OrderClosingDate = sup.OrderClosingDate,
-                     OproId = opro.Id
-                 };
+                }
+
+                sup.OproId = (Guid) oproId;
                  
-                 await _uow.Repository<Supplier>().AddAsync(supplier);
+                 var supplierMap = _mapper.Map<Supplier>(sup);
+
+                 await _uow.Repository<Supplier>().AddAsync(supplierMap);
         
                  await _uow.SaveChangesAsync();
                  return Ok(new {info = $"The supplier has been added (supplier ABBR: {sup.SupplierAbbr})."});

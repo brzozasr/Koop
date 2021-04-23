@@ -33,7 +33,12 @@ namespace Koop.Controllers
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetBaskets());
+                var baskets = _uow.ShopRepository().GetBaskets();
+                if (baskets != null && baskets.Any())
+                {
+                    return Ok(_uow.ShopRepository().GetBaskets());
+                }
+                return BadRequest(new {error = "Baskets are empty. No order is ready."});
             }
             catch (Exception e)
             {
@@ -56,15 +61,40 @@ namespace Koop.Controllers
         }
         
         // [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpGet("order/{orderId}/{status}/")]
+        [HttpGet("order/{orderId}/{status}")]
         public IActionResult ChangeOrderStatus(Guid orderId, OrderStatuses status)
         {
             try
             {
+                // only one order can be open
+                if (status == OrderStatuses.Otwarte)
+                {
+                    var orderOpen = _uow.Repository<Order>().GetAll().Where(o => o.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString()).ToList();
+
+                    if (orderOpen.Count > 0 )
+                    {
+                        return BadRequest(new {error = "There is already an open order!"});
+                    }
+                }
+                
+                
                 Order order = _uow.Repository<Order>().GetDetail(o => o.OrderId == orderId);
+                
+                // you can close or cancel only an open order
+                if (OrderStatuses.Zamknięte == status || OrderStatuses.Anulowane == status)
+                {
+                    string currentStatusName = _uow.Repository<OrderStatus>()
+                        .GetDetail(s => s.OrderStatusId == order.OrderStatusId).OrderStatusName;
+                    bool currentStatusOpen = (OrderStatuses.Otwarte.ToString() == currentStatusName);
+
+                    if (!currentStatusOpen)
+                    {
+                        return BadRequest(new {error = "This order must be open first."});
+                    }
+                }
+
                 _uow.ShopRepository().ChangeOrderStatus(order, status);
                 return Ok(new {info = "The order status has been changed."});
-
             }
             catch (Exception e)
             {
@@ -73,3 +103,12 @@ namespace Koop.Controllers
         }    
     }
 }
+
+
+// var orderOpen = _uow.Repository<Order>()
+//     .GetDetail(o => o.OrderStatus.OrderStatusName == "Otwarte");
+//
+// if (orderOpen != null && orderOpen.OrderId != orderId)
+// {
+//     return BadRequest(new {error = "There is already another order open!"});
+// }

@@ -414,5 +414,18 @@ namespace Koop.Controllers
                 return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
+
+        [HttpGet("funds")]
+        public IActionResult GetAllFunds()
+        {
+            try
+            {
+                return Ok(_uow.Repository<Fund>().GetAll());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
+        }
     }
 }

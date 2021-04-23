@@ -29,5 +29,7 @@ namespace Koop.Services
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
         public IEnumerable<UserEdit> GetAllUsers(Expression<Func<User, object>> orderBy, int start, int count,
             OrderDirection orderDirection = OrderDirection.Asc);
+
+        public Task<bool> EmailDuplicationCheck(string email);
     }
 }

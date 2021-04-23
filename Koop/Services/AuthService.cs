@@ -50,10 +50,23 @@ namespace Koop.Services
             return _userManager.CreateAsync(user, userSignUp.Password);
         }*/
         
-        public Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        public async Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
         {
             var user = _mapper.Map<User>(newUser);
-            return _userManager.CreateAsync(user, newUser.NewPassword);
+            var isEmailAlreadyPresent = await EmailDuplicationCheck(user.Email.ToUpper());
+            
+            if (isEmailAlreadyPresent)
+            {
+                return null;
+            }
+            
+            return await _userManager.CreateAsync(user, newUser.NewPassword);
+        }
+
+        public async Task<bool> EmailDuplicationCheck(string email)
+        {
+            var emailsCount = await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
+            return emailsCount > 0;
         }
 
         public async Task<RefreshToken> SignIn(UserLogIn userLogIn)

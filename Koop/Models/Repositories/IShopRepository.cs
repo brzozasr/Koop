@@ -56,5 +56,7 @@ namespace Koop.Models.Repositories
         public void ChangeOrderStatus(Order order, OrderStatuses status);
 
         public void ClearBaskets();
+
+        public void AssignBaskets(Guid orderId);
     }
 }

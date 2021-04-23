@@ -35,6 +35,7 @@ namespace Koop.Extensions
         RemoveProductSuccess,
         UpdateProductSuccess,
         AddProductSuccess,
+        UpdateSupplierSuccess
     }
     
     public static class ShopRepositoryExtensions
@@ -176,6 +177,11 @@ namespace Koop.Extensions
                 ShopRepositoryReturn.AddProductSuccess => new ShopRepositoryResponse()
                 {
                     Message = "New product added successfully.",
+                    StatusCode = 200
+                },
+                ShopRepositoryReturn.UpdateSupplierSuccess => new ShopRepositoryResponse()
+                {
+                    Message = "Supplier updated successfully.",
                     StatusCode = 200
                 },
                 _ => new ShopRepositoryResponse()

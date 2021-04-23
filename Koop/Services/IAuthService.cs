@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Koop.Models;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,5 +27,9 @@ namespace Koop.Services
         public Task<RefreshToken> GetNewToken(Guid userId);
         public string GenerateRefreshToken();
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
+        public IEnumerable<UserEdit> GetAllUsers(Expression<Func<User, object>> orderBy, int start, int count,
+            OrderDirection orderDirection = OrderDirection.Asc);
+
+        public Task<bool> EmailDuplicationCheck(string email);
     }
 }

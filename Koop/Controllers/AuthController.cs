@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -29,7 +30,13 @@ namespace Koop.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp([FromBody]UserEdit newUser)
         {
+            Console.WriteLine($"User first name: {newUser.FirstName}");
             var userCreateResult = await _uow.AuthService().SignUp(newUser);
+
+            if (userCreateResult is null)
+            {
+                return Problem("User with the same email already exists.", null, 500);
+            }
             
             if (userCreateResult.Succeeded)
             {
@@ -223,6 +230,53 @@ namespace Koop.Controllers
             }
             
             return Problem("Refresh token from the header is not equal to the token in the database.", null, 401);
+        }
+
+        [HttpGet("user/all")]
+        public IActionResult GetAllUsers(string orderBy = "lastName", int start = 0, int count = 10, string orderDir = "asc")
+        {
+            orderBy = orderBy.ToLower();
+            
+            Expression<Func<User, object>> order = orderBy switch
+            {
+                "firstName" => p => p.FirstName,
+                "lastName" => p => p.LastName,
+                "email" => p => p.Email,
+                _ => p => p.LastName
+            };
+            
+            OrderDirection direction = orderDir switch
+            {
+                "asc" => OrderDirection.Asc,
+                "desc" => OrderDirection.Desc,
+                _ => OrderDirection.Asc
+            };
+
+            var result = _uow.AuthService().GetAllUsers(order, start, count, direction);
+            
+            return Ok(result);
+            //return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction));
+        }
+
+        [HttpGet("user/email/check")]
+        public async Task<IActionResult> EmailDuplicationCheck(string email)
+        {
+            Console.WriteLine($"Email: {email}");
+            try
+            {
+                var result = await _uow.AuthService().EmailDuplicationCheck(email.ToUpper());
+
+                var output = new
+                {
+                    Result = result
+                };
+
+                return Ok(output);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
         }
     }
 }

@@ -48,8 +48,8 @@ namespace Koop.Controllers
                 return Created(string.Empty, string.Empty);
             }
 
-            // return Problem(userCreateResult.Errors.ToString(), null, 500);
-            return BadRequest(userCreateResult.Errors);
+            return Problem(userCreateResult.Errors.FirstOrDefault().ToString(), null, 500);
+            // return BadRequest(userCreateResult.Errors);
         }
 
         [HttpPost("signin")]
@@ -273,6 +273,26 @@ namespace Koop.Controllers
             try
             {
                 var result = await _uow.AuthService().EmailDuplicationCheck(email.ToUpper());
+
+                var output = new
+                {
+                    Result = result
+                };
+
+                return Ok(output);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
+        }
+        
+        [HttpGet("user/username/check")]
+        public async Task<IActionResult> UsernameDuplicationCheck(string username)
+        {
+            try
+            {
+                var result = await _uow.AuthService().UserDuplicationCheck(username.ToUpper());
 
                 var output = new
                 {

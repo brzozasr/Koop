@@ -68,6 +68,12 @@ namespace Koop.Services
             var emailsCount = await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
             return emailsCount > 0;
         }
+        
+        public async Task<bool> UserDuplicationCheck(string username)
+        {
+            var usernameCount = await _userManager.Users.Where(p => p.NormalizedUserName.Equals(username)).CountAsync();
+            return usernameCount > 0;
+        }
 
         public async Task<RefreshToken> SignIn(UserLogIn userLogIn)
         {

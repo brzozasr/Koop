@@ -67,7 +67,14 @@ namespace Koop
             services.AddControllers().AddNewtonsoftJson(o =>
                 o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
-            services.AddCors();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder
+                    .WithOrigins("http://localhost:4200")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -83,9 +90,7 @@ namespace Koop
             
             app.UseRouting();
 
-            app.UseCors(p => p
-                .AllowAnyHeader()
-                .AllowAnyOrigin());
+            app.UseCors("CorsPolicy");
             
             app.UseAuth();
             

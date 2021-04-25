@@ -124,7 +124,14 @@ namespace Koop.Controllers
         [HttpGet("user/{userId}/get")]
         public IActionResult GetUser(Guid userId)
         {
-            return Ok(_uow.AuthService().GetUser(userId));
+            var result = _uow.AuthService().GetUser(userId);
+
+            if (result is null)
+            {
+                return Problem("Użytkownik nie istnieje", null, 500);
+            }
+            
+            return Ok(result);
         }
 
         [Authorize]
@@ -158,14 +165,27 @@ namespace Koop.Controllers
         [HttpDelete("user/{userId}/remove")]
         public async Task<IActionResult> RemoveUser(Guid userId)
         {
-            var result = await _uow.AuthService().RemoveUser(userId);
-
-            if (result.Succeeded)
+            Response.Headers.Add("Access-Control-Allow-Methods", "DELETE");
+            try
             {
-                return Ok(new ShopRepositoryResponse() {Message = "User removed.", StatusCode = 200});
+                var result = await _uow.AuthService().RemoveUser(userId);
+
+                if (result is null)
+                {
+                    return Problem("Nie znaleziono użytkownika", null, 500);
+                }
+                
+                if (result.Succeeded)
+                {
+                    return Ok(new {Detail = "Użytkownik został usunięty", Status = 200});
+                }
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
             }
             
-            return Problem(result.Errors.First().Description, null, 500); 
+            return Problem("Unknown error on the server side", null, 500);
         }
 
         [HttpPost("user/refreshToken")]
@@ -241,7 +261,7 @@ namespace Koop.Controllers
         }
 
         [HttpGet("user/all")]
-        public IActionResult GetAllUsers(string orderBy = "lastName", int start = 0, int count = 10, string orderDir = "asc")
+        public IActionResult GetAllUsers(string orderBy = "lastName", int start = 0, int count = 0, string orderDir = "asc")
         {
             orderBy = orderBy.ToLower();
             

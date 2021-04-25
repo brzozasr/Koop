@@ -31,5 +31,6 @@ namespace Koop.Services
             OrderDirection orderDirection = OrderDirection.Asc);
 
         public Task<bool> EmailDuplicationCheck(string email);
+        public Task<bool> UserDuplicationCheck(string email);
     }
 }

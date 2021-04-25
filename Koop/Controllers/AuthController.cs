@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Models;
 using Koop.Models.Auth;
@@ -11,6 +12,7 @@ using Koop.Models.RepositoryModels;
 using Koop.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 
 namespace Koop.Controllers
@@ -19,11 +21,14 @@ namespace Koop.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private ILogger<AuthController> _logger;
+        
         private IGenericUnitOfWork _uow;
 
-        public AuthController(IGenericUnitOfWork genericUnitOfWork)
+        public AuthController(IGenericUnitOfWork genericUnitOfWork, ILogger<AuthController> logger)
         {
             _uow = genericUnitOfWork;
+            _logger = logger;
         }
         
         [AllowAnonymous]
@@ -43,18 +48,21 @@ namespace Koop.Controllers
                 return Created(string.Empty, string.Empty);
             }
 
-            // return Problem(userCreateResult.Errors.ToString(), null, 500);
-            return BadRequest(userCreateResult.Errors);
+            return Problem(userCreateResult.Errors.FirstOrDefault().ToString(), null, 500);
+            // return BadRequest(userCreateResult.Errors);
         }
 
         [HttpPost("signin")]
         public async Task<IActionResult> SignIn([FromBody]UserLogIn userLogIn)
         {
+            _logger.LogInformation(2, "Logging in {User}", userLogIn.Email);
+            Response response = new Response();
+            
             var refreshToken = await _uow.AuthService().SignIn(userLogIn);
 
             if (refreshToken is null)
             {
-                return BadRequest("Email or password incorrect");
+                return Problem("Nieprawidłowy login lub hasło.", null, 500);
             }
 
             try
@@ -265,6 +273,26 @@ namespace Koop.Controllers
             try
             {
                 var result = await _uow.AuthService().EmailDuplicationCheck(email.ToUpper());
+
+                var output = new
+                {
+                    Result = result
+                };
+
+                return Ok(output);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
+        }
+        
+        [HttpGet("user/username/check")]
+        public async Task<IActionResult> UsernameDuplicationCheck(string username)
+        {
+            try
+            {
+                var result = await _uow.AuthService().UserDuplicationCheck(username.ToUpper());
 
                 var output = new
                 {

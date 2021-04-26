@@ -25,6 +25,28 @@ namespace Koop.Controllers
             _mapper = mapper;
         }
         
+        // [Authorize(Roles = "Admin,Koty,Opro")]
+        [HttpGet("allNames")]
+        public IActionResult AllCooperatorsNames()
+        {
+            try
+            {
+                List<CooperantName> namesMap = new List<CooperantName>();
+                var users = _uow.Repository<User>().GetAll();
+                foreach (var user in users)
+                {
+                    namesMap.Add(_mapper.Map<CooperantName>(user));
+                }
+                
+                return Ok(namesMap);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+            
+        
         [Authorize(Roles = "Admin,Koty")]
         [HttpPost("Update/OrderItem/Quantity")]
         public async Task<IActionResult> UpdateOrderItem([FromBody] OrderedItemQuantityUpdate orderItem)

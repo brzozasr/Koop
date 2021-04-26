@@ -436,5 +436,34 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
+        
+        [Authorize]
+        [HttpGet("Get/Suppliers")]
+        public async Task<IActionResult> GetSuppliers()
+        {
+            try
+            {
+                var suppliers = await _uow.Repository<Supplier>().GetAll()
+                    .OrderBy(sup => sup.SupplierName)
+                    .Where(sn => sn.SupplierName != null)
+                    .Select(x => new
+                    {
+                        x.SupplierId,
+                        x.SupplierName,
+                        x.SupplierAbbr
+                    }).ToListAsync();
+
+                if (suppliers.Any())
+                {
+                    return Ok(suppliers);
+                }
+
+                return Ok(new {info = "There are no suppliers."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+        }
     }
 }

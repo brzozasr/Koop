@@ -103,12 +103,3 @@ namespace Koop.Controllers
         }    
     }
 }
-
-
-// var orderOpen = _uow.Repository<Order>()
-//     .GetDetail(o => o.OrderStatus.OrderStatusName == "Otwarte");
-//
-// if (orderOpen != null && orderOpen.OrderId != orderId)
-// {
-//     return BadRequest(new {error = "There is already another order open!"});
-// }

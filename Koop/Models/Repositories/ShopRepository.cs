@@ -480,7 +480,7 @@ namespace Koop.Models.Repositories
                 c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
         }
 
-        public SupplierView GetSupplier(Guid supplierId)
+        public Supplier GetSupplier(Guid supplierId)
         {
             // var supplier = _koopDbContext.SupplierViews
             //     .Include(s => s.Opro)
@@ -503,7 +503,7 @@ namespace Koop.Models.Repositories
 
             // return supplier;
             
-            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierId == supplierId);
+            return _koopDbContext.Suppliers.SingleOrDefault(s=> s.SupplierId == supplierId);
         }
 
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)

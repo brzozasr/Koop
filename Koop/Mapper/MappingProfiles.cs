@@ -59,6 +59,8 @@ namespace Koop.Mapper
             CreateMap<User, UserEdit>();
 
             CreateMap<SupplierViewMap, Supplier>();
+            CreateMap<Supplier, SupplierViewMap>();
+            CreateMap<User, CooperantName>();
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Koop.Models.Repositories
         
         IEnumerable<BasketsView> GetBaskets();
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
-        SupplierView GetSupplier(Guid supplierId);
+        Supplier GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
         public ShopRepositoryReturn UpdateProduct(Product product);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);

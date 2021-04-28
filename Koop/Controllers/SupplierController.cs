@@ -10,6 +10,7 @@ using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Koop.Controllers
 {
@@ -19,11 +20,13 @@ namespace Koop.Controllers
     {
         private IGenericUnitOfWork _uow;
         private readonly IMapper _mapper;
+        // private ILogger _logger;
 
         public SupplierController(IGenericUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
             _mapper = mapper;
+            // _logger = logger;
         }
         
         [AllowAnonymous]
@@ -32,6 +35,25 @@ namespace Koop.Controllers
         {
             try
             {
+                // _logger.LogInformation("Displayed all suppliers");
+
+                // var suppliers = _uow.Repository<Supplier>().GetAll();
+                //
+                // List<SupplierViewMap> suppliersMap = new List<SupplierViewMap>();
+                //
+                // foreach (var sup in suppliers)
+                // {
+                //     var tempSup = _mapper.Map<SupplierViewMap>(sup);
+                //     
+                //     tempSup.OproFirstName = _uow.Repository<User>()
+                //         .GetDetail(u => u.Id == sup.OproId)?.FirstName;   
+                //     tempSup.OproLastName = _uow.Repository<User>()
+                //         .GetDetail(u => u.Id == sup.OproId)?.LastName;  
+                //     suppliersMap.Add(tempSup);
+                // }
+                //
+                //
+                // return Ok(suppliersMap);
                 return Ok(_uow.Repository<SupplierView>().GetAll());
             }
             catch (Exception e)
@@ -46,7 +68,14 @@ namespace Koop.Controllers
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetSupplier(supplierId));
+                var supplier = _uow.ShopRepository().GetSupplier(supplierId);
+                
+                var supplierMap = _mapper.Map<SupplierViewMap>(supplier);
+                supplierMap.OproFirstName = _uow.Repository<User>()
+                    .GetDetail(u => u.Id == supplier.OproId)?.FirstName;   
+                supplierMap.OproLastName = _uow.Repository<User>()
+                    .GetDetail(u => u.Id == supplier.OproId)?.LastName;  
+                return Ok(supplierMap);
         
             }
             catch (Exception e)
@@ -70,12 +99,13 @@ namespace Koop.Controllers
             }
         }
         
-        [Authorize(Roles = "Admin,Koty,OpRo")]
+        // [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpPost("supplier/update")]
-        public IActionResult UpdateSupplier([FromBody] SupplierView sup) 
+        public IActionResult UpdateSupplier([FromBody] SupplierViewMap sup) 
         {
             try
             {
+                
                 Guid? oproId = _uow.Repository<User>()
                     .GetDetail(u => u.FirstName == sup.OproFirstName && u.LastName == sup.OproLastName)?.Id;
         
@@ -101,7 +131,7 @@ namespace Koop.Controllers
         
         [Authorize(Roles = "Admin,Koty,Opro")]
         [HttpPost("supplier/add")]
-        public async Task<IActionResult> AddSupplier([FromBody] SupplierView sup)
+        public async Task<IActionResult> AddSupplier([FromBody] SupplierViewMap sup)
         {
             try
             {

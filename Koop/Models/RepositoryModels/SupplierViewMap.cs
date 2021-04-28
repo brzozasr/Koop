@@ -18,9 +18,24 @@ namespace Koop.Models.RepositoryModels
         public Guid OproId { get; set; }
 
         public double Receivables { get; set; }
-        [NotMapped] public string OproFirstName { get; set; }
-        [NotMapped] public string OproLastName { get; set; }
+        public string OproFirstName { get; set; }
+        public string OproLastName { get; set; }
 
-        [NotMapped] public string OproFullName => $"{OproFirstName} {OproLastName}";
+        [NotMapped] private string _oproFullName;
+        
+        [NotMapped] public string OproFullName
+        {
+            get
+            {
+                return $"{OproFirstName} {OproLastName}";
+            }
+            set
+            {
+                OproFirstName = value.Split(" ")[0];
+                OproLastName = value.Split(" ")[1];
+            }
+        }
+
+        // [NotMapped] public string OproFullName => $"{OproFirstName} {OproLastName}";
     }
 }

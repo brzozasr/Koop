@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Koop.Extensions;
@@ -39,6 +40,8 @@ namespace Koop
                     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     opts.JsonSerializerOptions.IgnoreNullValues = true;
                 });
+            
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddDbContext<KoopDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
@@ -53,7 +56,6 @@ namespace Koop
             IMapper mapper = mapperConfig.CreateMapper();
             services.AddSingleton(mapper);
             
-
             services.Configure<JwtSettings>(Configuration.GetSection("Jwt"));
             var jwtSettings = Configuration.GetSection("Jwt").Get<JwtSettings>();
 
@@ -64,6 +66,15 @@ namespace Koop
 
             services.AddControllers().AddNewtonsoftJson(o =>
                 o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder
+                    .WithOrigins("http://localhost:4200")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -78,6 +89,8 @@ namespace Koop
             app.UseHttpsRedirection();
             
             app.UseRouting();
+
+            app.UseCors("CorsPolicy");
             
             app.UseAuth();
             

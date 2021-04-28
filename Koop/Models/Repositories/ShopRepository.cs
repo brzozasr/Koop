@@ -26,8 +26,16 @@ namespace Koop.Models.Repositories
         }
         
         public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start, int count,
-            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid))
+            OrderDirection orderDirection = OrderDirection.Asc, Guid categoryId = default(Guid), Guid productId = default(Guid))
         {
+            IQueryable<Guid> productsIdOfCategory = null;
+            if (categoryId != default(Guid))
+            {
+                productsIdOfCategory = _koopDbContext.ProductCategories
+                    .Where(p => p.CategoryId == categoryId)
+                    .Select(p => p.ProductId);
+            }
+
             var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic")?.OrderId ?? Guid.Empty;
             
             var orderedProducts = _koopDbContext.OrderedItems
@@ -61,6 +69,11 @@ namespace Koop.Models.Repositories
                 ? _koopDbContext.Products
                 : _koopDbContext.Products.Where(p => p.ProductId == productId);
             
+            if (categoryId !=default(Guid))
+            {
+                products_tmp = products_tmp.Where(p => productsIdOfCategory.Any(sp => sp == p.ProductId));
+            }
+
             var products = products_tmp
                 .Include(p => p.Supplier)
                 .Include(p => p.Unit)
@@ -480,7 +493,7 @@ namespace Koop.Models.Repositories
                 c.FirstName.ToLower() == firstName && c.LastName.ToLower() == lastName);
         }
 
-        public SupplierView GetSupplier(Guid supplierId)
+        public Supplier GetSupplier(Guid supplierId)
         {
             // var supplier = _koopDbContext.SupplierViews
             //     .Include(s => s.Opro)
@@ -503,7 +516,7 @@ namespace Koop.Models.Repositories
 
             // return supplier;
             
-            return _koopDbContext.SupplierViews.SingleOrDefault(s=> s.SupplierId == supplierId);
+            return _koopDbContext.Suppliers.SingleOrDefault(s=> s.SupplierId == supplierId);
         }
 
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)
@@ -511,7 +524,7 @@ namespace Koop.Models.Repositories
             return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
         
-        public void UpdateSupplier(Supplier supplier)
+        public void UpdateSupplier(Supplier supplier) 
         {
             _koopDbContext.Suppliers.Update(supplier);
             _koopDbContext.SaveChanges();
@@ -557,6 +570,7 @@ namespace Koop.Models.Repositories
                     break;
                 case OrderStatuses.Zamknięte:
                     //logic: close shop
+                    AssignBaskets(order.OrderId);
                     break;
                 case OrderStatuses.Anulowane:
                     //logic: close shop
@@ -590,5 +604,33 @@ namespace Koop.Models.Repositories
             _koopDbContext.SaveChanges();
         }
 
+        public void AssignBaskets(Guid orderId)
+        {
+            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o=>o.CoopId).Distinct().ToList();
+            // var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            var baskets = _koopDbContext.Baskets.ToList();
+            
+            int i = 0;
+            foreach (var id in usersIds)
+            {
+                var user = _koopDbContext.Users.SingleOrDefault(u => u.Id == id);
+                if (user != null)
+                {
+                    if (i >= baskets.Count)
+                    {
+                        Basket newBasket = new Basket()
+                        {
+                            BasketName = $"basket{i + 1}"
+                        };
+                        _koopDbContext.Baskets.Add(newBasket);
+                        _koopDbContext.SaveChanges();
+                    }
+                
+                    user.BasketId = baskets[i].BasketId;
+                    baskets[i].CoopId = user.Id;
+                    i++;
+                }
+            }
+        }
     }
 }

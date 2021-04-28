@@ -29,5 +29,13 @@ namespace Koop.Models.Auth
         public string OldPassword { get; set; }
         [StringLength(100, MinimumLength = 8, ErrorMessage = "The password must be at least 8 characters long.")]
         public string NewPassword { get; set; }
+
+        private Guid? _id;
+
+        public Guid? Id
+        {
+            get => _id;
+            set => _id = value == Guid.Empty ? null : value;
+        }
     }
 }

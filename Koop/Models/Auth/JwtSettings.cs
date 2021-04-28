@@ -7,5 +7,6 @@ namespace Koop.Models.Auth
         public string Secret { get; set; }
 
         public int ExpirationInMinutes { get; set; }
+        public int RefreshTokenExpirationInMinutes { get; set; }
     }
 }

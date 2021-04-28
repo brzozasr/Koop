@@ -86,7 +86,7 @@ namespace Koop.Controllers
 
         [Authorize]
         [HttpGet("products")]
-        public IActionResult Products(string orderBy = "name", int start = 1, int count = 10, string orderDir = "asc")
+        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc", Guid categoryId = default(Guid))
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
             orderBy = orderBy.ToLower();
@@ -109,7 +109,7 @@ namespace Koop.Controllers
                 _ => OrderDirection.Asc
             };
 
-            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction));
+            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
         }
 
         [HttpGet("product/{productId}/get")]

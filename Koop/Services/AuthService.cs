@@ -143,7 +143,7 @@ namespace Koop.Services
             return _userManager.FindByIdAsync(userId.ToString());
         }
         
-        public async Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
+        public async Task<ProblemResponse> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
         {
             if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
             {
@@ -151,22 +151,49 @@ namespace Koop.Services
 
                 if (user is not null)
                 {
-                    var setEmailResult = _userManager.SetEmailAsync(user, userEdit.Email).Result;
+                    var setEmailResult = await _userManager.SetEmailAsync(user, userEdit.Email);
                     if (!setEmailResult.Succeeded)
                     {
-                        return setEmailResult;
+                        return new ProblemResponse()
+                        {
+                            Detail = "Problem przy zmianie adresu e-mail",
+                            Status = 500
+                        };
                     }
-                    
-                    var setUserNameResult = _userManager.SetUserNameAsync(user, userEdit.UserName).Result;
+
+                    var setUserNameResult = await _userManager.SetUserNameAsync(user, userEdit.UserName);
                     if (!setUserNameResult.Succeeded)
                     {
-                        return setUserNameResult;
+                        return new ProblemResponse()
+                        {
+                            Detail = "Problem przy zmianie nazwy użytkownika",
+                            Status = 500
+                        };
                     }
-                    
-                    var setPhoneNumberResult = _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber).Result;
+
+                    var setPhoneNumberResult = await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
                     if (!setPhoneNumberResult.Succeeded)
                     {
-                        return setPhoneNumberResult;
+                        return new ProblemResponse()
+                        {
+                            Detail = "Problem przy zmianie numeru telefonu",
+                            Status = 500
+                        };
+                    }
+
+                    if (userEdit.OldPassword is not null)
+                    {
+                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword,
+                            userEdit.NewPassword);
+
+                        if (!changePasswordResult.Succeeded)
+                        {
+                            return new ProblemResponse()
+                            {
+                                Detail = "Nieprawidłowe hasło. Podaj aktualne hasło dla wybranego użytkownika",
+                                Status = 500
+                            };
+                        }
                     }
 
                     user.BasketId = userEdit.BasketId;
@@ -176,17 +203,22 @@ namespace Koop.Services
                     user.FirstName = userEdit.FirstName;
                     user.LastName = userEdit.LastName;
 
-                    if (userEdit.OldPassword is not null)
+                    var updateUserResult = await _userManager.UpdateAsync(user);
+                    if (!updateUserResult.Succeeded)
                     {
-                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword, userEdit.NewPassword);
-                        if (!changePasswordResult.Succeeded)
+                        return new ProblemResponse()
                         {
-                            return changePasswordResult;
-                        }
+                            Detail = "Nie udało się zaktualizować danych",
+                            Status = 500
+                        };
                     }
+                    
+                    return new ProblemResponse()
+                    {
+                        Detail = "Dane użytkownika zostały zaktualizowane",
+                        Status = 200
+                    };
                 }
-            
-                return await _userManager.UpdateAsync(user);
             }
 
             return null;

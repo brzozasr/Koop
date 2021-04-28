@@ -143,19 +143,15 @@ namespace Koop.Controllers
             
             if (authUserId is not null)
             {
-                var result = await _uow.AuthService().EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
-
+                var result = await _uow.AuthService()
+                    .EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
+                
                 if (result is null)
                 {
                     return Problem("Not enough privileges to edit user's credentials.", null, 500);
                 }
                 
-                if (result.Succeeded)
-                {
-                    return Ok(userEdit);
-                }
-                
-                return Problem(result.Errors.First().Description, null, 500);
+                return Ok(result);
             }
             
             return Problem("User is not authenticated.", null, 500);

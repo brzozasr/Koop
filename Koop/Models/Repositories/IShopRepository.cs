@@ -18,7 +18,7 @@ namespace Koop.Models.Repositories
     {
         public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start,
             int count,
-            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid));
+            OrderDirection orderDirection = OrderDirection.Asc, Guid categoryId = default(Guid), Guid productId = default(Guid));
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
         

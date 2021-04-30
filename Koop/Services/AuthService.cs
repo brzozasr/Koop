@@ -192,11 +192,15 @@ namespace Koop.Services
             return null;
         }
         
-        public Task<IdentityResult> RemoveUser(Guid userId)
+        public async Task<IdentityResult> RemoveUser(Guid userId)
         {
-            var user = _userManager.FindByIdAsync(userId.ToString());
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+            {
+                return null;
+            }
 
-            return _userManager.DeleteAsync(user.Result);
+            return await _userManager.DeleteAsync(user);
         }
         
         public Task<IdentityResult> CreateRole(string roleName)
@@ -320,7 +324,16 @@ namespace Koop.Services
             var users = _userManager.Users;
             
             var usersSorted = orderDirection == OrderDirection.Asc ? users.OrderBy(orderBy) : users.OrderByDescending(orderBy);
-            var usersGrouped = usersSorted.Skip(start).Take(count);
+
+            IQueryable<User> usersGrouped;
+            if (count > 0)
+            {
+                usersGrouped = usersSorted.Skip(start).Take(count);
+            }
+            else
+            {
+                usersGrouped = usersSorted.Skip(start);
+            }
 
             var usersOutput = _mapper.Map<IEnumerable<User>, IEnumerable<UserEdit>>(usersGrouped);
             

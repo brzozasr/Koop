@@ -26,8 +26,16 @@ namespace Koop.Models.Repositories
         }
         
         public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start, int count,
-            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid))
+            OrderDirection orderDirection = OrderDirection.Asc, Guid categoryId = default(Guid), Guid productId = default(Guid))
         {
+            IQueryable<Guid> productsIdOfCategory = null;
+            if (categoryId != default(Guid))
+            {
+                productsIdOfCategory = _koopDbContext.ProductCategories
+                    .Where(p => p.CategoryId == categoryId)
+                    .Select(p => p.ProductId);
+            }
+
             var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic")?.OrderId ?? Guid.Empty;
             
             var orderedProducts = _koopDbContext.OrderedItems
@@ -61,6 +69,11 @@ namespace Koop.Models.Repositories
                 ? _koopDbContext.Products
                 : _koopDbContext.Products.Where(p => p.ProductId == productId);
             
+            if (categoryId !=default(Guid))
+            {
+                products_tmp = products_tmp.Where(p => productsIdOfCategory.Any(sp => sp == p.ProductId));
+            }
+
             var products = products_tmp
                 .Include(p => p.Supplier)
                 .Include(p => p.Unit)

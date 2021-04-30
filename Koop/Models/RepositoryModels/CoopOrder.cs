@@ -14,6 +14,8 @@ namespace Koop.Models.RepositoryModels
         
         public Guid? OrderId { get; set; }
         public Guid? Id { get; set; }
+        public DateTime? OrderStartDate { get; set; }
+        public DateTime? OrderStopDate { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public short? FundValue { get; set; }

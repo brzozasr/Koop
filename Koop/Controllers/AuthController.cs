@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -88,6 +89,31 @@ namespace Koop.Controllers
             }
 
             return Problem(roleResult.Errors.First().Description, null, 500);
+        }
+
+        [HttpGet("user/{userId}/getRole")]
+        public async Task<IActionResult> GetUserRole(string userId)
+        {
+            var result = await _uow.AuthService().GetUserRole(userId);
+
+            result ??= new List<string>();
+
+            // var roleId = await _uow.AuthService().GetUserRoleId(result);
+
+            List<Roles> roles = new List<Roles>();
+            foreach (var item in result)
+            {
+                roles.Add(new Roles(){Name = item});
+            }
+            return Ok(roles);
+        }
+
+        [HttpGet("roles")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var result = await _uow.AuthService().GetAllRolesAsync();
+            
+            return Ok(result);
         }
 
         [HttpPost("user/{userId}/addRole/{roleName}")]

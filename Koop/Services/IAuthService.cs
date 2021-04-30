@@ -32,5 +32,8 @@ namespace Koop.Services
 
         public Task<bool> EmailDuplicationCheck(string email);
         public Task<bool> UserDuplicationCheck(string email);
+        public Task<IEnumerable<Roles>> GetAllRolesAsync();
+        public Task<IList<string>> GetUserRole(string userId);
+        public Task<Guid> GetUserRoleId(string roleName);
     }
 }

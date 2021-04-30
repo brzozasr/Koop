@@ -80,8 +80,9 @@ namespace Koop.Services
             /*var user = _userManager.Users
                 .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());*/
             //Console.WriteLine($"UserData: {userLogIn.Email} {userLogIn.Password} {userLogIn.UserName}");
-            var user = _userManager.Users
-                .SingleOrDefault(p => p.NormalizedEmail == userLogIn.Email.ToUpper());
+            var user = await _userManager.FindByEmailAsync(userLogIn.Email);
+            /*var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedEmail == userLogIn.Email.ToUpper());*/
             
             if (user is null)
             {
@@ -234,12 +235,43 @@ namespace Koop.Services
 
             return await _userManager.DeleteAsync(user);
         }
+
+        public async Task<IEnumerable<Roles>> GetAllRolesAsync()
+        {
+            var rolesTmp = await _roleManager.Roles.ToListAsync();
+            var roles = _mapper.Map<IEnumerable<Role>, IEnumerable<Roles>>(rolesTmp);
+            return roles;
+        }
         
         public Task<IdentityResult> CreateRole(string roleName)
         {
             var newRole = new Role() {Name = roleName};
 
             return _roleManager.CreateAsync(newRole);
+        }
+
+        public async Task<Guid> GetUserRoleId(string roleName)
+        {
+            var role = _roleManager.Roles.SingleOrDefault(p => p.Name.Equals(roleName));
+
+            if (role is not null)
+            {
+                return role.Id;
+            }
+            
+            return Guid.Empty;
+        }
+
+        public async Task<IList<string>> GetUserRole(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is not null)
+            {
+                return await _userManager.GetRolesAsync(user);
+            }
+
+            return null;
         }
 
         public Task<IdentityResult> AddRoleToUser(Guid userId, string roleName)

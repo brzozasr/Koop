@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.ComTypes;
@@ -50,5 +51,7 @@ namespace Koop.Models.Auth
             get => _id;
             set => _id = value == Guid.Empty ? null : value;
         }
+
+        public IEnumerable<string> Role { get; set; }
     }
 }

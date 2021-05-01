@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
@@ -18,6 +19,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Writers;
 
 namespace Koop.Services
 {
@@ -67,6 +69,11 @@ namespace Koop.Services
         {
             var emailsCount = await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
             return emailsCount > 0;
+        }
+
+        private async Task<int> EmailCounter(string email)
+        {
+            return await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
         }
         
         public async Task<bool> UserDuplicationCheck(string username)
@@ -146,83 +153,117 @@ namespace Koop.Services
         
         public async Task<ProblemResponse> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
         {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Brak wymaganych uprawnień do edycji użytkownika",
+                Status = 0
+            };
+            
             if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
             {
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-
-                if (user is not null)
+                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                try
                 {
-                    var setEmailResult = await _userManager.SetEmailAsync(user, userEdit.Email);
-                    if (!setEmailResult.Succeeded)
-                    {
-                        return new ProblemResponse()
-                        {
-                            Detail = "Problem przy zmianie adresu e-mail",
-                            Status = 500
-                        };
-                    }
+                    var user = await _userManager.FindByIdAsync(userId.ToString());
 
-                    var setUserNameResult = await _userManager.SetUserNameAsync(user, userEdit.UserName);
-                    if (!setUserNameResult.Succeeded)
+                    if (user is not null)
                     {
-                        return new ProblemResponse()
+                        if (await EmailCounter(user.Email.ToUpper()) > 1)
                         {
-                            Detail = "Problem przy zmianie nazwy użytkownika",
-                            Status = 500
-                        };
-                    }
-
-                    var setPhoneNumberResult = await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
-                    if (!setPhoneNumberResult.Succeeded)
-                    {
-                        return new ProblemResponse()
+                            throw new Exception("Podany adres e-mail już istnieje. Proszę podać inny");
+                        }
+                        
+                        var setEmailResult = await _userManager.SetEmailAsync(user, userEdit.Email);
+                        if (!setEmailResult.Succeeded)
                         {
-                            Detail = "Problem przy zmianie numeru telefonu",
-                            Status = 500
-                        };
-                    }
+                            var code = setEmailResult.Errors.FirstOrDefault().Code;
+                            throw new Exception($"Problem przy zmianie adresu e-mail. Kod błędu: {code}");
+                        }
 
-                    if (userEdit.OldPassword is not null)
-                    {
-                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword,
-                            userEdit.NewPassword);
-
-                        if (!changePasswordResult.Succeeded)
+                        var setUserNameResult = await _userManager.SetUserNameAsync(user, userEdit.UserName);
+                        if (!setUserNameResult.Succeeded)
                         {
-                            return new ProblemResponse()
+                            var code = setUserNameResult.Errors.FirstOrDefault().Code;
+                            if (code is not null && code.Equals("DuplicateUserName."))
                             {
-                                Detail = "Nieprawidłowe hasło. Podaj aktualne hasło dla wybranego użytkownika",
-                                Status = 500
-                            };
+                                throw new Exception($"Podana nazwa użytkownika już istnieje. Proszę podać inną");                                
+                            }
+                            
+                            throw new Exception($"Problem przy zmianie nazwy użytkownika. Kod błędu: {code}");
+                        }
+
+                        var setPhoneNumberResult =
+                            await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
+                        if (!setPhoneNumberResult.Succeeded)
+                        {
+                            var code = setPhoneNumberResult.Errors.FirstOrDefault().Code;
+                            throw new Exception($"Problem przy zmianie numeru telefonu. Kod błędu: {code}");
+                        }
+
+                        if (userEdit.OldPassword is not null)
+                        {
+                            var changePasswordResult = await _userManager.ChangePasswordAsync(user,
+                                userEdit.OldPassword,
+                                userEdit.NewPassword);
+
+                            if (!changePasswordResult.Succeeded)
+                            {
+                                var code = changePasswordResult.Errors.FirstOrDefault().Code;
+                                if (code is not null && code.Equals("PasswordMismatch"))
+                                {
+                                    throw new Exception(
+                                        $"Nieprawidłowe hasło. Podaj aktualne hasło dla wybranego użytkownika.");
+                                }
+                                
+                                throw new Exception(
+                                    $"Błąd podczas zmiany hasła. Kod błędu: {code}");
+                            }
+                        }
+
+                        user.BasketId = userEdit.BasketId;
+                        user.FundId = userEdit.FundId;
+                        user.Debt = userEdit.Debt;
+                        user.Info = userEdit.Info;
+                        user.FirstName = userEdit.FirstName;
+                        user.LastName = userEdit.LastName;
+
+                        var updateUserResult = await _userManager.UpdateAsync(user);
+                        if (!updateUserResult.Succeeded)
+                        {
+                            throw new Exception("Nie udało się zaktualizować danych");
+                        }
+                            
+                        var currentUserRoles = await GetUserRoleAsync(userId.ToString());
+                        var rolesToAdd = userEdit.Role.Where(p => !currentUserRoles.Contains(p));
+                        var rolesToRemove = currentUserRoles.Where(p => !userEdit.Role.Contains(p));
+                            
+                        var addRolesResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+                        if (!addRolesResult.Succeeded)
+                        {
+                            throw new Exception("Błąd w trakcie dodawania roli do użytkownika");
+                        }
+
+                        var removeRolesResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                        if (!removeRolesResult.Succeeded)
+                        {
+                            throw new Exception("Błąd w trakcie usuwania roli z użytkownika");
                         }
                     }
 
-                    user.BasketId = userEdit.BasketId;
-                    user.FundId = userEdit.FundId;
-                    user.Debt = userEdit.Debt;
-                    user.Info = userEdit.Info;
-                    user.FirstName = userEdit.FirstName;
-                    user.LastName = userEdit.LastName;
+                    problemResponse.Detail = "Dane użytkownika zostały zaktualizowane";
+                    problemResponse.Status = 200;
 
-                    var updateUserResult = await _userManager.UpdateAsync(user);
-                    if (!updateUserResult.Succeeded)
-                    {
-                        return new ProblemResponse()
-                        {
-                            Detail = "Nie udało się zaktualizować danych",
-                            Status = 500
-                        };
-                    }
-                    
-                    return new ProblemResponse()
-                    {
-                        Detail = "Dane użytkownika zostały zaktualizowane",
-                        Status = 200
-                    };
+                    scope.Complete();
+                }
+                catch (Exception e)
+                {
+                    problemResponse.Detail = e.Message;
+                    problemResponse.Status = 500;
+                    scope.Dispose();
                 }
             }
 
-            return null;
+            return problemResponse;
         }
         
         public async Task<IdentityResult> RemoveUser(Guid userId)
@@ -262,7 +303,7 @@ namespace Koop.Services
             return Guid.Empty;
         }
 
-        public async Task<IList<string>> GetUserRole(string userId)
+        public async Task<IList<string>> GetUserRoleAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
 

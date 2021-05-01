@@ -94,17 +94,18 @@ namespace Koop.Controllers
         [HttpGet("user/{userId}/getRole")]
         public async Task<IActionResult> GetUserRole(string userId)
         {
-            var result = await _uow.AuthService().GetUserRole(userId);
+            var result = await _uow.AuthService().GetUserRoleAsync(userId);
 
             result ??= new List<string>();
 
             // var roleId = await _uow.AuthService().GetUserRoleId(result);
 
-            List<Roles> roles = new List<Roles>();
+            List<string> roles = new List<string>();
             foreach (var item in result)
             {
-                roles.Add(new Roles(){Name = item});
+                roles.Add(item);
             }
+            
             return Ok(roles);
         }
 
@@ -171,12 +172,7 @@ namespace Koop.Controllers
             {
                 var result = await _uow.AuthService()
                     .EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
-                
-                if (result is null)
-                {
-                    return Problem("Not enough privileges to edit user's credentials.", null, 500);
-                }
-                
+
                 return Ok(result);
             }
             

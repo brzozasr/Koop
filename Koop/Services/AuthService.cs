@@ -52,17 +52,59 @@ namespace Koop.Services
             return _userManager.CreateAsync(user, userSignUp.Password);
         }*/
         
-        public async Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        public async Task<ProblemResponse> SignUp([FromBody]UserEdit newUser)
         {
-            var user = _mapper.Map<User>(newUser);
-            var isEmailAlreadyPresent = await EmailDuplicationCheck(user.Email.ToUpper());
-            
-            if (isEmailAlreadyPresent)
+            ProblemResponse problemResponse = new ProblemResponse()
             {
-                return null;
-            }
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia nowego użytkownika",
+                Status = 500
+            };
             
-            return await _userManager.CreateAsync(user, newUser.NewPassword);
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                var user = _mapper.Map<User>(newUser);
+                
+                var isEmailAlreadyPresent = await EmailDuplicationCheck(user.Email.ToUpper());
+                
+                if (isEmailAlreadyPresent)
+                {
+                    throw new Exception("Podany adres e-mail już istnieje. Proszę podać inny");
+                }
+                
+                var createUserResult = await _userManager.CreateAsync(user, newUser.NewPassword);
+
+                if (!createUserResult.Succeeded)
+                {
+                    var code = createUserResult.Errors.FirstOrDefault().Code;
+                    throw new Exception($"Problem przy tworzeniu użytkownika. Kod błędu: {code}");
+                }
+                
+                var createdUser = await _userManager.FindByEmailAsync(newUser.Email);
+                if (createdUser is null)
+                {
+                    throw new Exception("Pomimo utworzenia konta użytkownika, w bazie danych nie jest od obecny");
+                }
+         
+                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, newUser.Role);
+                if (!addRolesResult.Succeeded)
+                {
+                    throw new Exception("Błąd w trakcie dodawania roli do użytkownika");
+                }
+
+                problemResponse.Detail = "Konto użytkownika zostało utworzone";
+                problemResponse.Status = 200;
+
+                scope.Complete();
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+                scope.Dispose();
+            }
+
+            return problemResponse;
         }
 
         public async Task<bool> EmailDuplicationCheck(string email)

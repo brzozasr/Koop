@@ -39,18 +39,7 @@ namespace Koop.Controllers
             Console.WriteLine($"User first name: {newUser.FirstName}");
             var userCreateResult = await _uow.AuthService().SignUp(newUser);
 
-            if (userCreateResult is null)
-            {
-                return Problem("User with the same email already exists.", null, 500);
-            }
-            
-            if (userCreateResult.Succeeded)
-            {
-                return Created(string.Empty, string.Empty);
-            }
-
-            return Problem(userCreateResult.Errors.FirstOrDefault().ToString(), null, 500);
-            // return BadRequest(userCreateResult.Errors);
+            return Ok(userCreateResult);
         }
 
         [HttpPost("signin")]

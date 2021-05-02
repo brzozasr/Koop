@@ -85,7 +85,7 @@ namespace Koop.Controllers
                 _uow.Repository<OrderedItem>().Delete(order);
 
                 await _uow.SaveChangesAsync();
-                return Ok(new {info = $"The order item has been deleted (order ID: {orderItemId})."});
+                return Ok(new {info = $"The ordered item has been deleted (order ID: {orderItemId})."});
             }
             catch (Exception e)
             {

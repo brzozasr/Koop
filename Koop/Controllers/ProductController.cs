@@ -68,7 +68,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpPost("In/Stock")]
+        [HttpGet("In/Stock")]
         public async Task<IActionResult> ProductsInStock()
         {
             try

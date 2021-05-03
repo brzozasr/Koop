@@ -2,18 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using System.Transactions;
+using System.Web;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
+using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Writers;
 
 namespace Koop.Services
 {
@@ -46,31 +54,123 @@ namespace Koop.Services
             return _userManager.CreateAsync(user, userSignUp.Password);
         }*/
         
-        public Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        public async Task<ProblemResponse> SignUp([FromBody]UserEdit newUser)
         {
-            var user = _mapper.Map<User>(newUser);
-            return _userManager.CreateAsync(user, newUser.NewPassword);
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia nowego użytkownika",
+                Status = 500
+            };
+            
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                var user = _mapper.Map<User>(newUser);
+                
+                var isEmailAlreadyPresent = await EmailDuplicationCheck(user.Email.ToUpper());
+                
+                if (isEmailAlreadyPresent)
+                {
+                    throw new Exception("Podany adres e-mail już istnieje. Proszę podać inny");
+                }
+                
+                var createUserResult = await _userManager.CreateAsync(user, newUser.NewPassword);
+
+                if (!createUserResult.Succeeded)
+                {
+                    var code = createUserResult.Errors.FirstOrDefault().Code;
+                    throw new Exception($"Problem przy tworzeniu użytkownika. Kod błędu: {code}");
+                }
+                
+                var createdUser = await _userManager.FindByEmailAsync(newUser.Email);
+                if (createdUser is null)
+                {
+                    throw new Exception("Pomimo utworzenia konta użytkownika, w bazie danych nie jest od obecny");
+                }
+         
+                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, newUser.Role);
+                if (!addRolesResult.Succeeded)
+                {
+                    throw new Exception("Błąd w trakcie dodawania roli do użytkownika");
+                }
+
+                problemResponse.Detail = "Konto użytkownika zostało utworzone";
+                problemResponse.Status = 200;
+
+                scope.Complete();
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+                scope.Dispose();
+            }
+
+            return problemResponse;
         }
 
-        public string SignIn(UserLogIn userLogIn)
+        public async Task<bool> EmailDuplicationCheck(string email)
         {
-            var user = _userManager.Users
-                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());
+            var emailsCount = await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
+            return emailsCount > 0;
+        }
+
+        private async Task<int> EmailCounter(string email)
+        {
+            return await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
+        }
+        
+        public async Task<bool> UserDuplicationCheck(string username)
+        {
+            var usernameCount = await _userManager.Users.Where(p => p.NormalizedUserName.Equals(username)).CountAsync();
+            return usernameCount > 0;
+        }
+
+        public async Task<RefreshToken> SignIn(UserLogIn userLogIn)
+        {
+            /*var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());*/
+            //Console.WriteLine($"UserData: {userLogIn.Email} {userLogIn.Password} {userLogIn.UserName}");
+            var user = await _userManager.FindByEmailAsync(userLogIn.Email);
+            /*var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedEmail == userLogIn.Email.ToUpper());*/
             
             if (user is null)
             {
                 return null;
             }
             
-            var userSignInResult = _userManager.CheckPasswordAsync(user, userLogIn.Password);
-
-            if (userSignInResult.Result)
+            var userSignInResult = await _userManager.CheckPasswordAsync(user, userLogIn.Password);
+            
+            if (userSignInResult)
             {
-                var roles = _userManager.GetRolesAsync(user);
-                return GenerateJwt(user, roles.Result);
+                var roles = await _userManager.GetRolesAsync(user);
+                var refreshToken = GenerateRefreshToken();
+                var refreshTokenExp = DateTime.Now.Add(TimeSpan.FromMinutes(_jwtSettings.RefreshTokenExpirationInMinutes));
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExp = refreshTokenExp;
+
+                var result = await _userManager.UpdateAsync(user);
+                if (result.Succeeded)
+                {
+                    return new RefreshToken()
+                    {
+                        Token = GenerateJwt(user, roles),
+                        RefreshT = refreshToken,
+                        UserId = user.Id,
+                        TokenExp = _jwtSettings.ExpirationInMinutes * 60,
+                        RefTokenExp = _jwtSettings.RefreshTokenExpirationInMinutes * 60
+                    };
+                }
             }
 
             return null;
+        }
+
+        public Task<IList<string>> GetRoles(User user)
+        {
+            return _userManager.GetRolesAsync(user);
+            
         }
 
         public UserEdit GetUser(Guid userId)
@@ -89,61 +189,143 @@ namespace Koop.Services
 
             return null;
         }
-        
-        public async Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
+
+        public Task<User> GetUserRaw(Guid userId)
         {
-            if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
-            {
-                var user = await _userManager.FindByIdAsync(userId.ToString());
-
-                if (user is not null)
-                {
-                    var setEmailResult = _userManager.SetEmailAsync(user, userEdit.Email).Result;
-                    if (!setEmailResult.Succeeded)
-                    {
-                        return setEmailResult;
-                    }
-                    
-                    var setUserNameResult = _userManager.SetUserNameAsync(user, userEdit.UserName).Result;
-                    if (!setUserNameResult.Succeeded)
-                    {
-                        return setUserNameResult;
-                    }
-                    
-                    var setPhoneNumberResult = _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber).Result;
-                    if (!setPhoneNumberResult.Succeeded)
-                    {
-                        return setPhoneNumberResult;
-                    }
-
-                    user.BasketId = userEdit.BasketId;
-                    user.FundId = userEdit.FundId;
-                    user.Debt = userEdit.Debt;
-                    user.Info = userEdit.Info;
-                    user.FirstName = userEdit.FirstName;
-                    user.LastName = userEdit.LastName;
-
-                    if (userEdit.OldPassword is not null)
-                    {
-                        var changePasswordResult = await _userManager.ChangePasswordAsync(user, userEdit.OldPassword, userEdit.NewPassword);
-                        if (!changePasswordResult.Succeeded)
-                        {
-                            return changePasswordResult;
-                        }
-                    }
-                }
-            
-                return await _userManager.UpdateAsync(user);
-            }
-
-            return null;
+            return _userManager.FindByIdAsync(userId.ToString());
         }
         
-        public Task<IdentityResult> RemoveUser(Guid userId)
+        public async Task<ProblemResponse> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
         {
-            var user = _userManager.FindByIdAsync(userId.ToString());
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Brak wymaganych uprawnień do edycji użytkownika",
+                Status = 0
+            };
+            
+            if (userId == authUserId || authUserRoles.Any(p => p == "Admin"))
+            {
+                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                try
+                {
+                    var user = await _userManager.FindByIdAsync(userId.ToString());
 
-            return _userManager.DeleteAsync(user.Result);
+                    if (user is not null)
+                    {
+                        if (await EmailCounter(user.Email.ToUpper()) > 1)
+                        {
+                            throw new Exception("Podany adres e-mail już istnieje. Proszę podać inny");
+                        }
+                        
+                        var setEmailResult = await _userManager.SetEmailAsync(user, userEdit.Email);
+                        if (!setEmailResult.Succeeded)
+                        {
+                            var code = setEmailResult.Errors.FirstOrDefault().Code;
+                            throw new Exception($"Problem przy zmianie adresu e-mail. Kod błędu: {code}");
+                        }
+
+                        var setUserNameResult = await _userManager.SetUserNameAsync(user, userEdit.UserName);
+                        if (!setUserNameResult.Succeeded)
+                        {
+                            var code = setUserNameResult.Errors.FirstOrDefault().Code;
+                            if (code is not null && code.Equals("DuplicateUserName."))
+                            {
+                                throw new Exception($"Podana nazwa użytkownika już istnieje. Proszę podać inną");                                
+                            }
+                            
+                            throw new Exception($"Problem przy zmianie nazwy użytkownika. Kod błędu: {code}");
+                        }
+
+                        var setPhoneNumberResult =
+                            await _userManager.SetPhoneNumberAsync(user, userEdit.PhoneNumber);
+                        if (!setPhoneNumberResult.Succeeded)
+                        {
+                            var code = setPhoneNumberResult.Errors.FirstOrDefault().Code;
+                            throw new Exception($"Problem przy zmianie numeru telefonu. Kod błędu: {code}");
+                        }
+
+                        if (userEdit.OldPassword is not null)
+                        {
+                            var changePasswordResult = await _userManager.ChangePasswordAsync(user,
+                                userEdit.OldPassword,
+                                userEdit.NewPassword);
+
+                            if (!changePasswordResult.Succeeded)
+                            {
+                                var code = changePasswordResult.Errors.FirstOrDefault().Code;
+                                if (code is not null && code.Equals("PasswordMismatch"))
+                                {
+                                    throw new Exception(
+                                        $"Nieprawidłowe hasło. Podaj aktualne hasło dla wybranego użytkownika.");
+                                }
+                                
+                                throw new Exception(
+                                    $"Błąd podczas zmiany hasła. Kod błędu: {code}");
+                            }
+                        }
+
+                        user.BasketId = userEdit.BasketId;
+                        user.FundId = userEdit.FundId;
+                        user.Debt = userEdit.Debt;
+                        user.Info = userEdit.Info;
+                        user.FirstName = userEdit.FirstName;
+                        user.LastName = userEdit.LastName;
+
+                        var updateUserResult = await _userManager.UpdateAsync(user);
+                        if (!updateUserResult.Succeeded)
+                        {
+                            throw new Exception("Nie udało się zaktualizować danych");
+                        }
+                            
+                        var currentUserRoles = await GetUserRoleAsync(userId.ToString());
+                        var rolesToAdd = userEdit.Role.Where(p => !currentUserRoles.Contains(p));
+                        var rolesToRemove = currentUserRoles.Where(p => !userEdit.Role.Contains(p));
+                            
+                        var addRolesResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+                        if (!addRolesResult.Succeeded)
+                        {
+                            throw new Exception("Błąd w trakcie dodawania roli do użytkownika");
+                        }
+
+                        var removeRolesResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                        if (!removeRolesResult.Succeeded)
+                        {
+                            throw new Exception("Błąd w trakcie usuwania roli z użytkownika");
+                        }
+                    }
+
+                    problemResponse.Detail = "Dane użytkownika zostały zaktualizowane";
+                    problemResponse.Status = 200;
+
+                    scope.Complete();
+                }
+                catch (Exception e)
+                {
+                    problemResponse.Detail = e.Message;
+                    problemResponse.Status = 500;
+                    scope.Dispose();
+                }
+            }
+
+            return problemResponse;
+        }
+        
+        public async Task<IdentityResult> RemoveUser(Guid userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+            {
+                return null;
+            }
+
+            return await _userManager.DeleteAsync(user);
+        }
+
+        public async Task<IEnumerable<Roles>> GetAllRolesAsync()
+        {
+            var rolesTmp = await _roleManager.Roles.ToListAsync();
+            var roles = _mapper.Map<IEnumerable<Role>, IEnumerable<Roles>>(rolesTmp);
+            return roles;
         }
         
         public Task<IdentityResult> CreateRole(string roleName)
@@ -151,6 +333,30 @@ namespace Koop.Services
             var newRole = new Role() {Name = roleName};
 
             return _roleManager.CreateAsync(newRole);
+        }
+
+        public async Task<Guid> GetUserRoleId(string roleName)
+        {
+            var role = _roleManager.Roles.SingleOrDefault(p => p.Name.Equals(roleName));
+
+            if (role is not null)
+            {
+                return role.Id;
+            }
+            
+            return Guid.Empty;
+        }
+
+        public async Task<IList<string>> GetUserRoleAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is not null)
+            {
+                return await _userManager.GetRolesAsync(user);
+            }
+
+            return null;
         }
 
         public Task<IdentityResult> AddRoleToUser(Guid userId, string roleName)
@@ -167,7 +373,7 @@ namespace Koop.Services
             return _userManager.RemoveFromRoleAsync(user.Result, roleName);
         }
         
-        private string GenerateJwt(User user, IList<string> roles)
+        public string GenerateJwt(User user, IList<string> roles)
         {
             var claims = new List<Claim>()
             {
@@ -197,6 +403,157 @@ namespace Koop.Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<RefreshToken> GetNewToken(Guid userId)
+        {
+            var user = await GetUserRaw(userId);
+
+            if (user is null)
+            {
+                return null;
+            }
+
+            var roles = await GetRoles(user);
+            var newToken = GenerateJwt(user, roles);
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExp = DateTime.Now.Add(TimeSpan.FromMinutes(_jwtSettings.RefreshTokenExpirationInMinutes));
+            var result = await _userManager.UpdateAsync(user);
+            
+            if (result.Succeeded)
+            {
+                return new RefreshToken()
+                {
+                    Token = newToken,
+                    UserId = userId,
+                    RefreshT = newRefreshToken,
+                    TokenExp = _jwtSettings.ExpirationInMinutes * 60,
+                    RefTokenExp = _jwtSettings.RefreshTokenExpirationInMinutes * 60
+                };
+            }
+
+            return null;
+        }
+        
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create()){
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+        
+        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret)),
+                ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+        }
+
+        public IEnumerable<UserEdit> GetAllUsers(Expression<Func<User, object>> orderBy, int start, int count,
+            OrderDirection orderDirection = OrderDirection.Asc)
+        {
+            var users = _userManager.Users;
+            
+            var usersSorted = orderDirection == OrderDirection.Asc ? users.OrderBy(orderBy) : users.OrderByDescending(orderBy);
+
+            IQueryable<User> usersGrouped;
+            if (count > 0)
+            {
+                usersGrouped = usersSorted.Skip(start).Take(count);
+            }
+            else
+            {
+                usersGrouped = usersSorted.Skip(start);
+            }
+
+            var usersOutput = _mapper.Map<IEnumerable<User>, IEnumerable<UserEdit>>(usersGrouped);
+            
+            return usersOutput;
+        }
+
+        public async Task<ProblemResponse> GetPasswordResetTokenAsync(PasswordReset data)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Na podany adres mailowy został wysłany link do zresetowania hasła",
+                Status = 200
+            };
+
+            try
+            {
+                Console.WriteLine($"Checking email: {data.Email}");
+                var user = await _userManager.FindByEmailAsync(data.Email);
+                if (user is null)
+                {
+                    problemResponse.Detail = "Na podany adres mailowy został wysłany link do zresetowania hasła";
+                    throw new Exception("Na podany adres mailowy został wysłany link do zresetowania hasła");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                Console.WriteLine(code);
+                problemResponse.Data = $"{data.HostName}/password-reset/new-email/{user.Id}/{HttpUtility.UrlEncode(code)}";
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+
+            return problemResponse;
+        }
+
+        public async Task<ProblemResponse> ResetPassword(PasswordReset data)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Coś poszło nie tak",
+                Status = 500
+            };
+
+            try
+            {
+                Console.WriteLine(data.Token);
+                var user = await _userManager.FindByIdAsync(data.UserId);
+                if (user is null)
+                {
+                    throw new Exception("Użytkownik nie został znaleziony w bazie.");
+                }
+
+                var resetPasswordResult = await _userManager.ResetPasswordAsync(user, data.Token, data.Password);
+                if (!resetPasswordResult.Succeeded)
+                {
+                    var code = resetPasswordResult.Errors.FirstOrDefault().Code;
+                    throw new Exception($"Coś poszło nie tak podczas resetowania hasła. Kod błędu: {code}");
+                }
+                
+                problemResponse.Detail = "Hasło zostało pomyślnie zmienione";
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
         }
     }
 }

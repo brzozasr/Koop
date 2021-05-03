@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Koop.Migrations
 {
     [DbContext(typeof(KoopDbContext))]
-    [Migration("20210401203802_snap1")]
+    [Migration("20210415205513_snap1")]
     partial class snap1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -62,14 +62,14 @@ namespace Koop.Migrations
                         .HasColumnName("basket_name");
 
                     b.Property<Guid?>("CoopId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CoopName")
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("coop_id")
+                        .HasDefaultValueSql("uuid_generate_v4()");
 
                     b.HasKey("BasketId");
 
-                    b.HasIndex(new[] { "CoopId" }, "IX_baskets_coop_id");
+                    b.HasIndex("CoopId");
 
                     b.ToTable("baskets");
                 });
@@ -502,6 +502,14 @@ namespace Koop.Migrations
                         .HasColumnName("supplier_id")
                         .HasDefaultValueSql("uuid_generate_v4()");
 
+                    b.Property<bool>("Available")
+                        .HasColumnType("boolean")
+                        .HasColumnName("available");
+
+                    b.Property<bool>("Blocked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("blocked");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -642,6 +650,12 @@ namespace Koop.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("RefreshTokenExp")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -717,6 +731,107 @@ namespace Koop.Migrations
                     b.HasKey("WorkTypeId");
 
                     b.ToTable("work_types");
+                });
+
+            modelBuilder.Entity("Koop.models.BasketsView", b =>
+                {
+                    b.Property<string>("BasketName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("basket_name");
+
+                    b.Property<string>("Cooperator")
+                        .HasColumnType("text")
+                        .HasColumnName("cooperator");
+
+                    b.ToTable("baskets_view");
+                });
+
+            modelBuilder.Entity("Koop.models.OrderGrandeHistoryView", b =>
+                {
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<DateTime?>("OrderStartDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_start_date");
+
+                    b.Property<Guid?>("OrderStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_status_id");
+
+                    b.Property<string>("OrderStatusName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("order_status_name");
+
+                    b.Property<DateTime?>("OrderStopDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_stop_date");
+
+                    b.ToTable("order_grande_history_view");
+                });
+
+            modelBuilder.Entity("Koop.models.SupplierView", b =>
+                {
+                    b.Property<bool>("Available")
+                        .HasColumnType("boolean")
+                        .HasColumnName("available");
+
+                    b.Property<bool>("Blocked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("blocked");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("OproFirstName")
+                        .HasColumnType("text")
+                        .HasColumnName("opro_first_name");
+
+                    b.Property<Guid>("OproId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opro_id");
+
+                    b.Property<string>("OproLastName")
+                        .HasColumnType("text")
+                        .HasColumnName("opro_last_name");
+
+                    b.Property<DateTime?>("OrderClosingDate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("order_closing_date");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Picture")
+                        .HasColumnType("text")
+                        .HasColumnName("picture");
+
+                    b.Property<string>("SupplierAbbr")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("supplier_abbr");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_name");
+
+                    b.ToTable("supplier_view");
                 });
 
             modelBuilder.Entity("Koop.models.UserOrdersHistoryView", b =>

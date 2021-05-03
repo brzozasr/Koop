@@ -21,6 +21,8 @@ namespace Koop.models
         public Guid OproId { get; set; }
         public string OproFirstName { get; set; }
         public string OproLastName { get; set; }
+        
+
 
         public string OproFullName => $"{OproFirstName} {OproLastName}";
     }

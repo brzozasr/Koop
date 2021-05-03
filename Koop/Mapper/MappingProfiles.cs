@@ -57,6 +57,11 @@ namespace Koop.Mapper
             CreateMap<Unit, Unit>();
 
             CreateMap<User, UserEdit>();
+
+            CreateMap<SupplierViewMap, Supplier>();
+            CreateMap<Supplier, SupplierViewMap>();
+
+            CreateMap<Role, Roles>();
         }
     }
 }

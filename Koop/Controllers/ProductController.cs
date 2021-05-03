@@ -26,7 +26,7 @@ namespace Koop.Controllers
         }
 
         [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpPost("By/Supplier/{supplierId:guid}")]
+        [HttpGet("By/Supplier/{supplierId:guid}")]
         public async Task<IActionResult> ProductsBySupplier([FromRoute] Guid supplierId)
         {
             try

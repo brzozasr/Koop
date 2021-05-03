@@ -81,7 +81,7 @@ namespace Koop.Controllers
 
 
                 var stockStatusMap = _mapper.Map<List<StockStatus>>(products)
-                    .OrderBy(s => s.StockSupplierId);
+                    .OrderBy(s => s.ProductName);
 
                 if (products.Any())
                 {

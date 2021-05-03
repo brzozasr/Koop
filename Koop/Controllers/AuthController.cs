@@ -168,6 +168,24 @@ namespace Koop.Controllers
             return Problem("User is not authenticated.", null, 500);
         }
 
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> GetPasswordResetTokenAsync(PasswordReset data)
+        {
+            var response = await _uow.AuthService().GetPasswordResetTokenAsync(data);
+
+            return Ok(response);
+        }
+        
+        [AllowAnonymous]
+        [HttpPost("reset-password-set")]
+        public async Task<IActionResult> ResetPassword(PasswordReset data)
+        {
+            var response = await _uow.AuthService().ResetPassword(data);
+
+            return Ok(response);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("user/{userId}/remove")]
         public async Task<IActionResult> RemoveUser(Guid userId)

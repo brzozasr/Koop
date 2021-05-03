@@ -6,8 +6,10 @@ using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using System.Transactions;
+using System.Web;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
@@ -485,6 +487,73 @@ namespace Koop.Services
             var usersOutput = _mapper.Map<IEnumerable<User>, IEnumerable<UserEdit>>(usersGrouped);
             
             return usersOutput;
+        }
+
+        public async Task<ProblemResponse> GetPasswordResetTokenAsync(PasswordReset data)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Na podany adres mailowy został wysłany link do zresetowania hasła",
+                Status = 200
+            };
+
+            try
+            {
+                Console.WriteLine($"Checking email: {data.Email}");
+                var user = await _userManager.FindByEmailAsync(data.Email);
+                if (user is null)
+                {
+                    problemResponse.Detail = "Na podany adres mailowy został wysłany link do zresetowania hasła";
+                    throw new Exception("Na podany adres mailowy został wysłany link do zresetowania hasła");
+                }
+
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                Console.WriteLine(code);
+                problemResponse.Data = $"{data.HostName}/password-reset/new-email/{user.Id}/{HttpUtility.UrlEncode(code)}";
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+
+            return problemResponse;
+        }
+
+        public async Task<ProblemResponse> ResetPassword(PasswordReset data)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Coś poszło nie tak",
+                Status = 500
+            };
+
+            try
+            {
+                Console.WriteLine(data.Token);
+                var user = await _userManager.FindByIdAsync(data.UserId);
+                if (user is null)
+                {
+                    throw new Exception("Użytkownik nie został znaleziony w bazie.");
+                }
+
+                var resetPasswordResult = await _userManager.ResetPasswordAsync(user, data.Token, data.Password);
+                if (!resetPasswordResult.Succeeded)
+                {
+                    var code = resetPasswordResult.Errors.FirstOrDefault().Code;
+                    throw new Exception($"Coś poszło nie tak podczas resetowania hasła. Kod błędu: {code}");
+                }
+                
+                problemResponse.Detail = "Hasło zostało pomyślnie zmienione";
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
         }
     }
 }

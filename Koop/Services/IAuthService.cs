@@ -35,5 +35,7 @@ namespace Koop.Services
         public Task<IEnumerable<Roles>> GetAllRolesAsync();
         public Task<IList<string>> GetUserRoleAsync(string userId);
         public Task<Guid> GetUserRoleId(string roleName);
+        public Task<ProblemResponse> GetPasswordResetTokenAsync(PasswordReset data);
+        public Task<ProblemResponse> ResetPassword(PasswordReset data);
     }
 }

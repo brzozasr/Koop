@@ -42,7 +42,8 @@ namespace Koop.Controllers
                 }
 
                 var supplierProducts = _uow.Repository<Product>()
-                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false);
+                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false)
+                    .OrderBy(x => x.ProductName);
 
                 var supplierMap = _mapper.Map<SupplierProducts>(supplier);
                 var supplierProductsMap = _mapper.Map<List<SupplierProductsNode>>(supplierProducts);

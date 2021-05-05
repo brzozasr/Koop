@@ -190,6 +190,19 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
+        
+        [HttpGet("product/availAllQuantities")]
+        public IActionResult GetProductAllAvailQuantities(Guid productId)
+        {
+            try
+            {
+                return Ok(_uow.ShopRepository().GetAllAvailableQuantities(productId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
 
         [HttpPost("product/availQuantities/update")]
         public IActionResult UpdateAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
@@ -425,6 +438,26 @@ namespace Koop.Controllers
             catch (Exception e)
             {
                 return Problem(e.Message);
+            }
+        }
+        
+        [AllowAnonymous]
+        [HttpGet("allsuppliers")]
+        public IActionResult AllSuppliers()
+        {
+            try
+            {
+                var suppliers = _uow.Repository<SupplierView>().GetAll().Select(p => new
+                {
+                    SupplierId = p.SupplierId,
+                    SupplierName = p.SupplierName,
+                    SupplierAbbr = p.SupplierAbbr
+                });
+                return Ok(suppliers);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
     }

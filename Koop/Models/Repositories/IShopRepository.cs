@@ -58,5 +58,6 @@ namespace Koop.Models.Repositories
         public void ClearBaskets();
 
         public void AssignBaskets(Guid orderId);
+        public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId);
     }
 }

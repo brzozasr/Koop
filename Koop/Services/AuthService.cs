@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Koop.Models.Repositories;
+using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -46,31 +50,75 @@ namespace Koop.Services
             return _userManager.CreateAsync(user, userSignUp.Password);
         }*/
         
-        public Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
+        public async Task<IdentityResult> SignUp([FromBody]UserEdit newUser)
         {
             var user = _mapper.Map<User>(newUser);
-            return _userManager.CreateAsync(user, newUser.NewPassword);
+            var isEmailAlreadyPresent = await EmailDuplicationCheck(user.Email.ToUpper());
+            
+            if (isEmailAlreadyPresent)
+            {
+                return null;
+            }
+            
+            return await _userManager.CreateAsync(user, newUser.NewPassword);
         }
 
-        public string SignIn(UserLogIn userLogIn)
+        public async Task<bool> EmailDuplicationCheck(string email)
         {
+            var emailsCount = await _userManager.Users.Where(p => p.NormalizedEmail.Equals(email)).CountAsync();
+            return emailsCount > 0;
+        }
+        
+        public async Task<bool> UserDuplicationCheck(string username)
+        {
+            var usernameCount = await _userManager.Users.Where(p => p.NormalizedUserName.Equals(username)).CountAsync();
+            return usernameCount > 0;
+        }
+
+        public async Task<RefreshToken> SignIn(UserLogIn userLogIn)
+        {
+            /*var user = _userManager.Users
+                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());*/
+            //Console.WriteLine($"UserData: {userLogIn.Email} {userLogIn.Password} {userLogIn.UserName}");
             var user = _userManager.Users
-                .SingleOrDefault(p => p.NormalizedUserName == userLogIn.UserName.ToUpper() || p.NormalizedEmail == userLogIn.Email.ToUpper());
+                .SingleOrDefault(p => p.NormalizedEmail == userLogIn.Email.ToUpper());
             
             if (user is null)
             {
                 return null;
             }
             
-            var userSignInResult = _userManager.CheckPasswordAsync(user, userLogIn.Password);
-
-            if (userSignInResult.Result)
+            var userSignInResult = await _userManager.CheckPasswordAsync(user, userLogIn.Password);
+            
+            if (userSignInResult)
             {
-                var roles = _userManager.GetRolesAsync(user);
-                return GenerateJwt(user, roles.Result);
+                var roles = await _userManager.GetRolesAsync(user);
+                var refreshToken = GenerateRefreshToken();
+                var refreshTokenExp = DateTime.Now.Add(TimeSpan.FromMinutes(_jwtSettings.RefreshTokenExpirationInMinutes));
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExp = refreshTokenExp;
+
+                var result = await _userManager.UpdateAsync(user);
+                if (result.Succeeded)
+                {
+                    return new RefreshToken()
+                    {
+                        Token = GenerateJwt(user, roles),
+                        RefreshT = refreshToken,
+                        UserId = user.Id,
+                        TokenExp = _jwtSettings.ExpirationInMinutes * 60,
+                        RefTokenExp = _jwtSettings.RefreshTokenExpirationInMinutes * 60
+                    };
+                }
             }
 
             return null;
+        }
+
+        public Task<IList<string>> GetRoles(User user)
+        {
+            return _userManager.GetRolesAsync(user);
+            
         }
 
         public UserEdit GetUser(Guid userId)
@@ -88,6 +136,11 @@ namespace Koop.Services
             }
 
             return null;
+        }
+
+        public Task<User> GetUserRaw(Guid userId)
+        {
+            return _userManager.FindByIdAsync(userId.ToString());
         }
         
         public async Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles)
@@ -139,11 +192,15 @@ namespace Koop.Services
             return null;
         }
         
-        public Task<IdentityResult> RemoveUser(Guid userId)
+        public async Task<IdentityResult> RemoveUser(Guid userId)
         {
-            var user = _userManager.FindByIdAsync(userId.ToString());
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+            {
+                return null;
+            }
 
-            return _userManager.DeleteAsync(user.Result);
+            return await _userManager.DeleteAsync(user);
         }
         
         public Task<IdentityResult> CreateRole(string roleName)
@@ -167,7 +224,7 @@ namespace Koop.Services
             return _userManager.RemoveFromRoleAsync(user.Result, roleName);
         }
         
-        private string GenerateJwt(User user, IList<string> roles)
+        public string GenerateJwt(User user, IList<string> roles)
         {
             var claims = new List<Claim>()
             {
@@ -197,6 +254,90 @@ namespace Koop.Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<RefreshToken> GetNewToken(Guid userId)
+        {
+            var user = await GetUserRaw(userId);
+
+            if (user is null)
+            {
+                return null;
+            }
+
+            var roles = await GetRoles(user);
+            var newToken = GenerateJwt(user, roles);
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExp = DateTime.Now.Add(TimeSpan.FromMinutes(_jwtSettings.RefreshTokenExpirationInMinutes));
+            var result = await _userManager.UpdateAsync(user);
+            
+            if (result.Succeeded)
+            {
+                return new RefreshToken()
+                {
+                    Token = newToken,
+                    UserId = userId,
+                    RefreshT = newRefreshToken,
+                    TokenExp = _jwtSettings.ExpirationInMinutes * 60,
+                    RefTokenExp = _jwtSettings.RefreshTokenExpirationInMinutes * 60
+                };
+            }
+
+            return null;
+        }
+        
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create()){
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+        
+        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret)),
+                ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+        }
+
+        public IEnumerable<UserEdit> GetAllUsers(Expression<Func<User, object>> orderBy, int start, int count,
+            OrderDirection orderDirection = OrderDirection.Asc)
+        {
+            var users = _userManager.Users;
+            
+            var usersSorted = orderDirection == OrderDirection.Asc ? users.OrderBy(orderBy) : users.OrderByDescending(orderBy);
+
+            IQueryable<User> usersGrouped;
+            if (count > 0)
+            {
+                usersGrouped = usersSorted.Skip(start).Take(count);
+            }
+            else
+            {
+                usersGrouped = usersSorted.Skip(start);
+            }
+
+            var usersOutput = _mapper.Map<IEnumerable<User>, IEnumerable<UserEdit>>(usersGrouped);
+            
+            return usersOutput;
         }
     }
 }

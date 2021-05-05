@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 using AutoMapper;
 using Koop.Extensions;
@@ -39,6 +40,8 @@ namespace Koop
                     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     opts.JsonSerializerOptions.IgnoreNullValues = true;
                 });
+            
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddDbContext<KoopDbContext>(options =>
                 options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
@@ -58,20 +61,19 @@ namespace Koop
 
             services.AddAuth(jwtSettings);
             services.AddIdentityPasswordPolicy();
-
+            
             services.AddSwaggerExt();
 
             services.AddControllers().AddNewtonsoftJson(o =>
                 o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
-            
-            // CORS POLICY
+
             services.AddCors(options =>
             {
-                options.AddPolicy(name: "MyPolicy",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:4200");
-                    });
+                options.AddPolicy("CorsPolicy", builder => builder
+                    .WithOrigins("http://localhost:4200")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
             });
         }
 
@@ -87,11 +89,11 @@ namespace Koop
             app.UseHttpsRedirection();
             
             app.UseRouting();
-            
-            app.UseCors("MyPolicy");
+
+            app.UseCors("CorsPolicy");
             
             app.UseAuth();
-
+            
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }

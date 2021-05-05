@@ -18,13 +18,13 @@ namespace Koop.Models.Repositories
     {
         public IEnumerable<ProductsShop> GetProductsShop(Guid userId, Expression<Func<ProductsShop, object>> orderBy, int start,
             int count,
-            OrderDirection orderDirection = OrderDirection.Asc, Guid productId = default(Guid));
+            OrderDirection orderDirection = OrderDirection.Asc, Guid categoryId = default(Guid), Guid productId = default(Guid));
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
         
         IEnumerable<BasketsView> GetBaskets();
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
-        SupplierView GetSupplier(Guid supplierId);
+        Supplier GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
         public ShopRepositoryReturn UpdateProduct(Product product);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
@@ -56,5 +56,7 @@ namespace Koop.Models.Repositories
         public void ChangeOrderStatus(Order order, OrderStatuses status);
 
         public void ClearBaskets();
+
+        public void AssignBaskets(Guid orderId);
     }
 }

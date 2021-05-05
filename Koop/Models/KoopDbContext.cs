@@ -42,7 +42,6 @@ namespace Koop.Models
         public virtual DbSet<BasketsView> BasketViews { get; set; }
         public virtual DbSet<OrderGrandeHistoryView> OrderGrandeHistoryViews { get; set; }
 
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -581,7 +580,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("supplier_view");
+                entity.ToView("supplier_view");
                 
                 entity.Property(e => e.Available).HasColumnName("available");
 
@@ -624,7 +623,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("baskets_view");
+                entity.ToView("baskets_view");
 
                 entity.Property(e => e.BasketName)
                     .HasMaxLength(100)
@@ -637,7 +636,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("order_grande_history_view");
+                entity.ToView("order_grande_history_view");
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 

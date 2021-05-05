@@ -13,11 +13,11 @@ namespace Koop.Services
 {
     public interface IAuthService
     {
-        Task<IdentityResult> SignUp([FromBody]UserEdit newUser);
+        Task<ProblemResponse> SignUp([FromBody]UserEdit newUser);
         public Task<RefreshToken> SignIn(UserLogIn userLogIn);
         Task<IdentityResult> CreateRole(string roleName);
         Task<IdentityResult> AddRoleToUser(Guid id, [FromBody] string roleName);
-        public Task<IdentityResult> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles);
+        public Task<ProblemResponse> EditUser(UserEdit userEdit, Guid userId, Guid authUserId, IEnumerable<string> authUserRoles);
         public UserEdit GetUser(Guid userId);
         public Task<IdentityResult> RemoveUser(Guid userId);
         public Task<IdentityResult> RemoveRoleFromUser(Guid userId, string roleName);
@@ -32,5 +32,10 @@ namespace Koop.Services
 
         public Task<bool> EmailDuplicationCheck(string email);
         public Task<bool> UserDuplicationCheck(string email);
+        public Task<IEnumerable<Roles>> GetAllRolesAsync();
+        public Task<IList<string>> GetUserRoleAsync(string userId);
+        public Task<Guid> GetUserRoleId(string roleName);
+        public Task<ProblemResponse> GetPasswordResetTokenAsync(PasswordReset data);
+        public Task<ProblemResponse> ResetPassword(PasswordReset data);
     }
 }

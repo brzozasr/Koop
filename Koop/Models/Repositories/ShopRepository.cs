@@ -169,6 +169,14 @@ namespace Koop.Models.Repositories
             //return _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
             return availQuantities;
         }
+        
+        public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId)
+        {
+            var availQuantities = _koopDbContext.AvailableQuantities
+                .Where(p => p.ProductId == productId);
+            
+            return availQuantities;
+        }
 
         public ShopRepositoryReturn UpdateAvailableQuantities(IEnumerable<AvailableQuantity>availableQuantity)
         {

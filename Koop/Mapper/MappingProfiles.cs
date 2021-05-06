@@ -62,6 +62,8 @@ namespace Koop.Mapper
             CreateMap<Supplier, SupplierViewMap>();
 
             CreateMap<Role, Roles>();
+            
+            CreateMap<CategoryUpdate, Category>();
         }
     }
 }

@@ -5,6 +5,7 @@ using AutoMapper;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,6 +43,7 @@ namespace Koop.Controllers
             }
         }
         
+        [Authorize(Roles = "Admin")]
         [HttpPost("Update/Insert")]
         public async Task<IActionResult> UpdateCategories(CategoryUpdate categoryUpdate)
         {

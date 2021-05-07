@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
@@ -24,7 +26,7 @@ namespace Koop.Controllers
             _uow = uow;
             _mapper = mapper;
         }
-        
+
         [HttpGet("Get/Categories")]
         public async Task<IActionResult> GetCategories()
         {
@@ -36,6 +38,7 @@ namespace Koop.Controllers
                 {
                     return BadRequest(new {error = "There are no categories available"});
                 }
+
                 return Ok(result);
             }
             catch (Exception e)
@@ -43,7 +46,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, null, e.Source);
             }
         }
-        
+
         [Authorize(Roles = "Admin")]
         [HttpPost("Update/Insert")]
         public async Task<IActionResult> UpdateCategories(CategoryUpdate categoryUpdate)
@@ -60,24 +63,64 @@ namespace Koop.Controllers
 
                     if (categoryId != Guid.Empty)
                     {
-                        return Ok(new {info = "The new category has been added."});
+                        return Ok(new
+                        {
+                            info = "The new category has been added.",
+                            addCategoryId = categoryId
+                        });
                     }
-                    
-                    return BadRequest(new {error = $"Something went wrong, the category \'{categoryUpdate.CategoryName}\' was not added"});
+
+                    return BadRequest(new
+                    {
+                        error = $"Something went wrong, the category \'{categoryUpdate.CategoryName}\' was not added"
+                    });
                 }
-                
+
                 var category = await _uow.Repository<Category>()
                     .GetAll().FirstOrDefaultAsync(x => x.CategoryId == categoryUpdate.CategoryId);
 
                 if (category == null)
                 {
-                    return BadRequest(new {error = $"The category with ID: {categoryUpdate.CategoryId} is unavailable."});
+                    return BadRequest(
+                        new {error = $"The category with ID: {categoryUpdate.CategoryId} is unavailable."});
                 }
 
                 _mapper.Map(categoryUpdate, category);
-                
+
                 await _uow.SaveChangesAsync();
                 return Ok(new {info = "The category has been updated."});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+        }
+
+        [HttpPost("Upload/Image"), DisableRequestSizeLimit]
+        public IActionResult UploadImg()
+        {
+            try
+            {
+                var file = Request.Form.Files[0];
+                var folderName = Path.Combine("Resources", "CategoryImgs");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (file.Length > 0)
+                {
+                    var guidFileName = Guid.NewGuid().ToString();
+                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName?.Trim('"');
+                    var fullPath = Path.Combine(pathToSave, fileName ?? guidFileName);
+                    var dbPath = Path.Combine(folderName, fileName ?? guidFileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        file.CopyTo(stream);
+                    }
+
+                    return Ok(new {dbPath});
+                }
+
+                return BadRequest(new {error = $"The file was not uploaded to the server."});
             }
             catch (Exception e)
             {

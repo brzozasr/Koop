@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Koop.Models;
@@ -35,7 +36,7 @@ namespace Koop.Controllers
                 {
                     return BadRequest(new {error = "There are no categories available"});
                 }
-                return Ok(result);
+                return Ok(result.OrderBy(x => x.CategoryName));
             }
             catch (Exception e)
             {

@@ -49,30 +49,41 @@ namespace Koop.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("Update/Insert")]
-        public async Task<IActionResult> UpdateCategories(CategoryUpdate categoryUpdate)
+        public async Task<IActionResult> UpdateInsertCategory(CategoryUpdate categoryUpdate)
         {
             try
             {
                 if (categoryUpdate.CategoryId == null || categoryUpdate.CategoryId == Guid.Empty)
                 {
-                    var categoryNew = new Category();
-                    var insertCategory = _mapper.Map(categoryUpdate, categoryNew);
-                    await _uow.Repository<Category>().AddAsync(insertCategory);
-                    await _uow.SaveChangesAsync();
-                    var categoryId = insertCategory.CategoryId;
+                    Guid categoryId;
 
+                    if (categoryUpdate.CategoryName.Length > 0)
+                    {
+                        var categoryNew = new Category();
+                        var insertCategory = _mapper.Map(categoryUpdate, categoryNew);
+                        await _uow.Repository<Category>().AddAsync(insertCategory);
+                        await _uow.SaveChangesAsync();
+                        categoryId = insertCategory.CategoryId;
+                    }
+                    else
+                    {
+                        return BadRequest(new
+                        {
+                            error = $"The category field cannot be empty. The category was not added."
+                        });
+                    }
+                    
                     if (categoryId != Guid.Empty)
                     {
                         return Ok(new
                         {
-                            info = "The new category has been added.",
-                            addCategoryId = categoryId
+                            info = "The new category has been added."
                         });
                     }
 
                     return BadRequest(new
                     {
-                        error = $"Something went wrong, the category \'{categoryUpdate.CategoryName}\' was not added"
+                        error = $"Something went wrong, the category \'{categoryUpdate.CategoryName}\' was not added."
                     });
                 }
 
@@ -85,10 +96,18 @@ namespace Koop.Controllers
                         new {error = $"The category with ID: {categoryUpdate.CategoryId} is unavailable."});
                 }
 
-                _mapper.Map(categoryUpdate, category);
+                if (categoryUpdate.CategoryName.Length > 0)
+                {
+                    _mapper.Map(categoryUpdate, category);
 
-                await _uow.SaveChangesAsync();
-                return Ok(new {info = "The category has been updated."});
+                    await _uow.SaveChangesAsync();
+                    return Ok(new {info = "The category has been updated."});
+                }
+
+                return BadRequest(new
+                {
+                    error = $"The category field cannot be empty. The category was not added."
+                });
             }
             catch (Exception e)
             {

@@ -36,7 +36,7 @@ namespace Koop.Controllers
                 {
                     return BadRequest(new {error = "There are no categories available"});
                 }
-                return Ok(result.OrderBy(x => x.CategoryName));
+                return Ok(result);
             }
             catch (Exception e)
             {

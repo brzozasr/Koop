@@ -42,11 +42,27 @@ namespace Koop.Controllers
             }
         }
         
-        [HttpPost("Update")]
+        [HttpPost("Update/Insert")]
         public async Task<IActionResult> UpdateCategories(CategoryUpdate categoryUpdate)
         {
             try
             {
+                if (categoryUpdate.CategoryId == null || categoryUpdate.CategoryId == Guid.Empty)
+                {
+                    var categoryNew = new Category();
+                    var insertCategory = _mapper.Map(categoryUpdate, categoryNew);
+                    await _uow.Repository<Category>().AddAsync(insertCategory);
+                    await _uow.SaveChangesAsync();
+                    var categoryId = insertCategory.CategoryId;
+
+                    if (categoryId != Guid.Empty)
+                    {
+                        return Ok(new {info = "The new category has been added."});
+                    }
+                    
+                    return BadRequest(new {error = $"Something went wrong, the category \'{categoryUpdate.CategoryName}\' was not added"});
+                }
+                
                 var category = await _uow.Repository<Category>()
                     .GetAll().FirstOrDefaultAsync(x => x.CategoryId == categoryUpdate.CategoryId);
 

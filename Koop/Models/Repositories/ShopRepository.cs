@@ -4,9 +4,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Transactions;
 using AutoMapper;
 using Koop.Extensions;
 using Koop.models;
+using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
 using Microsoft.EntityFrameworkCore;
@@ -143,14 +145,102 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.AddProductSuccess;
         }
 
-        public ShopRepositoryReturn UpdateProduct(Product product)
+        public ProblemResponse UpdateProduct(Product product)
         {
-            var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
-            var productUpdated = _mapper.Map(product, productExist);
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Wystąpił błąd nieznanego pochodzenia",
+                Status = 500
+            };
             
-            _koopDbContext.Products.Update(productUpdated);
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                Product updatedProduct;
+                if (product.ProductId == Guid.Empty)
+                {
+                    Product newProductTmp = new Product();
+                    var newProduct = _mapper.Map(product, newProductTmp);
+                    _koopDbContext.Products.Add(newProduct);
+                    updatedProduct = newProduct;
+                }
+                else
+                {
+                    var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
 
-            return ShopRepositoryReturn.UpdateProductSuccess;
+                    if (productExist is null)
+                    {
+                        throw new Exception($"Nie znaleziono produktu o podanym Id: {product.ProductId}");
+                    }
+                
+                    var productUpdated = _mapper.Map(product, productExist);
+                    _koopDbContext.Products.Update(productUpdated);
+                    updatedProduct = productUpdated;
+                }
+                _koopDbContext.SaveChanges();
+
+                Console.WriteLine($"productID: {updatedProduct.ProductId}");
+
+                if (updatedProduct.Category.Any())
+                {
+                    var currentProductCategories =
+                        _koopDbContext.ProductCategories.Where(p => p.ProductId == product.ProductId).Include(p => p.Category);
+                    
+                    var categoriesToAdd = updatedProduct.Category.Where(p => !currentProductCategories.Select(q => q.Category.CategoryName).Contains(p.CategoryName));
+                    var categoriesToRemove = currentProductCategories.Where(p =>
+                        !updatedProduct.Category.Select(q => q.CategoryName).Contains(p.Category.CategoryName));
+                    
+                    foreach (var category in categoriesToAdd)
+                    {
+                        ProductCategory productCategory = new ProductCategory()
+                        {
+                            CategoryId = category.CategoryId,
+                            ProductId = updatedProduct.ProductId
+                        };
+
+                        _koopDbContext.ProductCategories.Add(productCategory);
+                    }
+                    
+                    _koopDbContext.ProductCategories.RemoveRange(categoriesToRemove);
+                }
+
+                if (updatedProduct.AvailQuantity.Any())
+                {
+                    var currentAvailableQuantities =
+                        _koopDbContext.AvailableQuantities.Where(p => p.ProductId == product.ProductId);
+
+                    var availQuantToAdd = updatedProduct.AvailQuantity.Where(p =>
+                        !currentAvailableQuantities.Select(q => q.Quantity).Contains(p.Quantity));
+                    var availQuantToRemove = currentAvailableQuantities.Where(p =>
+                        !updatedProduct.AvailQuantity.Select(q => q.Quantity).Contains(p.Quantity));
+
+                    foreach (var quantity in availQuantToAdd)
+                    {
+                        AvailableQuantity availableQuantity = new AvailableQuantity()
+                        {
+                            // AvailableQuantityId = Guid.Empty,
+                            ProductId = updatedProduct.ProductId,
+                            Quantity = quantity.Quantity
+                        };
+
+                        _koopDbContext.AvailableQuantities.Add(availableQuantity);
+                    }
+                    
+                    _koopDbContext.AvailableQuantities.RemoveRange(availQuantToRemove);
+                }
+
+                _koopDbContext.SaveChanges();
+                problemResponse.Detail = "Dane zostały poprawnie zapisane";
+                problemResponse.Status = 200;
+                scope.Complete();
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                scope.Dispose();
+            }
+            
+            return problemResponse;
         }
 
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product)

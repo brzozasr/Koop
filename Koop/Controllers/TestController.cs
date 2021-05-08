@@ -138,7 +138,7 @@ namespace Koop.Controllers
         {
             var response = _uow.ShopRepository().UpdateProduct(product);
             
-            return ToResult(response);
+            return Ok(response);
         }
 
         [HttpDelete("product/remove")]

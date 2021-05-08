@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Koop.Extensions;
 using Koop.models;
+using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
 
@@ -26,7 +27,7 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         Supplier GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
-        public ShopRepositoryReturn UpdateProduct(Product product);
+        public ProblemResponse UpdateProduct(Product product);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);

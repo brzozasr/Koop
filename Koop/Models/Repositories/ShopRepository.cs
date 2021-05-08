@@ -177,6 +177,9 @@ namespace Koop.Models.Repositories
                     _koopDbContext.Products.Update(productUpdated);
                     updatedProduct = productUpdated;
                 }
+                _koopDbContext.SaveChanges();
+
+                Console.WriteLine($"productID: {updatedProduct.ProductId}");
 
                 if (updatedProduct.Category.Any())
                 {
@@ -192,7 +195,7 @@ namespace Koop.Models.Repositories
                         ProductCategory productCategory = new ProductCategory()
                         {
                             CategoryId = category.CategoryId,
-                            ProductId = product.ProductId
+                            ProductId = updatedProduct.ProductId
                         };
 
                         _koopDbContext.ProductCategories.Add(productCategory);
@@ -215,7 +218,8 @@ namespace Koop.Models.Repositories
                     {
                         AvailableQuantity availableQuantity = new AvailableQuantity()
                         {
-                            ProductId = product.ProductId,
+                            // AvailableQuantityId = Guid.Empty,
+                            ProductId = updatedProduct.ProductId,
                             Quantity = quantity.Quantity
                         };
 
@@ -226,6 +230,8 @@ namespace Koop.Models.Repositories
                 }
 
                 _koopDbContext.SaveChanges();
+                problemResponse.Detail = "Dane zostały poprawnie zapisane";
+                problemResponse.Status = 200;
                 scope.Complete();
             }
             catch (Exception e)

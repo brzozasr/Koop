@@ -64,6 +64,7 @@ namespace Koop.Mapper
             CreateMap<Role, Roles>();
             
             CreateMap<CategoryUpdate, Category>();
+            CreateMap<PictureUpdate, Category>();
         }
     }
 }

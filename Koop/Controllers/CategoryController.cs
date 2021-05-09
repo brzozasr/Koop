@@ -98,6 +98,7 @@ namespace Koop.Controllers
 
                 if (categoryUpdate.CategoryName.Length > 0)
                 {
+                    categoryUpdate.Picture = category.Picture;
                     _mapper.Map(categoryUpdate, category);
 
                     await _uow.SaveChangesAsync();

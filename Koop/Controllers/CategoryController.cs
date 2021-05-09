@@ -162,10 +162,24 @@ namespace Koop.Controllers
                 if (file.Length > 0)
                 {
                     var guidFileName = Guid.NewGuid().ToString();
-                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName?.Trim('"');
-                    var fullPath = Path.Combine(pathToSave, fileName ?? guidFileName);
-                    var dbPath = Path.Combine(folderName, fileName ?? guidFileName);
+                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName?.Trim('"') ?? guidFileName;
+                    var fullPath = Path.Combine(pathToSave, fileName);
+                    var dbPath = Path.Combine(folderName, fileName);
 
+                    var fileNameWithoutExtension = fileName.Substring(0, fileName.LastIndexOf(".", StringComparison.Ordinal));
+                    var picList = Directory.GetFiles(pathToSave, $"{fileNameWithoutExtension}.*");
+
+                    if (picList.Length > 0)
+                    {
+                        foreach (var pic in picList)
+                        {
+                            if (System.IO.File.Exists(pic))
+                            {
+                                System.IO.File.Delete(pic);
+                            }
+                        }
+                    }
+                    
                     using (var stream = new FileStream(fullPath, FileMode.Create))
                     {
                         file.CopyTo(stream);

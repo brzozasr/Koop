@@ -39,7 +39,7 @@ namespace Koop.Controllers
                     return BadRequest(new {error = "There are no categories available"});
                 }
 
-                return Ok(result);
+                return Ok(result.OrderBy(x => x.CategoryName));
             }
             catch (Exception e)
             {
@@ -49,7 +49,7 @@ namespace Koop.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost("Update/Insert")]
-        public async Task<IActionResult> UpdateInsertCategory(CategoryUpdate categoryUpdate)
+        public async Task<IActionResult> UpdateInsertCategory([FromBody] CategoryUpdate categoryUpdate)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace Koop.Controllers
                             error = $"The category field cannot be empty. The category was not added."
                         });
                     }
-                    
+
                     if (categoryId != Guid.Empty)
                     {
                         return Ok(new
@@ -107,6 +107,40 @@ namespace Koop.Controllers
                 return BadRequest(new
                 {
                     error = $"The category field cannot be empty. The category was not added."
+                });
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, null, e.Source);
+            }
+        }
+
+        [HttpPost("Update/Image/Name")]
+        public async Task<IActionResult> UpdateImgOfCategory([FromBody] PictureUpdate pictureUpdate)
+        {
+            try
+            {
+                if (pictureUpdate.Picture.Length > 0)
+                {
+                    var category = await _uow.Repository<Category>()
+                        .GetAll().FirstOrDefaultAsync(x => x.CategoryId == pictureUpdate.CategoryId);
+
+                    if (category is not null)
+                    {
+                        _mapper.Map(pictureUpdate, category);
+                        await _uow.SaveChangesAsync();
+                        return Ok(new {info = "The picture of category has been updated."});
+                    }
+
+                    return BadRequest(new
+                    {
+                        error = "The selected category is not available."
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    error = $"The picture name field cannot be empty. The picture was not updated."
                 });
             }
             catch (Exception e)

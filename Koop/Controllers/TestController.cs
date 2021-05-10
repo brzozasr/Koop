@@ -10,6 +10,7 @@ using Koop.models;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -314,6 +315,35 @@ namespace Koop.Controllers
             try
             {
                 return Ok(_uow.ShopRepository().GetCooperatorOrders(coopId, orderId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+        
+        [HttpGet("User/{coopId:guid}/Order/In/Basket")]
+        public IActionResult CoopOrderInBasket(Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var order = _uow.ShopRepository().GetCooperatorOrders(coopId, lastOrderGrandeId.Value)
+                        .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString());
+
+                    if (order.Any())
+                    {
+                        return Ok(order);
+                    }
+                    return Ok(new {info = "The basket is empty."});
+                }
+                
+                return BadRequest(new {error = "No Grande orders"});
             }
             catch (Exception e)
             {

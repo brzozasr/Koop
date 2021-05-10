@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
@@ -11,6 +12,7 @@ using Koop.models;
 using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -145,7 +147,7 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.AddProductSuccess;
         }
 
-        public ProblemResponse UpdateProduct(Product product)
+        public ProblemResponse UpdateProduct(Product product, IFormFile picture)
         {
             ProblemResponse problemResponse = new ProblemResponse()
             {
@@ -227,6 +229,27 @@ namespace Koop.Models.Repositories
                     }
                     
                     _koopDbContext.AvailableQuantities.RemoveRange(availQuantToRemove);
+                }
+
+                if (picture.Length > 0)
+                {
+                    var fileExtension = picture.FileName.Split('.');
+                    if (fileExtension.Length != 2)
+                    {
+                        throw new Exception($"Problem z obrazkiem - za dużo kropek");
+                    }
+
+                    var fileName = $"{updatedProduct.ProductId}.{fileExtension[1]}";
+                    var fullPath = Path.Combine("Resources/ProductImgs", fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        picture.CopyTo(stream);
+                    }
+
+                    updatedProduct.Picture = fullPath;
+                    _koopDbContext.Products.Update(updatedProduct);
+                    _koopDbContext.SaveChanges();
                 }
 
                 _koopDbContext.SaveChanges();

@@ -6,6 +6,7 @@ using Koop.models;
 using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
+using Microsoft.AspNetCore.Http;
 
 namespace Koop.Models.Repositories
 {
@@ -27,7 +28,7 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         Supplier GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
-        public ProblemResponse UpdateProduct(Product product);
+        public ProblemResponse UpdateProduct(Product product, IFormFile picture);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);

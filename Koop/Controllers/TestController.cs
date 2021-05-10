@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Extensions;
 using Koop.models;
@@ -15,6 +16,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NetTopologySuite.Operation.Union;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Koop.Controllers
 {
@@ -132,14 +136,40 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }
-
+        
         [HttpPost("product/update")]
+        public IActionResult UpdateProduct()
+        {
+            var file = Request.Form.Files[0];
+            var data = Request.Form["data"].ToString();
+            var options = new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var jdata = (JObject)JsonConvert.DeserializeObject(data);
+            var product = JsonSerializer.Deserialize<Product>(data, options);
+            
+            var availQuantS = JsonConvert.SerializeObject(jdata["availQuantity"]);
+            var availQuantity = JsonSerializer.Deserialize<List<AvailableQuantity>>(availQuantS, options);
+            
+            var categoryS = JsonConvert.SerializeObject(jdata["category"]);
+            var category = JsonSerializer.Deserialize<List<Category>>(categoryS, options);
+
+            product.Category = category;
+            product.AvailQuantity = availQuantity;
+
+            var response = _uow.ShopRepository().UpdateProduct(product, file);
+
+            return Ok(response);
+        }
+
+        /*[HttpPost("product/update")]
         public IActionResult UpdateProduct(Product product)
         {
             var response = _uow.ShopRepository().UpdateProduct(product);
             
             return Ok(response);
-        }
+        }*/
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)

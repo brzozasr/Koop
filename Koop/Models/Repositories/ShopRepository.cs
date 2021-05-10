@@ -149,6 +149,8 @@ namespace Koop.Models.Repositories
 
         public ProblemResponse UpdateProduct(Product product, IFormFile picture)
         {
+            string dirPath = "Resources/ProductImgs";
+            
             ProblemResponse problemResponse = new ProblemResponse()
             {
                 Detail = "Wystąpił błąd nieznanego pochodzenia",
@@ -240,7 +242,7 @@ namespace Koop.Models.Repositories
                     }
 
                     var fileName = $"{updatedProduct.ProductId}.{fileExtension[1]}";
-                    string dirPath = "Resources/ProductImgs";
+                    
                     var fullPath = Path.Combine(dirPath, fileName);
 
                     // Remove files with the same name
@@ -258,6 +260,17 @@ namespace Koop.Models.Repositories
                     updatedProduct.Picture = fullPath;
                     _koopDbContext.Products.Update(updatedProduct);
                     _koopDbContext.SaveChanges();
+                }
+                else
+                {
+                    if (updatedProduct.Picture is null || updatedProduct.Picture.Equals(String.Empty))
+                    {
+                        var filesWithSameName = Directory.GetFiles(dirPath, $"{updatedProduct.ProductId}*");
+                        foreach (var file in filesWithSameName)
+                        {
+                            File.Delete(file);
+                        }
+                    }
                 }
 
                 _koopDbContext.SaveChanges();

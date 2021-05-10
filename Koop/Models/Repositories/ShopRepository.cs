@@ -231,7 +231,7 @@ namespace Koop.Models.Repositories
                     _koopDbContext.AvailableQuantities.RemoveRange(availQuantToRemove);
                 }
 
-                if (picture.Length > 0)
+                if (picture is not null && picture.Length > 0)
                 {
                     var fileExtension = picture.FileName.Split('.');
                     if (fileExtension.Length != 2)
@@ -240,7 +240,15 @@ namespace Koop.Models.Repositories
                     }
 
                     var fileName = $"{updatedProduct.ProductId}.{fileExtension[1]}";
-                    var fullPath = Path.Combine("Resources/ProductImgs", fileName);
+                    string dirPath = "Resources/ProductImgs";
+                    var fullPath = Path.Combine(dirPath, fileName);
+
+                    // Remove files with the same name
+                    var filesWithSameName = Directory.GetFiles(dirPath, $"{updatedProduct.ProductId}*");
+                    foreach (var file in filesWithSameName)
+                    {
+                        File.Delete(file);
+                    }
 
                     using (var stream = new FileStream(fullPath, FileMode.Create))
                     {

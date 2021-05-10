@@ -12,6 +12,7 @@ using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -140,7 +141,16 @@ namespace Koop.Controllers
         [HttpPost("product/update")]
         public IActionResult UpdateProduct()
         {
-            var file = Request.Form.Files[0];
+            IFormFile file;
+            if (Request.Form.Files is not null && Request.Form.Files.Count > 0)
+            {
+                file = Request.Form.Files[0];
+            }
+            else
+            {
+                file = null;
+            }
+            
             var data = Request.Form["data"].ToString();
             var options = new JsonSerializerOptions()
             {

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Koop.Models.RepositoryModels
@@ -18,5 +19,6 @@ namespace Koop.Models.RepositoryModels
         public bool Magazine { get; set; }
         public int? Deposit { get; set; }
         public bool Ordered { get; set; }
+        public Guid ProductId { get; set; }
     }
 }

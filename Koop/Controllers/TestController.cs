@@ -4,18 +4,24 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models;
+using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NetTopologySuite.Operation.Union;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Koop.Controllers
 {
@@ -29,7 +35,7 @@ namespace Koop.Controllers
         {
             _uow = genericUnitOfWork;
         }
-
+        
         [AllowAnonymous]
         [HttpGet("index")]
         public IActionResult Index()
@@ -51,7 +57,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-
+        
         [Authorize]
         [HttpGet("Auth")]
         public IActionResult Auth()
@@ -62,7 +68,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-
+        
         [Authorize(Policy = "Szymek")]
         [HttpGet("AuthUserName")]
         public IActionResult AuthUserName()
@@ -73,7 +79,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-
+        
         [Authorize(Roles = "Koty")]
         [HttpGet("AuthRole")]
         public IActionResult AuthRole()
@@ -87,8 +93,7 @@ namespace Koop.Controllers
 
         [Authorize]
         [HttpGet("products")]
-        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc",
-            Guid categoryId = default(Guid))
+        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc", Guid categoryId = default(Guid))
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
             orderBy = orderBy.ToLower();
@@ -111,8 +116,7 @@ namespace Koop.Controllers
                 _ => OrderDirection.Asc
             };
 
-            return Ok(_uow.ShopRepository()
-                .GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
+            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
         }
 
         [HttpGet("product/{productId}/get")]
@@ -132,26 +136,61 @@ namespace Koop.Controllers
         public IActionResult AddProduct(Product product)
         {
             var response = _uow.ShopRepository().AddProduct(product);
-
+            
             return ToResult(response);
         }
 
         [HttpPost("product/update")]
-        public IActionResult UpdateProduct(Product product)
+        public IActionResult UpdateProduct()
         {
-            var response = _uow.ShopRepository().UpdateProduct(product);
+            IFormFile file;
+            if (Request.Form.Files is not null && Request.Form.Files.Count > 0)
+            {
+                file = Request.Form.Files[0];
+            }
+            else
+            {
+                file = null;
+            }
+            
+            var data = Request.Form["data"].ToString();
+            var options = new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var jdata = (JObject)JsonConvert.DeserializeObject(data);
+            var product = JsonSerializer.Deserialize<Product>(data, options);
+            
+            var availQuantS = JsonConvert.SerializeObject(jdata["availQuantity"]);
+            var availQuantity = JsonSerializer.Deserialize<List<AvailableQuantity>>(availQuantS, options);
+            
+            var categoryS = JsonConvert.SerializeObject(jdata["category"]);
+            var category = JsonSerializer.Deserialize<List<Category>>(categoryS, options);
+
+            product.Category = category;
+            product.AvailQuantity = availQuantity;
+
+            var response = _uow.ShopRepository().UpdateProduct(product, file);
 
             return Ok(response);
         }
+
+        /*[HttpPost("product/update")]
+        public IActionResult UpdateProduct(Product product)
+        {
+            var response = _uow.ShopRepository().UpdateProduct(product);
+            
+            return Ok(response);
+        }*/
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)
         {
             var response = _uow.ShopRepository().RemoveProduct(products);
-
+            
             return ToResult(response);
         }
-
+        
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {
@@ -164,7 +203,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-
+        
         [HttpPost("product/categories/update")]
         public IActionResult UpdateCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -172,7 +211,7 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-
+        
         [HttpDelete("product/categories/remove")]
         public IActionResult RemoveCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -180,20 +219,21 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-
+        
         [HttpGet("product/availQuantities")]
         public IActionResult GetProductAvailQuantities(Guid productId)
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+                var result = _uow.ShopRepository().GetAvailableQuantities(productId);
+                return Ok(result);
             }
             catch (Exception e)
             {
                 return Problem(e.Message, null, 500);
             }
         }
-
+        
         [HttpGet("product/availAllQuantities")]
         public IActionResult GetProductAllAvailQuantities(Guid productId)
         {
@@ -219,7 +259,7 @@ namespace Koop.Controllers
         public IActionResult RemoveAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
         {
             var response = _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
-
+            
             return ToResult(response);
         }
 
@@ -241,7 +281,7 @@ namespace Koop.Controllers
         public IActionResult UnitsUpdate(IEnumerable<Unit> units)
         {
             var response = _uow.ShopRepository().UpdateUnits(units);
-
+            
             return ToResult(response);
         }
 
@@ -283,7 +323,7 @@ namespace Koop.Controllers
         public IActionResult UpdateCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().UpdateCategories(categories);
-
+            
             return ToResult(response);
         }
 
@@ -291,7 +331,7 @@ namespace Koop.Controllers
         public IActionResult RemoveCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().RemoveCategories(categories);
-
+            
             return ToResult(response);
         }
 
@@ -304,10 +344,42 @@ namespace Koop.Controllers
             if (userId is not null)
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
+                
+                return Ok(response);
+            }
+            
+            return Problem("Your identity could not be verified.", null, 500);
+        }
 
-                return ToResult(response);
+        [HttpGet("product/isAvailable")]
+        public IActionResult CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse result;
+            try
+            {
+                result = _uow.ShopRepository().CheckProductAvailability(productId);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
             }
 
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("order/orderedItems/count")]
+        public IActionResult GetOrderedItemsCount()
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            
+            if (userId is not null)
+            {
+                var response = _uow.ShopRepository().GetOrderedItemsCount(Guid.Parse(userId));
+                
+                return Ok(response);
+            }
+            
             return Problem("Your identity could not be verified.", null, 500);
         }
 
@@ -360,7 +432,7 @@ namespace Koop.Controllers
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
-
+            
             return ToResult(response);
         }
 
@@ -428,22 +500,22 @@ namespace Koop.Controllers
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-
+        
 
         // [HttpGet("supplier/{abbr}/edit")]
         // public IActionResult EditSupplier(string abbr)
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-
+        
         [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
             var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
-
+            
             return ToResult(response);
         }
-
+        
         /*[HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
@@ -451,20 +523,20 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }*/
-
+        
 
         // [HttpGet("allsuppliers")]
         // public IActionResult AllSuppliers()
         // {
         //     return Ok(_uow.Repository<Supplier>().GetAll());
         // }
-
+        
         [HttpGet("cooperator/{firstname}+{lastname}/history")]
         public IActionResult UserOrdersHistoryView(string firstName, string lastName)
         {
             return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
-
+        
         // [HttpGet("order/baskets")]
         // public IActionResult BasketName()
         // {
@@ -476,7 +548,7 @@ namespace Koop.Controllers
         // {
         //     return Ok(_uow.Repository<Order>().GetAll());
         // }
-
+        
         [NonAction]
         private IActionResult ToResult(ShopRepositoryReturn shopRepositoryReturn)
         {
@@ -490,7 +562,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-
+        
         [Authorize(Roles = "Admin,Koty")]
         [HttpDelete("supplier/{supplierId}/remove")]
         public async Task<IActionResult> RemoveSupplier(Guid supplierId)
@@ -499,12 +571,12 @@ namespace Koop.Controllers
             {
                 // IEnumerable<Product> products = _uow.ShopRepository().GetProductsBySupplier(supplierId);
                 // _uow.ShopRepository().RemoveProduct(products);
-
+                
                 var supplier = _uow.Repository<Supplier>()
                     .GetDetail(s => s.SupplierId == supplierId);
-
+                
                 _uow.Repository<Supplier>().Delete(supplier);
-
+                
                 await _uow.SaveChangesAsync();
                 return Ok(new {info = $"The supplier has been deleted (supplier ABBR: {supplier.SupplierAbbr})."});
             }
@@ -526,7 +598,7 @@ namespace Koop.Controllers
                 return Problem(e.Message);
             }
         }
-
+        
         [AllowAnonymous]
         [HttpGet("allsuppliers")]
         public IActionResult AllSuppliers()

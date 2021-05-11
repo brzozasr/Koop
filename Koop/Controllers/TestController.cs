@@ -10,6 +10,7 @@ using Koop.models;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ namespace Koop.Controllers
         {
             _uow = genericUnitOfWork;
         }
-        
+
         [AllowAnonymous]
         [HttpGet("index")]
         public IActionResult Index()
@@ -50,7 +51,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize]
         [HttpGet("Auth")]
         public IActionResult Auth()
@@ -61,7 +62,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize(Policy = "Szymek")]
         [HttpGet("AuthUserName")]
         public IActionResult AuthUserName()
@@ -72,7 +73,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize(Roles = "Koty")]
         [HttpGet("AuthRole")]
         public IActionResult AuthRole()
@@ -86,7 +87,8 @@ namespace Koop.Controllers
 
         [Authorize]
         [HttpGet("products")]
-        public IActionResult Products(string orderBy = "name", int start = 1, int count = 10, string orderDir = "asc")
+        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc",
+            Guid categoryId = default(Guid))
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
             orderBy = orderBy.ToLower();
@@ -109,7 +111,8 @@ namespace Koop.Controllers
                 _ => OrderDirection.Asc
             };
 
-            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction));
+            return Ok(_uow.ShopRepository()
+                .GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
         }
 
         [HttpGet("product/{productId}/get")]
@@ -129,7 +132,7 @@ namespace Koop.Controllers
         public IActionResult AddProduct(Product product)
         {
             var response = _uow.ShopRepository().AddProduct(product);
-            
+
             return ToResult(response);
         }
 
@@ -137,18 +140,18 @@ namespace Koop.Controllers
         public IActionResult UpdateProduct(Product product)
         {
             var response = _uow.ShopRepository().UpdateProduct(product);
-            
-            return ToResult(response);
+
+            return Ok(response);
         }
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)
         {
             var response = _uow.ShopRepository().RemoveProduct(products);
-            
+
             return ToResult(response);
         }
-        
+
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {
@@ -161,7 +164,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-        
+
         [HttpPost("product/categories/update")]
         public IActionResult UpdateCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -169,7 +172,7 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-        
+
         [HttpDelete("product/categories/remove")]
         public IActionResult RemoveCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -177,13 +180,26 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-        
+
         [HttpGet("product/availQuantities")]
         public IActionResult GetProductAvailQuantities(Guid productId)
         {
             try
             {
                 return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpGet("product/availAllQuantities")]
+        public IActionResult GetProductAllAvailQuantities(Guid productId)
+        {
+            try
+            {
+                return Ok(_uow.ShopRepository().GetAllAvailableQuantities(productId));
             }
             catch (Exception e)
             {
@@ -203,7 +219,7 @@ namespace Koop.Controllers
         public IActionResult RemoveAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
         {
             var response = _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
-            
+
             return ToResult(response);
         }
 
@@ -225,7 +241,7 @@ namespace Koop.Controllers
         public IActionResult UnitsUpdate(IEnumerable<Unit> units)
         {
             var response = _uow.ShopRepository().UpdateUnits(units);
-            
+
             return ToResult(response);
         }
 
@@ -267,7 +283,7 @@ namespace Koop.Controllers
         public IActionResult UpdateCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().UpdateCategories(categories);
-            
+
             return ToResult(response);
         }
 
@@ -275,7 +291,7 @@ namespace Koop.Controllers
         public IActionResult RemoveCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().RemoveCategories(categories);
-            
+
             return ToResult(response);
         }
 
@@ -288,10 +304,10 @@ namespace Koop.Controllers
             if (userId is not null)
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
-                
+
                 return ToResult(response);
             }
-            
+
             return Problem("Your identity could not be verified.", null, 500);
         }
 
@@ -308,15 +324,47 @@ namespace Koop.Controllers
             }
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/setQuantity/{quantity}")]
+        // [Authorize(Roles = "Default")]
+        [HttpGet("User/{coopId:guid}/Order/In/Basket")]
+        public IActionResult CoopOrderInBasket([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var order = _uow.ShopRepository().GetCooperatorOrders(coopId, lastOrderGrandeId.Value)
+                        .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString())
+                        .OrderBy(x => x.ProductName);
+
+                    if (order.Any())
+                    {
+                        return Ok(order);
+                    }
+
+                    return Ok(new {info = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpPost("orderedItem/{orderedItemId:guid}/setQuantity/{quantity:int}")]
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
-            
+
             return ToResult(response);
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/remove")]
+        [HttpPost("orderedItem/{orderedItemId:guid}/remove")]
         public IActionResult RemoveUserOrder(Guid orderedItemId)
         {
             ShopRepositoryReturn response = _uow.ShopRepository().RemoveUserOrder(orderedItemId);
@@ -324,27 +372,78 @@ namespace Koop.Controllers
             return ToResult(response);
         }
 
+        // [Authorize(Roles = "Default")]
+        [HttpPost("User/{coopId:guid}/Order/Submit")]
+        public IActionResult SubmitYourOrder([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                var orderStatusIdPlaned = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zaplanowane.ToString())?
+                    .OrderStatusId;
+
+                var orderStatusIdClosed = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zamknięte.ToString())?
+                    .OrderStatusId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var orders = _uow.Repository<OrderedItem>().GetAll()
+                        .Where(field => field.OrderId == lastOrderGrandeId &&
+                                        field.CoopId == coopId && field.OrderStatusId == orderStatusIdPlaned)
+                        .ToList();
+
+                    if (orders.Any())
+                    {
+                        if (orderStatusIdClosed.HasValue)
+                        {
+                            foreach (var item in orders)
+                            {
+                                item.OrderStatusId = orderStatusIdClosed.Value;
+                            }
+                            
+                            _uow.SaveChanges();
+                            return Ok(new {info = "The order has been accepted."});
+                        }
+                        return BadRequest(new {error = "There is a problem with the order status."});
+                    }
+
+                    return BadRequest(new {error = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
         // [HttpGet("supplier/{abbr}")]
         // public IActionResult Supplier(string abbr)
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-        
+
 
         // [HttpGet("supplier/{abbr}/edit")]
         // public IActionResult EditSupplier(string abbr)
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-        
+
         [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
             var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
-            
+
             return ToResult(response);
         }
-        
+
         /*[HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
@@ -352,20 +451,20 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }*/
-        
+
 
         // [HttpGet("allsuppliers")]
         // public IActionResult AllSuppliers()
         // {
         //     return Ok(_uow.Repository<Supplier>().GetAll());
         // }
-        
+
         [HttpGet("cooperator/{firstname}+{lastname}/history")]
         public IActionResult UserOrdersHistoryView(string firstName, string lastName)
         {
             return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
-        
+
         // [HttpGet("order/baskets")]
         // public IActionResult BasketName()
         // {
@@ -377,7 +476,7 @@ namespace Koop.Controllers
         // {
         //     return Ok(_uow.Repository<Order>().GetAll());
         // }
-        
+
         [NonAction]
         private IActionResult ToResult(ShopRepositoryReturn shopRepositoryReturn)
         {
@@ -391,7 +490,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-        
+
         [Authorize(Roles = "Admin,Koty")]
         [HttpDelete("supplier/{supplierId}/remove")]
         public async Task<IActionResult> RemoveSupplier(Guid supplierId)
@@ -400,14 +499,47 @@ namespace Koop.Controllers
             {
                 // IEnumerable<Product> products = _uow.ShopRepository().GetProductsBySupplier(supplierId);
                 // _uow.ShopRepository().RemoveProduct(products);
-                
+
                 var supplier = _uow.Repository<Supplier>()
                     .GetDetail(s => s.SupplierId == supplierId);
-                
+
                 _uow.Repository<Supplier>().Delete(supplier);
-                
+
                 await _uow.SaveChangesAsync();
                 return Ok(new {info = $"The supplier has been deleted (supplier ABBR: {supplier.SupplierAbbr})."});
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+
+        [HttpGet("funds")]
+        public IActionResult GetAllFunds()
+        {
+            try
+            {
+                return Ok(_uow.Repository<Fund>().GetAll());
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("allsuppliers")]
+        public IActionResult AllSuppliers()
+        {
+            try
+            {
+                var suppliers = _uow.Repository<SupplierView>().GetAll().Select(p => new
+                {
+                    SupplierId = p.SupplierId,
+                    SupplierName = p.SupplierName,
+                    SupplierAbbr = p.SupplierAbbr
+                });
+                return Ok(suppliers);
             }
             catch (Exception e)
             {

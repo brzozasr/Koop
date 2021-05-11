@@ -64,6 +64,11 @@ namespace Koop.Mapper
             CreateMap<User, CooperantName>();
             
             CreateMap<OrderGrandeHistoryView, Order>();
+
+            CreateMap<Role, Roles>();
+            
+            CreateMap<CategoryUpdate, Category>();
+            CreateMap<PictureUpdate, Category>();
         }
     }
 }

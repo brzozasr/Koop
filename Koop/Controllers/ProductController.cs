@@ -26,7 +26,7 @@ namespace Koop.Controllers
         }
 
         [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpPost("By/Supplier/{supplierId:guid}")]
+        [HttpGet("By/Supplier/{supplierId:guid}")]
         public async Task<IActionResult> ProductsBySupplier([FromRoute] Guid supplierId)
         {
             try
@@ -42,7 +42,8 @@ namespace Koop.Controllers
                 }
 
                 var supplierProducts = _uow.Repository<Product>()
-                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false);
+                    .GetAllAsync().Result.Where(p => p.SupplierId == supplierId && p.Magazine == false)
+                    .OrderBy(x => x.ProductName);
 
                 var supplierMap = _mapper.Map<SupplierProducts>(supplier);
                 var supplierProductsMap = _mapper.Map<List<SupplierProductsNode>>(supplierProducts);
@@ -68,7 +69,7 @@ namespace Koop.Controllers
         }
         
         [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpPost("In/Stock")]
+        [HttpGet("In/Stock")]
         public async Task<IActionResult> ProductsInStock()
         {
             try
@@ -81,7 +82,7 @@ namespace Koop.Controllers
 
 
                 var stockStatusMap = _mapper.Map<List<StockStatus>>(products)
-                    .OrderBy(s => s.StockSupplierId);
+                    .OrderBy(s => s.ProductName);
 
                 if (products.Any())
                 {

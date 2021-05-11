@@ -122,6 +122,11 @@ namespace Koop.Models
                     .HasMaxLength(100)
                     .IsUnicode(false)
                     .HasColumnName("category_name");
+                
+                entity.Property(e => e.Picture)
+                    .HasColumnType("text")
+                    .HasColumnName("picture")
+                    .HasDefaultValueSql("''::text");
             });
 
             modelBuilder.Entity<CoopOrderHistoryView>(entity =>
@@ -580,7 +585,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("supplier_view");
+                entity.ToView("supplier_view");
                 
                 entity.Property(e => e.Available).HasColumnName("available");
 
@@ -623,7 +628,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("baskets_view");
+                entity.ToView("baskets_view");
 
                 entity.Property(e => e.BasketName)
                     .HasMaxLength(100)
@@ -636,7 +641,7 @@ namespace Koop.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("order_grande_history_view");
+                entity.ToView("order_grande_history_view");
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 

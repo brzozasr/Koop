@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models;
+using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
@@ -223,7 +224,8 @@ namespace Koop.Controllers
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+                var result = _uow.ShopRepository().GetAvailableQuantities(productId);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -342,7 +344,39 @@ namespace Koop.Controllers
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
                 
-                return ToResult(response);
+                return Ok(response);
+            }
+            
+            return Problem("Your identity could not be verified.", null, 500);
+        }
+
+        [HttpGet("product/isAvailable")]
+        public IActionResult CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse result;
+            try
+            {
+                result = _uow.ShopRepository().CheckProductAvailability(productId);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("order/orderedItems/count")]
+        public IActionResult GetOrderedItemsCount()
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            
+            if (userId is not null)
+            {
+                var response = _uow.ShopRepository().GetOrderedItemsCount(Guid.Parse(userId));
+                
+                return Ok(response);
             }
             
             return Problem("Your identity could not be verified.", null, 500);

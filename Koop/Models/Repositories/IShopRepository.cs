@@ -42,7 +42,7 @@ namespace Koop.Models.Repositories
         public ShopRepositoryReturn RemoveUnits(IEnumerable<Unit> units);
         public ShopRepositoryReturn UpdateUserOrderQuantity(Guid orderId, int quantity);
         public ShopRepositoryReturn UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId);
-        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity);
+        public ProblemResponse MakeOrder(Guid productId, Guid userId, int quantity);
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId);
         public ShopRepositoryReturn AddProduct(Product product);
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId);
@@ -61,5 +61,7 @@ namespace Koop.Models.Repositories
 
         public void AssignBaskets(Guid orderId);
         public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId);
+        public ProblemResponse GetOrderedItemsCount(Guid userId);
+        public ProblemResponse CheckProductAvailability(Guid productId);
     }
 }

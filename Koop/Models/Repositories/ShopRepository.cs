@@ -98,12 +98,13 @@ namespace Koop.Models.Repositories
                     Quantities = p.Product.AvailableQuantities.Select(p => p.Quantity),
                     Magazine = p.Product.Magazine,
                     Deposit = p.Product.Deposit,
-                    Ordered = orderedProducts.Any(o => o == p.Product.ProductId)
+                    Ordered = orderedProducts.Any(o => o == p.Product.ProductId),
+                    ProductId = p.Product.ProductId
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
             var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
-
+            
             List<ProductsShop> output = new List<ProductsShop>();
             foreach (var product in productsGrouped)
             {
@@ -124,7 +125,8 @@ namespace Koop.Models.Repositories
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
                     Deposit = data.Deposit,
-                    Ordered = data.Ordered
+                    Ordered = data.Ordered,
+                    ProductId = data.ProductId
                 };
                 
                 output.Add(tmp);
@@ -556,25 +558,58 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.UpdateUserOrderStatusSuccess;
         }
 
-        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity)
+        public ProblemResponse MakeOrder(Guid productId, Guid userId, int quantity)
         {
-            var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic");
-
-            if (activeOrderId is not null)
+            ProblemResponse problemResponse = new ProblemResponse()
             {
-                var orderedItem = new OrderedItem()
-                {
-                    OrderId = activeOrderId.OrderId,
-                    CoopId = userId,
-                    ProductId = productId,
-                    // TODO Add default value to database table order_status
-                    OrderStatusId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                    Quantity = quantity
-                };
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
 
-                _koopDbContext.OrderedItems.Add(orderedItem);
-                
+            try
+            {
+                var activeOrder = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+
+                if (activeOrder is null)
+                {
+                    throw new Exception("Obecnie nie ma otwartego zamówienia");
+                }
+
+                var orderStatusId =
+                    _koopDbContext.OrderStatuses.SingleOrDefault(p =>
+                        p.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
+
+                if (orderStatusId is null)
+                {
+                    throw new Exception("Nie znaleziono w bazie statusu zamówienia: 'Zaplanowane'");
+                }
+
+                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderStatus == orderStatusId);
+                if (orderedSameProduct is not null)
+                {
+                    orderedSameProduct.Quantity += quantity;
+                }
+                else
+                {
+                    var orderedItem = new OrderedItem()
+                    {
+                        OrderId = activeOrder.OrderId,
+                        CoopId = userId,
+                        ProductId = productId,
+                        Quantity = quantity,
+                        OrderStatus = orderStatusId
+                    };
+                    
+                    _koopDbContext.OrderedItems.Add(orderedItem);
+                }
+
                 var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+
+                if (product is null)
+                {
+                    throw new Exception("Nie znaleziono w bazie zamawianego produktu");
+                }
+                
                 if (product.Magazine)
                 {
                     if (product.AmountInMagazine - quantity >= 0)
@@ -589,14 +624,75 @@ namespace Koop.Models.Repositories
                     product.Available = product.AmountMax != 0;
 
                     _koopDbContext.Products.Update(product);
-
-                    return ShopRepositoryReturn.MakeOrderSuccess;
+                }
+                else
+                {
+                    throw new Exception("Wielkość zamówienia przekracza wartość maksymalną");
                 }
 
-                return ShopRepositoryReturn.MakeOrderErrTooMuch;
+                _koopDbContext.SaveChanges();
+                
+                problemResponse.Detail = "Produkt został dodany do koszyka";
+                problemResponse.Status = 200;
             }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
+        }
 
-            return ShopRepositoryReturn.MakeOrderErrOther;
+        public ProblemResponse CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
+
+            try
+            {
+                var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+                if (product is null)
+                {
+                    throw new Exception($"Nie znaleziono produktu o id {productId}");
+                }
+
+                problemResponse.Detail = product.Available.ToString();
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
+        }
+
+        public ProblemResponse GetOrderedItemsCount(Guid userId)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
+
+            try
+            {
+                var count = _koopDbContext.OrderedItems.Count(p => p.OrderStatus.OrderStatusName == OrderStatuses.Zaplanowane.ToString() && p.CoopId == userId);
+                problemResponse.Detail = count.ToString();
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
         }
 
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId)

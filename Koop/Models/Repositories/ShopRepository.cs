@@ -72,8 +72,8 @@ namespace Koop.Models.Repositories
             var products_tmp = productId == Guid.Empty
                 ? _koopDbContext.Products
                 : _koopDbContext.Products.Where(p => p.ProductId == productId);
-            
-            if (categoryId !=default(Guid))
+
+            if (categoryId != default(Guid))
             {
                 products_tmp = products_tmp.Where(p => productsIdOfCategory.Any(sp => sp == p.ProductId));
             }
@@ -183,6 +183,7 @@ namespace Koop.Models.Repositories
                     _koopDbContext.Products.Update(productUpdated);
                     updatedProduct = productUpdated;
                 }
+
                 _koopDbContext.SaveChanges();
 
                 Console.WriteLine($"productID: {updatedProduct.ProductId}");
@@ -500,7 +501,8 @@ namespace Koop.Models.Repositories
                     Unit = item.Products.Product.Unit.UnitName,
                     OrderStatus = item.Products.OrderStatus.OrderStatusName,
                     Quantity = item.Products.Quantity,
-                    Price = item.Products.Product.Price * item.Products.Quantity,
+                    Price = Math.Round(item.Products.Product.Price * item.Products.Quantity, 2,
+                        MidpointRounding.AwayFromZero),
                     UnitPrice = item.Products.Product.Price
                 };
                 
@@ -753,16 +755,16 @@ namespace Koop.Models.Repositories
             //     .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
 
             // return supplier;
-            
-            return _koopDbContext.Suppliers.SingleOrDefault(s=> s.SupplierId == supplierId);
+
+            return _koopDbContext.Suppliers.SingleOrDefault(s => s.SupplierId == supplierId);
         }
 
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)
         {
             return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
-        
-        public void UpdateSupplier(Supplier supplier) 
+
+        public void UpdateSupplier(Supplier supplier)
         {
             _koopDbContext.Suppliers.Update(supplier);
             _koopDbContext.SaveChanges();
@@ -797,9 +799,10 @@ namespace Koop.Models.Repositories
         }
 
         public void ChangeOrderStatus(Order order, OrderStatuses newStatus)
-        { 
-            var newStatusId = _koopDbContext.OrderStatuses.SingleOrDefault(s=>s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
-            
+        {
+            var newStatusId = _koopDbContext.OrderStatuses
+                .SingleOrDefault(s => s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
+
             switch (newStatus)
             {
                 case OrderStatuses.Otwarte:
@@ -825,7 +828,7 @@ namespace Koop.Models.Repositories
 
         public void ClearBaskets()
         {
-            var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            var users = _koopDbContext.Users.Where(u => u.BasketId != null).ToList();
             foreach (var user in users)
             {
                 user.BasketId = null;
@@ -844,7 +847,8 @@ namespace Koop.Models.Repositories
 
         public void AssignBaskets(Guid orderId)
         {
-            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o=>o.CoopId).Distinct().ToList();
+            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o => o.CoopId)
+                .Distinct().ToList();
             // var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
             var baskets = _koopDbContext.Baskets.ToList();
             

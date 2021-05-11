@@ -63,6 +63,7 @@ namespace Koop.Controllers
         }
         
         [AllowAnonymous]
+        // [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpGet("supplier/{supplierId}")]
         public IActionResult Supplier(Guid supplierId)
         {
@@ -127,11 +128,10 @@ namespace Koop.Controllers
                 return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
-        
-        
+
         [Authorize(Roles = "Admin,Koty,Opro")]
         [HttpPost("supplier/add")]
-        public async Task<IActionResult> AddSupplier([FromBody] SupplierViewMap sup)
+        public IActionResult AddSupplier([FromBody] SupplierViewMap sup)
         {
             try
             {
@@ -147,9 +147,9 @@ namespace Koop.Controllers
                  
                  var supplierMap = _mapper.Map<Supplier>(sup);
 
-                 await _uow.Repository<Supplier>().AddAsync(supplierMap);
+                 _uow.Repository<Supplier>().Add(supplierMap);
         
-                 await _uow.SaveChangesAsync();
+                 _uow.SaveChanges();
                  return Ok(new {info = $"The supplier has been added (supplier ABBR: {sup.SupplierAbbr})."});
             }
             catch (Exception e)
@@ -158,16 +158,16 @@ namespace Koop.Controllers
             }
         }
         
-        [Authorize(Roles = "Admin,Koty,OpRo")]
-        [HttpGet("supplier/{supplierId}/toggleAvail/")]
+        [Authorize(Roles = "Admin,Koty")]
+        [HttpGet("supplier/{supplierId}/toggleAvail")]
         public IActionResult ToggleSupplierAvailability(Guid supplierId)
         {
+            Console.WriteLine(supplierId);
             try
             {
                 Supplier supplier= _uow.Repository<Supplier>().GetDetail(s => s.SupplierId == supplierId);
                 _uow.ShopRepository().ToggleSupplierAvailability(supplier);
                 return Ok(new {info = "The supplier availability has been changed."});
-        
             }
             catch (Exception e)
             {
@@ -175,7 +175,7 @@ namespace Koop.Controllers
             }
         }
         
-        [Authorize(Roles = "Admin,Koty,OpRo")]
+        [Authorize(Roles = "Admin,Koty,Opro")]
         [HttpGet("supplier/{supplierId}/toggleBlocked/")]
         public IActionResult ToggleSupplierBlocked(Guid supplierId)
         {

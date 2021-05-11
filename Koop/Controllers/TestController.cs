@@ -12,6 +12,7 @@ using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -138,7 +139,7 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }
-        
+
         [HttpPost("product/update")]
         public IActionResult UpdateProduct()
         {
@@ -395,7 +396,39 @@ namespace Koop.Controllers
             }
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/setQuantity/{quantity}")]
+        // [Authorize(Roles = "Default")]
+        [HttpGet("User/{coopId:guid}/Order/In/Basket")]
+        public IActionResult CoopOrderInBasket([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var order = _uow.ShopRepository().GetCooperatorOrders(coopId, lastOrderGrandeId.Value)
+                        .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString())
+                        .OrderBy(x => x.ProductName);
+
+                    if (order.Any())
+                    {
+                        return Ok(order);
+                    }
+
+                    return Ok(new {info = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpPost("orderedItem/{orderedItemId:guid}/setQuantity/{quantity:int}")]
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
@@ -403,12 +436,63 @@ namespace Koop.Controllers
             return ToResult(response);
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/remove")]
+        [HttpPost("orderedItem/{orderedItemId:guid}/remove")]
         public IActionResult RemoveUserOrder(Guid orderedItemId)
         {
             ShopRepositoryReturn response = _uow.ShopRepository().RemoveUserOrder(orderedItemId);
 
             return ToResult(response);
+        }
+
+        // [Authorize(Roles = "Default")]
+        [HttpPost("User/{coopId:guid}/Order/Submit")]
+        public IActionResult SubmitYourOrder([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                var orderStatusIdPlaned = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zaplanowane.ToString())?
+                    .OrderStatusId;
+
+                var orderStatusIdClosed = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zamknięte.ToString())?
+                    .OrderStatusId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var orders = _uow.Repository<OrderedItem>().GetAll()
+                        .Where(field => field.OrderId == lastOrderGrandeId &&
+                                        field.CoopId == coopId && field.OrderStatusId == orderStatusIdPlaned)
+                        .ToList();
+
+                    if (orders.Any())
+                    {
+                        if (orderStatusIdClosed.HasValue)
+                        {
+                            foreach (var item in orders)
+                            {
+                                item.OrderStatusId = orderStatusIdClosed.Value;
+                            }
+                            
+                            _uow.SaveChanges();
+                            return Ok(new {info = "The order has been accepted."});
+                        }
+                        return BadRequest(new {error = "There is a problem with the order status."});
+                    }
+
+                    return BadRequest(new {error = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         // [HttpGet("supplier/{abbr}")]

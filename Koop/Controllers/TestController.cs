@@ -4,17 +4,23 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models;
+using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NetTopologySuite.Operation.Union;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Koop.Controllers
 {
@@ -132,14 +138,49 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }
-
+        
         [HttpPost("product/update")]
+        public IActionResult UpdateProduct()
+        {
+            IFormFile file;
+            if (Request.Form.Files is not null && Request.Form.Files.Count > 0)
+            {
+                file = Request.Form.Files[0];
+            }
+            else
+            {
+                file = null;
+            }
+            
+            var data = Request.Form["data"].ToString();
+            var options = new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var jdata = (JObject)JsonConvert.DeserializeObject(data);
+            var product = JsonSerializer.Deserialize<Product>(data, options);
+            
+            var availQuantS = JsonConvert.SerializeObject(jdata["availQuantity"]);
+            var availQuantity = JsonSerializer.Deserialize<List<AvailableQuantity>>(availQuantS, options);
+            
+            var categoryS = JsonConvert.SerializeObject(jdata["category"]);
+            var category = JsonSerializer.Deserialize<List<Category>>(categoryS, options);
+
+            product.Category = category;
+            product.AvailQuantity = availQuantity;
+
+            var response = _uow.ShopRepository().UpdateProduct(product, file);
+
+            return Ok(response);
+        }
+
+        /*[HttpPost("product/update")]
         public IActionResult UpdateProduct(Product product)
         {
             var response = _uow.ShopRepository().UpdateProduct(product);
             
-            return ToResult(response);
-        }
+            return Ok(response);
+        }*/
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)
@@ -183,7 +224,8 @@ namespace Koop.Controllers
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+                var result = _uow.ShopRepository().GetAvailableQuantities(productId);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -302,7 +344,39 @@ namespace Koop.Controllers
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
                 
-                return ToResult(response);
+                return Ok(response);
+            }
+            
+            return Problem("Your identity could not be verified.", null, 500);
+        }
+
+        [HttpGet("product/isAvailable")]
+        public IActionResult CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse result;
+            try
+            {
+                result = _uow.ShopRepository().CheckProductAvailability(productId);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("order/orderedItems/count")]
+        public IActionResult GetOrderedItemsCount()
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            
+            if (userId is not null)
+            {
+                var response = _uow.ShopRepository().GetOrderedItemsCount(Guid.Parse(userId));
+                
+                return Ok(response);
             }
             
             return Problem("Your identity could not be verified.", null, 500);

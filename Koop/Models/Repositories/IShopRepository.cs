@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Koop.Extensions;
 using Koop.models;
+using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
+using Microsoft.AspNetCore.Http;
 
 namespace Koop.Models.Repositories
 {
@@ -26,7 +28,7 @@ namespace Koop.Models.Repositories
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);
         Supplier GetSupplier(Guid supplierId);
         public Product GetProductById(Guid productId);
-        public ShopRepositoryReturn UpdateProduct(Product product);
+        public ProblemResponse UpdateProduct(Product product, IFormFile picture);
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product);
         public IEnumerable<ProductCategoriesCombo> GetProductCategories(Guid productId);
         public IEnumerable<AvailableQuantity> GetAvailableQuantities(Guid productId);
@@ -40,7 +42,7 @@ namespace Koop.Models.Repositories
         public ShopRepositoryReturn RemoveUnits(IEnumerable<Unit> units);
         public ShopRepositoryReturn UpdateUserOrderQuantity(Guid orderId, int quantity);
         public ShopRepositoryReturn UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId);
-        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity);
+        public ProblemResponse MakeOrder(Guid productId, Guid userId, int quantity);
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId);
         public ShopRepositoryReturn AddProduct(Product product);
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId);
@@ -59,5 +61,7 @@ namespace Koop.Models.Repositories
 
         public void AssignBaskets(Guid orderId);
         public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId);
+        public ProblemResponse GetOrderedItemsCount(Guid userId);
+        public ProblemResponse CheckProductAvailability(Guid productId);
     }
 }

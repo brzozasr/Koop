@@ -92,6 +92,7 @@ namespace Koop.Controllers
             orderBy = orderBy.ToLower();
             Expression<Func<ProductsShop, object>> order = orderBy switch
             {
+                "productId" => p => p.ProductId,
                 "name" => p => p.ProductName,
                 "price" => p => p.Price,
                 "blocked" => p => p.Blocked,

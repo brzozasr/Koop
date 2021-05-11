@@ -81,6 +81,7 @@ namespace Koop.Models.Repositories
                     (product, quantity) => new {Product = product, Quantity = quantity})
                 .Select(p => new ProductsShop()
                 {
+                    ProductId = p.Product.ProductId,
                     ProductName = p.Product.ProductName,
                     Price = p.Product.Price,
                     Picture = p.Product.Picture,
@@ -107,6 +108,7 @@ namespace Koop.Models.Repositories
                 
                 ProductsShop tmp = new ProductsShop()
                 {
+                    ProductId = data.ProductId,
                     ProductName = data.ProductName,
                     Price = data.Price,
                     Picture = data.Picture,

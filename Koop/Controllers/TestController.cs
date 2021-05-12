@@ -402,15 +402,16 @@ namespace Koop.Controllers
         {
             try
             {
-                var orderStatusIdPlaned = _uow.Repository<OrderStatus>().GetAll()
-                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zaplanowane.ToString())?
+                var orderStatusIdOpened = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Otwarte.ToString())?
                     .OrderStatusId;
                 
                 var orderGrande = _uow.Repository<Order>().GetAll()
                     .OrderByDescending(x => x.OrderStartDate)
                     .FirstOrDefault();
 
-                if (orderGrande is not null && orderStatusIdPlaned.HasValue && orderGrande.OrderStatusId == orderStatusIdPlaned.Value)
+                if (orderGrande is not null && orderStatusIdOpened.HasValue && 
+                    orderGrande.OrderStatusId == orderStatusIdOpened.Value)
                 {
                     var order = _uow.ShopRepository().GetCooperatorOrders(coopId, orderGrande.OrderId)
                         .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString())

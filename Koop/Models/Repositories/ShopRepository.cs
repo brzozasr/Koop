@@ -570,7 +570,9 @@ namespace Koop.Models.Repositories
 
             try
             {
-                var activeOrder = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+                var activeOrder = _koopDbContext.Orders
+                    .OrderByDescending(p => p.OrderStartDate)
+                    .FirstOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
 
                 if (activeOrder is null)
                 {
@@ -586,7 +588,7 @@ namespace Koop.Models.Repositories
                     throw new Exception("Nie znaleziono w bazie statusu zamówienia: 'Zaplanowane'");
                 }
 
-                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderStatus == orderStatusId);
+                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderId == activeOrder.OrderId);
                 if (orderedSameProduct is not null)
                 {
                     orderedSameProduct.Quantity += quantity;

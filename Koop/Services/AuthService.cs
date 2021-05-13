@@ -87,8 +87,13 @@ namespace Koop.Services
                 {
                     throw new Exception("Pomimo utworzenia konta użytkownika, w bazie danych nie jest od obecny");
                 }
-         
-                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, newUser.Role);
+
+                var roles = newUser.Role.ToList();
+                if (!roles.Contains("Default"))
+                {
+                    roles.Add("Default");
+                }
+                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, roles);
                 if (!addRolesResult.Succeeded)
                 {
                     throw new Exception("Błąd w trakcie dodawania roli do użytkownika");

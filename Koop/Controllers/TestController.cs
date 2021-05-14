@@ -425,7 +425,7 @@ namespace Koop.Controllers
                     return Ok(new {info = "The basket is empty."});
                 }
 
-                return BadRequest(new {error = "No Grande orders"});
+                return BadRequest(new {error = "No Grande orders."});
             }
             catch (Exception e)
             {

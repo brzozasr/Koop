@@ -6,6 +6,7 @@ using AutoMapper;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -113,7 +114,8 @@ namespace Koop.Controllers
                 }
 
                 var orders = await _uow.Repository<OrderView>().GetAll()
-                    .Where(coop => coop.Id == coopId && coop.OrderId == lastOrderGrandeId)
+                    .Where(coop => coop.Id == coopId && coop.OrderId == lastOrderGrandeId 
+                    && coop.OrderStatusName == OrderStatuses.Zamknięte.ToString())
                     .ToListAsync();
 
 
@@ -187,7 +189,8 @@ namespace Koop.Controllers
             try
             {
                 var orders = await _uow.Repository<OrderView>().GetAll()
-                    .Where(coop => coop.Id == coopId)
+                    .Where(coop => coop.Id == coopId && 
+                                   coop.OrderStatusName == OrderStatuses.Zamknięte.ToString())
                     .ToListAsync();
 
                 if (orders == null || orders.Count == 0)

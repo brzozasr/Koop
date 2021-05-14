@@ -569,13 +569,34 @@ namespace Koop.Models.Repositories
                 Status = 500
             };
 
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
+                var userBasket = _koopDbContext.Baskets.SingleOrDefault(p => p.CoopId == userId);
+                if (userBasket is null)
+                {
+                    var b = _koopDbContext.Baskets.FirstOrDefault(p => p.CoopId == null);
+                    if (b is null)
+                    {
+                        throw new Exception("Brak wolnych koszyków");
+                    }
+
+                    b.CoopId = userId;
+
+                    _koopDbContext.Baskets.Update(b);
+                    _koopDbContext.SaveChanges();
+
+                    var p = _koopDbContext.Baskets.Include(p => p.Coop).FirstOrDefault(p => p.BasketId == b.BasketId);
+                    p.Coop.BasketId = b.BasketId;
+                    _koopDbContext.Update(p);
+                }
+                
                 var activeOrder = _koopDbContext.Orders
                     .OrderByDescending(p => p.OrderStartDate)
-                    .SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+                    .Include(p => p.OrderStatus)
+                    .FirstOrDefault();
 
-                if (activeOrder is null)
+                if (activeOrder is null || activeOrder.OrderStatus.OrderStatusName != OrderStatuses.Otwarte.ToString())
                 {
                     throw new Exception("Obecnie nie ma otwartego zamówienia");
                 }
@@ -639,11 +660,15 @@ namespace Koop.Models.Repositories
                 
                 problemResponse.Detail = "Produkt został dodany do koszyka";
                 problemResponse.Status = 200;
+                
+                scope.Complete();
             }
             catch (Exception e)
             {
                 problemResponse.Detail = e.Message;
                 problemResponse.Status = 500;
+                
+                scope.Dispose();
             }
             
             return problemResponse;

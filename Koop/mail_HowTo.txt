@@ -1,0 +1,10 @@
+# Initialize user-secrets:
+dotnet user-secrets init
+
+# Set mail credentials stored in mail.json file:
+cat mail.json | dotnet user-secrets set
+
+# To list stored values:
+dotnet user-secrets list
+
+

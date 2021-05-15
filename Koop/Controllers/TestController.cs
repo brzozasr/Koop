@@ -623,5 +623,19 @@ namespace Koop.Controllers
                 return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
+
+        [HttpGet("order/isopen")]
+        public IActionResult IsOrderOpen()
+        {
+            var response = _uow.ShopRepository().IsOrderOpen();
+            return Ok(response);
+        }
+        
+        [HttpGet("order/checkStatus")]
+        public IActionResult CheckOrderStatus()
+        {
+            var response = _uow.ShopRepository().CheckOrderStatus();
+            return Ok(response);
+        }
     }
 }

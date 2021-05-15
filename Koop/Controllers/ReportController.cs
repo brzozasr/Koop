@@ -7,6 +7,7 @@ using Koop.Extensions;
 using Koop.Models;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -59,7 +60,8 @@ namespace Koop.Controllers
                 }
 
                 var allOrders = await _uow.Repository<OrderView>().GetAll()
-                    .Where(x => x.OrderId == lastOrderGrandeId).ToListAsync();
+                    .Where(x => x.OrderId == lastOrderGrandeId
+                    && x.OrderStatusName == OrderStatuses.Zamknięte.ToString()).ToListAsync();
 
                 var lastOrderGrande = allOrders
                     .GroupBy(x => x.ProductId).AsQueryable();

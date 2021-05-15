@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -568,11 +569,34 @@ namespace Koop.Models.Repositories
                 Status = 500
             };
 
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
-                var activeOrder = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+                var userBasket = _koopDbContext.Baskets.SingleOrDefault(p => p.CoopId == userId);
+                if (userBasket is null)
+                {
+                    var b = _koopDbContext.Baskets.FirstOrDefault(p => p.CoopId == null);
+                    if (b is null)
+                    {
+                        throw new Exception("Brak wolnych koszyków");
+                    }
 
-                if (activeOrder is null)
+                    b.CoopId = userId;
+
+                    _koopDbContext.Baskets.Update(b);
+                    _koopDbContext.SaveChanges();
+
+                    var p = _koopDbContext.Baskets.Include(p => p.Coop).FirstOrDefault(p => p.BasketId == b.BasketId);
+                    p.Coop.BasketId = b.BasketId;
+                    _koopDbContext.Update(p);
+                }
+                
+                var activeOrder = _koopDbContext.Orders
+                    .OrderByDescending(p => p.OrderStartDate)
+                    .Include(p => p.OrderStatus)
+                    .FirstOrDefault();
+
+                if (activeOrder is null || activeOrder.OrderStatus.OrderStatusName != OrderStatuses.Otwarte.ToString())
                 {
                     throw new Exception("Obecnie nie ma otwartego zamówienia");
                 }
@@ -586,7 +610,7 @@ namespace Koop.Models.Repositories
                     throw new Exception("Nie znaleziono w bazie statusu zamówienia: 'Zaplanowane'");
                 }
 
-                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderStatus == orderStatusId);
+                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderId == activeOrder.OrderId);
                 if (orderedSameProduct is not null)
                 {
                     orderedSameProduct.Quantity += quantity;
@@ -636,11 +660,15 @@ namespace Koop.Models.Repositories
                 
                 problemResponse.Detail = "Produkt został dodany do koszyka";
                 problemResponse.Status = 200;
+                
+                scope.Complete();
             }
             catch (Exception e)
             {
                 problemResponse.Detail = e.Message;
                 problemResponse.Status = 500;
+                
+                scope.Dispose();
             }
             
             return problemResponse;
@@ -873,6 +901,77 @@ namespace Koop.Models.Repositories
                     i++;
                 }
             }
+        }
+
+        public ProblemResponse IsOrderOpen()
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się",
+                Status = 500
+            };
+
+            try
+            {
+                var order = _koopDbContext.Orders.OrderByDescending(p => p.OrderStartDate)
+                    .SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+
+                if (order is null)
+                {
+                    problemResponse.Detail = "false";
+                }
+                else
+                {
+                    problemResponse.Detail = "true";
+                }
+
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+            }
+
+            return problemResponse;
+        }
+        
+        public ProblemResponse CheckOrderStatus()
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się",
+                Status = 500
+            };
+
+            try
+            {
+                var order = _koopDbContext.Orders.OrderByDescending(p => p.OrderStartDate);
+                var otwarte =
+                    order.SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+                var zaplanowane = order.SingleOrDefault(p =>
+                    p.OrderStatus.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
+                
+                if (otwarte is not null)
+                {
+                    problemResponse.Detail = "opened";
+                }
+                else if (zaplanowane is not null)
+                {
+                    problemResponse.Detail = $"planned;{zaplanowane.OrderStartDate.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)};{zaplanowane.OrderStartDate.ToString("HH:mm:ss", CultureInfo.InvariantCulture)}";
+                }
+                else
+                {
+                    problemResponse.Detail = $"closed";
+                }
+
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+            }
+
+            return problemResponse;
         }
     }
 }

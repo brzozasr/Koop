@@ -38,14 +38,20 @@ namespace Koop.Services
         private UserManager<User> _userManager;
         private RoleManager<Role> _roleManager;
         private readonly JwtSettings _jwtSettings;
+        private IMyEmailSender _emailSender;
 
-        public AuthService(IMapper mapper, UserManager<User> userManager, RoleManager<Role> roleManager,
-            IOptionsSnapshot<JwtSettings> jwtSettings)
+        public AuthService(
+            IMapper mapper, 
+            UserManager<User> userManager, 
+            RoleManager<Role> roleManager,
+            IOptionsSnapshot<JwtSettings> jwtSettings,
+            IMyEmailSender emailSender)
         {
             _mapper = mapper;
             _userManager = userManager;
             _roleManager = roleManager;
             _jwtSettings = jwtSettings.Value;
+            _emailSender = emailSender;
         }
         
         /*public Task<IdentityResult> SignUp([FromBody]UserSignUp userSignUp)
@@ -87,8 +93,13 @@ namespace Koop.Services
                 {
                     throw new Exception("Pomimo utworzenia konta użytkownika, w bazie danych nie jest od obecny");
                 }
-         
-                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, newUser.Role);
+
+                var roles = newUser.Role.ToList();
+                if (!roles.Contains("Default"))
+                {
+                    roles.Add("Default");
+                }
+                var addRolesResult = await _userManager.AddToRolesAsync(createdUser, roles);
                 if (!addRolesResult.Succeeded)
                 {
                     throw new Exception("Błąd w trakcie dodawania roli do użytkownika");
@@ -509,7 +520,10 @@ namespace Koop.Services
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
                 Console.WriteLine(code);
-                problemResponse.Data = $"{data.HostName}/password-reset/new-email/{user.Id}/{HttpUtility.UrlEncode(code)}";
+                string link = $"{data.HostName}/password-reset/new-email/{user.Id}/{HttpUtility.UrlEncode(code)}";
+                problemResponse.Data = link;
+                
+                await _emailSender.SendPasswordResetToken(data.Email, link);
             }
             catch (Exception e)
             {

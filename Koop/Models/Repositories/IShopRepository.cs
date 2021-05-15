@@ -63,5 +63,7 @@ namespace Koop.Models.Repositories
         public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId);
         public ProblemResponse GetOrderedItemsCount(Guid userId);
         public ProblemResponse CheckProductAvailability(Guid productId);
+        public ProblemResponse IsOrderOpen();
+        public ProblemResponse CheckOrderStatus();
     }
 }

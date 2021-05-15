@@ -6,6 +6,7 @@ using Koop.Extensions;
 using Koop.Mapper;
 using Koop.Models;
 using Koop.Models.Auth;
+using Koop.Models.MailSenderService;
 using Koop.Models.Repositories;
 using Koop.Services;
 using Microsoft.AspNetCore.Builder;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -86,6 +88,10 @@ namespace Koop
                     .AllowAnyHeader()
                     .AllowCredentials());
             });
+
+            services.AddSingleton<IEmailSender, EmailSenderService>();
+            services.AddSingleton<IMyEmailSender, EmailSender>();
+            services.Configure<MailOptions>(mailOptions => Configuration.GetSection("MailOptions").Bind(mailOptions));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

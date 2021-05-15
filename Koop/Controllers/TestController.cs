@@ -4,17 +4,24 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Extensions;
 using Koop.models;
 using Koop.Models;
+using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
+using Koop.Models.Util;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using NetTopologySuite.Operation.Union;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Koop.Controllers
 {
@@ -134,12 +141,47 @@ namespace Koop.Controllers
         }
 
         [HttpPost("product/update")]
+        public IActionResult UpdateProduct()
+        {
+            IFormFile file;
+            if (Request.Form.Files is not null && Request.Form.Files.Count > 0)
+            {
+                file = Request.Form.Files[0];
+            }
+            else
+            {
+                file = null;
+            }
+            
+            var data = Request.Form["data"].ToString();
+            var options = new JsonSerializerOptions()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var jdata = (JObject)JsonConvert.DeserializeObject(data);
+            var product = JsonSerializer.Deserialize<Product>(data, options);
+            
+            var availQuantS = JsonConvert.SerializeObject(jdata["availQuantity"]);
+            var availQuantity = JsonSerializer.Deserialize<List<AvailableQuantity>>(availQuantS, options);
+            
+            var categoryS = JsonConvert.SerializeObject(jdata["category"]);
+            var category = JsonSerializer.Deserialize<List<Category>>(categoryS, options);
+
+            product.Category = category;
+            product.AvailQuantity = availQuantity;
+
+            var response = _uow.ShopRepository().UpdateProduct(product, file);
+
+            return Ok(response);
+        }
+
+        /*[HttpPost("product/update")]
         public IActionResult UpdateProduct(Product product)
         {
             var response = _uow.ShopRepository().UpdateProduct(product);
             
-            return ToResult(response);
-        }
+            return Ok(response);
+        }*/
 
         [HttpDelete("product/remove")]
         public IActionResult RemoveProduct(IEnumerable<Product> products)
@@ -183,7 +225,21 @@ namespace Koop.Controllers
         {
             try
             {
-                return Ok(_uow.ShopRepository().GetAvailableQuantities(productId));
+                var result = _uow.ShopRepository().GetAvailableQuantities(productId);
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+        
+        [HttpGet("product/availAllQuantities")]
+        public IActionResult GetProductAllAvailQuantities(Guid productId)
+        {
+            try
+            {
+                return Ok(_uow.ShopRepository().GetAllAvailableQuantities(productId));
             }
             catch (Exception e)
             {
@@ -289,7 +345,39 @@ namespace Koop.Controllers
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
                 
-                return ToResult(response);
+                return Ok(response);
+            }
+            
+            return Problem("Your identity could not be verified.", null, 500);
+        }
+
+        [HttpGet("product/isAvailable")]
+        public IActionResult CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse result;
+            try
+            {
+                result = _uow.ShopRepository().CheckProductAvailability(productId);
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("order/orderedItems/count")]
+        public IActionResult GetOrderedItemsCount()
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
+            
+            if (userId is not null)
+            {
+                var response = _uow.ShopRepository().GetOrderedItemsCount(Guid.Parse(userId));
+                
+                return Ok(response);
             }
             
             return Problem("Your identity could not be verified.", null, 500);
@@ -308,7 +396,44 @@ namespace Koop.Controllers
             }
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/setQuantity/{quantity}")]
+        // [Authorize(Roles = "Default")]
+        [HttpGet("User/{coopId:guid}/Order/In/Basket")]
+        public IActionResult CoopOrderInBasket([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var orderStatusIdOpened = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Otwarte.ToString())?
+                    .OrderStatusId;
+                
+                var orderGrande = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault();
+
+                if (orderGrande is not null && orderStatusIdOpened.HasValue && 
+                    orderGrande.OrderStatusId == orderStatusIdOpened.Value)
+                {
+                    var order = _uow.ShopRepository().GetCooperatorOrders(coopId, orderGrande.OrderId)
+                        .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString())
+                        .OrderBy(x => x.ProductName);
+
+                    if (order.Any())
+                    {
+                        return Ok(order);
+                    }
+
+                    return Ok(new {info = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
+        }
+
+        [HttpPost("orderedItem/{orderedItemId:guid}/setQuantity/{quantity:int}")]
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
@@ -316,12 +441,63 @@ namespace Koop.Controllers
             return ToResult(response);
         }
 
-        [HttpPost("orderedItem/{orderedItemId}/remove")]
+        [HttpPost("orderedItem/{orderedItemId:guid}/remove")]
         public IActionResult RemoveUserOrder(Guid orderedItemId)
         {
             ShopRepositoryReturn response = _uow.ShopRepository().RemoveUserOrder(orderedItemId);
 
             return ToResult(response);
+        }
+
+        // [Authorize(Roles = "Default")]
+        [HttpPost("User/{coopId:guid}/Order/Submit")]
+        public IActionResult SubmitYourOrder([FromRoute] Guid coopId)
+        {
+            try
+            {
+                var lastOrderGrandeId = _uow.Repository<Order>().GetAll()
+                    .OrderByDescending(x => x.OrderStartDate)
+                    .FirstOrDefault()?.OrderId;
+
+                var orderStatusIdPlaned = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zaplanowane.ToString())?
+                    .OrderStatusId;
+
+                var orderStatusIdClosed = _uow.Repository<OrderStatus>().GetAll()
+                    .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Zamknięte.ToString())?
+                    .OrderStatusId;
+
+                if (lastOrderGrandeId.HasValue)
+                {
+                    var orders = _uow.Repository<OrderedItem>().GetAll()
+                        .Where(field => field.OrderId == lastOrderGrandeId &&
+                                        field.CoopId == coopId && field.OrderStatusId == orderStatusIdPlaned)
+                        .ToList();
+
+                    if (orders.Any())
+                    {
+                        if (orderStatusIdClosed.HasValue)
+                        {
+                            foreach (var item in orders)
+                            {
+                                item.OrderStatusId = orderStatusIdClosed.Value;
+                            }
+                            
+                            _uow.SaveChanges();
+                            return Ok(new {info = "The order has been accepted."});
+                        }
+                        return BadRequest(new {error = "There is a problem with the order status."});
+                    }
+
+                    return BadRequest(new {error = "The basket is empty."});
+                }
+
+                return BadRequest(new {error = "No Grande orders"});
+            }
+            catch (Exception e)
+            {
+                return Problem(e.Message, null, 500);
+            }
         }
 
         // [HttpGet("supplier/{abbr}")]
@@ -426,6 +602,40 @@ namespace Koop.Controllers
             {
                 return Problem(e.Message);
             }
+        }
+        
+        [AllowAnonymous]
+        [HttpGet("allsuppliers")]
+        public IActionResult AllSuppliers()
+        {
+            try
+            {
+                var suppliers = _uow.Repository<SupplierView>().GetAll().Select(p => new
+                {
+                    SupplierId = p.SupplierId,
+                    SupplierName = p.SupplierName,
+                    SupplierAbbr = p.SupplierAbbr
+                });
+                return Ok(suppliers);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+
+        [HttpGet("order/isopen")]
+        public IActionResult IsOrderOpen()
+        {
+            var response = _uow.ShopRepository().IsOrderOpen();
+            return Ok(response);
+        }
+        
+        [HttpGet("order/checkStatus")]
+        public IActionResult CheckOrderStatus()
+        {
+            var response = _uow.ShopRepository().CheckOrderStatus();
+            return Ok(response);
         }
     }
 }

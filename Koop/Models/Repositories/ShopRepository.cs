@@ -1,14 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Transactions;
 using AutoMapper;
 using Koop.Extensions;
 using Koop.models;
+using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -68,8 +73,8 @@ namespace Koop.Models.Repositories
             var products_tmp = productId == Guid.Empty
                 ? _koopDbContext.Products
                 : _koopDbContext.Products.Where(p => p.ProductId == productId);
-            
-            if (categoryId !=default(Guid))
+
+            if (categoryId != default(Guid))
             {
                 products_tmp = products_tmp.Where(p => productsIdOfCategory.Any(sp => sp == p.ProductId));
             }
@@ -94,12 +99,13 @@ namespace Koop.Models.Repositories
                     Quantities = p.Product.AvailableQuantities.Select(p => p.Quantity),
                     Magazine = p.Product.Magazine,
                     Deposit = p.Product.Deposit,
-                    Ordered = orderedProducts.Any(o => o == p.Product.ProductId)
+                    Ordered = orderedProducts.Any(o => o == p.Product.ProductId),
+                    ProductId = p.Product.ProductId
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
             var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
-
+            
             List<ProductsShop> output = new List<ProductsShop>();
             foreach (var product in productsGrouped)
             {
@@ -120,7 +126,8 @@ namespace Koop.Models.Repositories
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
                     Deposit = data.Deposit,
-                    Ordered = data.Ordered
+                    Ordered = data.Ordered,
+                    ProductId = data.ProductId
                 };
                 
                 output.Add(tmp);
@@ -143,14 +150,145 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.AddProductSuccess;
         }
 
-        public ShopRepositoryReturn UpdateProduct(Product product)
+        public ProblemResponse UpdateProduct(Product product, IFormFile picture)
         {
-            var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
-            var productUpdated = _mapper.Map(product, productExist);
+            string dirPath = "Resources/ProductImgs";
             
-            _koopDbContext.Products.Update(productUpdated);
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Wystąpił błąd nieznanego pochodzenia",
+                Status = 500
+            };
+            
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                Product updatedProduct;
+                if (product.ProductId == Guid.Empty)
+                {
+                    Product newProductTmp = new Product();
+                    var newProduct = _mapper.Map(product, newProductTmp);
+                    _koopDbContext.Products.Add(newProduct);
+                    updatedProduct = newProduct;
+                }
+                else
+                {
+                    var productExist = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == product.ProductId);
 
-            return ShopRepositoryReturn.UpdateProductSuccess;
+                    if (productExist is null)
+                    {
+                        throw new Exception($"Nie znaleziono produktu o podanym Id: {product.ProductId}");
+                    }
+                
+                    var productUpdated = _mapper.Map(product, productExist);
+                    _koopDbContext.Products.Update(productUpdated);
+                    updatedProduct = productUpdated;
+                }
+
+                _koopDbContext.SaveChanges();
+
+                Console.WriteLine($"productID: {updatedProduct.ProductId}");
+
+                if (updatedProduct.Category.Any())
+                {
+                    var currentProductCategories =
+                        _koopDbContext.ProductCategories.Where(p => p.ProductId == product.ProductId).Include(p => p.Category);
+                    
+                    var categoriesToAdd = updatedProduct.Category.Where(p => !currentProductCategories.Select(q => q.Category.CategoryName).Contains(p.CategoryName));
+                    var categoriesToRemove = currentProductCategories.Where(p =>
+                        !updatedProduct.Category.Select(q => q.CategoryName).Contains(p.Category.CategoryName));
+                    
+                    foreach (var category in categoriesToAdd)
+                    {
+                        ProductCategory productCategory = new ProductCategory()
+                        {
+                            CategoryId = category.CategoryId,
+                            ProductId = updatedProduct.ProductId
+                        };
+
+                        _koopDbContext.ProductCategories.Add(productCategory);
+                    }
+                    
+                    _koopDbContext.ProductCategories.RemoveRange(categoriesToRemove);
+                }
+
+                if (updatedProduct.AvailQuantity.Any())
+                {
+                    var currentAvailableQuantities =
+                        _koopDbContext.AvailableQuantities.Where(p => p.ProductId == product.ProductId);
+
+                    var availQuantToAdd = updatedProduct.AvailQuantity.Where(p =>
+                        !currentAvailableQuantities.Select(q => q.Quantity).Contains(p.Quantity));
+                    var availQuantToRemove = currentAvailableQuantities.Where(p =>
+                        !updatedProduct.AvailQuantity.Select(q => q.Quantity).Contains(p.Quantity));
+
+                    foreach (var quantity in availQuantToAdd)
+                    {
+                        AvailableQuantity availableQuantity = new AvailableQuantity()
+                        {
+                            // AvailableQuantityId = Guid.Empty,
+                            ProductId = updatedProduct.ProductId,
+                            Quantity = quantity.Quantity
+                        };
+
+                        _koopDbContext.AvailableQuantities.Add(availableQuantity);
+                    }
+                    
+                    _koopDbContext.AvailableQuantities.RemoveRange(availQuantToRemove);
+                }
+
+                if (picture is not null && picture.Length > 0)
+                {
+                    var fileExtension = picture.FileName.Split('.');
+                    if (fileExtension.Length != 2)
+                    {
+                        throw new Exception($"Problem z obrazkiem - za dużo kropek");
+                    }
+
+                    var fileName = $"{updatedProduct.ProductId}.{fileExtension[1]}";
+                    
+                    var fullPath = Path.Combine(dirPath, fileName);
+
+                    // Remove files with the same name
+                    var filesWithSameName = Directory.GetFiles(dirPath, $"{updatedProduct.ProductId}*");
+                    foreach (var file in filesWithSameName)
+                    {
+                        File.Delete(file);
+                    }
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        picture.CopyTo(stream);
+                    }
+
+                    updatedProduct.Picture = fullPath;
+                    _koopDbContext.Products.Update(updatedProduct);
+                    _koopDbContext.SaveChanges();
+                }
+                else
+                {
+                    if (updatedProduct.Picture is null || updatedProduct.Picture.Equals(String.Empty))
+                    {
+                        var filesWithSameName = Directory.GetFiles(dirPath, $"{updatedProduct.ProductId}*");
+                        foreach (var file in filesWithSameName)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                }
+
+                _koopDbContext.SaveChanges();
+                problemResponse.Detail = "Dane zostały poprawnie zapisane";
+                problemResponse.Status = 200;
+                scope.Complete();
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                scope.Dispose();
+            }
+            
+            return problemResponse;
         }
 
         public ShopRepositoryReturn RemoveProduct(IEnumerable<Product> product)
@@ -167,6 +305,14 @@ namespace Koop.Models.Repositories
             var availQuantities = _koopDbContext.AvailableQuantities
                 .Where(p => p.ProductId == productId && p.Quantity <= amountMax);
             //return _koopDbContext.AvailableQuantities.Where(p => p.ProductId == productId);
+            return availQuantities;
+        }
+        
+        public IEnumerable<AvailableQuantity> GetAllAvailableQuantities(Guid productId)
+        {
+            var availQuantities = _koopDbContext.AvailableQuantities
+                .Where(p => p.ProductId == productId);
+            
             return availQuantities;
         }
 
@@ -356,7 +502,8 @@ namespace Koop.Models.Repositories
                     Unit = item.Products.Product.Unit.UnitName,
                     OrderStatus = item.Products.OrderStatus.OrderStatusName,
                     Quantity = item.Products.Quantity,
-                    Price = item.Products.Product.Price * item.Products.Quantity,
+                    Price = Math.Round(item.Products.Product.Price * item.Products.Quantity, 2,
+                        MidpointRounding.AwayFromZero),
                     UnitPrice = item.Products.Product.Price
                 };
                 
@@ -414,25 +561,81 @@ namespace Koop.Models.Repositories
             return ShopRepositoryReturn.UpdateUserOrderStatusSuccess;
         }
 
-        public ShopRepositoryReturn MakeOrder(Guid productId, Guid userId, int quantity)
+        public ProblemResponse MakeOrder(Guid productId, Guid userId, int quantity)
         {
-            var activeOrderId = _koopDbContext.Orders.SingleOrDefault(p => p.OrderStatus.OrderStatusName == "Szkic");
-
-            if (activeOrderId is not null)
+            ProblemResponse problemResponse = new ProblemResponse()
             {
-                var orderedItem = new OrderedItem()
-                {
-                    OrderId = activeOrderId.OrderId,
-                    CoopId = userId,
-                    ProductId = productId,
-                    // TODO Add default value to database table order_status
-                    OrderStatusId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                    Quantity = quantity
-                };
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
 
-                _koopDbContext.OrderedItems.Add(orderedItem);
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            try
+            {
+                var userBasket = _koopDbContext.Baskets.SingleOrDefault(p => p.CoopId == userId);
+                if (userBasket is null)
+                {
+                    var b = _koopDbContext.Baskets.FirstOrDefault(p => p.CoopId == null);
+                    if (b is null)
+                    {
+                        throw new Exception("Brak wolnych koszyków");
+                    }
+
+                    b.CoopId = userId;
+
+                    _koopDbContext.Baskets.Update(b);
+                    _koopDbContext.SaveChanges();
+
+                    var p = _koopDbContext.Baskets.Include(p => p.Coop).FirstOrDefault(p => p.BasketId == b.BasketId);
+                    p.Coop.BasketId = b.BasketId;
+                    _koopDbContext.Update(p);
+                }
                 
+                var activeOrder = _koopDbContext.Orders
+                    .OrderByDescending(p => p.OrderStartDate)
+                    .Include(p => p.OrderStatus)
+                    .FirstOrDefault();
+
+                if (activeOrder is null || activeOrder.OrderStatus.OrderStatusName != OrderStatuses.Otwarte.ToString())
+                {
+                    throw new Exception("Obecnie nie ma otwartego zamówienia");
+                }
+
+                var orderStatusId =
+                    _koopDbContext.OrderStatuses.SingleOrDefault(p =>
+                        p.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
+
+                if (orderStatusId is null)
+                {
+                    throw new Exception("Nie znaleziono w bazie statusu zamówienia: 'Zaplanowane'");
+                }
+
+                var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderId == activeOrder.OrderId);
+                if (orderedSameProduct is not null)
+                {
+                    orderedSameProduct.Quantity += quantity;
+                }
+                else
+                {
+                    var orderedItem = new OrderedItem()
+                    {
+                        OrderId = activeOrder.OrderId,
+                        CoopId = userId,
+                        ProductId = productId,
+                        Quantity = quantity,
+                        OrderStatus = orderStatusId
+                    };
+                    
+                    _koopDbContext.OrderedItems.Add(orderedItem);
+                }
+
                 var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+
+                if (product is null)
+                {
+                    throw new Exception("Nie znaleziono w bazie zamawianego produktu");
+                }
+                
                 if (product.Magazine)
                 {
                     if (product.AmountInMagazine - quantity >= 0)
@@ -447,14 +650,79 @@ namespace Koop.Models.Repositories
                     product.Available = product.AmountMax != 0;
 
                     _koopDbContext.Products.Update(product);
-
-                    return ShopRepositoryReturn.MakeOrderSuccess;
+                }
+                else
+                {
+                    throw new Exception("Wielkość zamówienia przekracza wartość maksymalną");
                 }
 
-                return ShopRepositoryReturn.MakeOrderErrTooMuch;
+                _koopDbContext.SaveChanges();
+                
+                problemResponse.Detail = "Produkt został dodany do koszyka";
+                problemResponse.Status = 200;
+                
+                scope.Complete();
             }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+                
+                scope.Dispose();
+            }
+            
+            return problemResponse;
+        }
 
-            return ShopRepositoryReturn.MakeOrderErrOther;
+        public ProblemResponse CheckProductAvailability(Guid productId)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
+
+            try
+            {
+                var product = _koopDbContext.Products.SingleOrDefault(p => p.ProductId == productId);
+                if (product is null)
+                {
+                    throw new Exception($"Nie znaleziono produktu o id {productId}");
+                }
+
+                problemResponse.Detail = product.Available.ToString();
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
+        }
+
+        public ProblemResponse GetOrderedItemsCount(Guid userId)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się w trakcie tworzenia zamówienia",
+                Status = 500
+            };
+
+            try
+            {
+                var count = _koopDbContext.OrderedItems.Count(p => p.OrderStatus.OrderStatusName == OrderStatuses.Zaplanowane.ToString() && p.CoopId == userId);
+                problemResponse.Detail = count.ToString();
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
         }
 
         public ShopRepositoryReturn RemoveUserOrder(Guid orderedItemId)
@@ -515,16 +783,16 @@ namespace Koop.Models.Repositories
             //     .SingleOrDefault(s=>s.SupplierAbbr.ToLower() == abbr);
 
             // return supplier;
-            
-            return _koopDbContext.Suppliers.SingleOrDefault(s=> s.SupplierId == supplierId);
+
+            return _koopDbContext.Suppliers.SingleOrDefault(s => s.SupplierId == supplierId);
         }
 
         public IEnumerable<Product> GetProductsBySupplier(Guid supplierId)
         {
             return _koopDbContext.Products.Where(p => p.SupplierId == supplierId).ToList();
         }
-        
-        public void UpdateSupplier(Supplier supplier) 
+
+        public void UpdateSupplier(Supplier supplier)
         {
             _koopDbContext.Suppliers.Update(supplier);
             _koopDbContext.SaveChanges();
@@ -559,9 +827,10 @@ namespace Koop.Models.Repositories
         }
 
         public void ChangeOrderStatus(Order order, OrderStatuses newStatus)
-        { 
-            var newStatusId = _koopDbContext.OrderStatuses.SingleOrDefault(s=>s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
-            
+        {
+            var newStatusId = _koopDbContext.OrderStatuses
+                .SingleOrDefault(s => s.OrderStatusName == newStatus.ToString())?.OrderStatusId;
+
             switch (newStatus)
             {
                 case OrderStatuses.Otwarte:
@@ -587,7 +856,7 @@ namespace Koop.Models.Repositories
 
         public void ClearBaskets()
         {
-            var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
+            var users = _koopDbContext.Users.Where(u => u.BasketId != null).ToList();
             foreach (var user in users)
             {
                 user.BasketId = null;
@@ -606,7 +875,8 @@ namespace Koop.Models.Repositories
 
         public void AssignBaskets(Guid orderId)
         {
-            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o=>o.CoopId).Distinct().ToList();
+            var usersIds = _koopDbContext.OrderedItems.Where(o => o.OrderId == orderId)?.Select(o => o.CoopId)
+                .Distinct().ToList();
             // var users = _koopDbContext.Users.Where(u=>u.BasketId != null).ToList();
             var baskets = _koopDbContext.Baskets.ToList();
             
@@ -631,6 +901,77 @@ namespace Koop.Models.Repositories
                     i++;
                 }
             }
+        }
+
+        public ProblemResponse IsOrderOpen()
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się",
+                Status = 500
+            };
+
+            try
+            {
+                var order = _koopDbContext.Orders.OrderByDescending(p => p.OrderStartDate)
+                    .SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+
+                if (order is null)
+                {
+                    problemResponse.Detail = "false";
+                }
+                else
+                {
+                    problemResponse.Detail = "true";
+                }
+
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+            }
+
+            return problemResponse;
+        }
+        
+        public ProblemResponse CheckOrderStatus()
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Jakiś nieznany problem pojawił się",
+                Status = 500
+            };
+
+            try
+            {
+                var order = _koopDbContext.Orders.OrderByDescending(p => p.OrderStartDate);
+                var otwarte =
+                    order.SingleOrDefault(p => p.OrderStatus.OrderStatusName == OrderStatuses.Otwarte.ToString());
+                var zaplanowane = order.SingleOrDefault(p =>
+                    p.OrderStatus.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
+                
+                if (otwarte is not null)
+                {
+                    problemResponse.Detail = "opened";
+                }
+                else if (zaplanowane is not null)
+                {
+                    problemResponse.Detail = $"planned;{zaplanowane.OrderStartDate.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture)};{zaplanowane.OrderStartDate.ToString("HH:mm:ss", CultureInfo.InvariantCulture)}";
+                }
+                else
+                {
+                    problemResponse.Detail = $"closed";
+                }
+
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+            }
+
+            return problemResponse;
         }
     }
 }

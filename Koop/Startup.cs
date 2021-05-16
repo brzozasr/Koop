@@ -9,6 +9,7 @@ using Koop.Models.Auth;
 using Koop.Models.MailSenderService;
 using Koop.Models.Repositories;
 using Koop.Services;
+using Koop.Services.MailSender;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

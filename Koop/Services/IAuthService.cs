@@ -37,5 +37,6 @@ namespace Koop.Services
         public Task<Guid> GetUserRoleId(string roleName);
         public Task<ProblemResponse> GetPasswordResetTokenAsync(PasswordReset data);
         public Task<ProblemResponse> ResetPassword(PasswordReset data);
+        public Task<ProblemResponse> SelfResetPassword(PasswordReset data);
     }
 }

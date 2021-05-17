@@ -572,6 +572,36 @@ namespace Koop.Models.Repositories
             using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
+                var plannedStatusId =
+                    _koopDbContext.OrderStatuses.SingleOrDefault(p =>
+                        p.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
+                
+                var closedStatusId =
+                    _koopDbContext.OrderStatuses.SingleOrDefault(p =>
+                        p.OrderStatusName == OrderStatuses.Zamknięte.ToString());
+
+                if (plannedStatusId is null || closedStatusId is null)
+                {
+                    string status = plannedStatusId is null ? "Zaplanowane" : "Zamknięte";
+                    throw new Exception($"Nie znaleziono w bazie statusu zamówienia: '{status}'");
+                }
+                
+                var activeOrder = _koopDbContext.Orders
+                    .OrderByDescending(p => p.OrderStartDate)
+                    .Include(p => p.OrderStatus)
+                    .FirstOrDefault();
+
+                if (activeOrder is null || activeOrder.OrderStatus.OrderStatusName != OrderStatuses.Otwarte.ToString())
+                {
+                    throw new Exception("Obecnie nie ma otwartego zamówienia");
+                }
+                
+                var orderClosedCheck = _koopDbContext.OrderedItems.FirstOrDefault(p => p.CoopId == userId && p.OrderId == activeOrder.OrderId && p.OrderStatusId == closedStatusId.OrderStatusId);
+                if (orderClosedCheck is not null)
+                {
+                    throw new Exception("Zamówienie zostało już złożone. Nie można dodawać nowych produktów");
+                }
+                
                 var userBasket = _koopDbContext.Baskets.SingleOrDefault(p => p.CoopId == userId);
                 if (userBasket is null)
                 {
@@ -590,25 +620,6 @@ namespace Koop.Models.Repositories
                     p.Coop.BasketId = b.BasketId;
                     _koopDbContext.Update(p);
                 }
-                
-                var activeOrder = _koopDbContext.Orders
-                    .OrderByDescending(p => p.OrderStartDate)
-                    .Include(p => p.OrderStatus)
-                    .FirstOrDefault();
-
-                if (activeOrder is null || activeOrder.OrderStatus.OrderStatusName != OrderStatuses.Otwarte.ToString())
-                {
-                    throw new Exception("Obecnie nie ma otwartego zamówienia");
-                }
-
-                var orderStatusId =
-                    _koopDbContext.OrderStatuses.SingleOrDefault(p =>
-                        p.OrderStatusName == OrderStatuses.Zaplanowane.ToString());
-
-                if (orderStatusId is null)
-                {
-                    throw new Exception("Nie znaleziono w bazie statusu zamówienia: 'Zaplanowane'");
-                }
 
                 var orderedSameProduct = _koopDbContext.OrderedItems.SingleOrDefault(p => p.CoopId == userId && p.ProductId == productId && p.OrderId == activeOrder.OrderId);
                 if (orderedSameProduct is not null)
@@ -623,7 +634,7 @@ namespace Koop.Models.Repositories
                         CoopId = userId,
                         ProductId = productId,
                         Quantity = quantity,
-                        OrderStatus = orderStatusId
+                        OrderStatus = plannedStatusId
                     };
                     
                     _koopDbContext.OrderedItems.Add(orderedItem);

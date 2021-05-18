@@ -185,6 +185,15 @@ namespace Koop.Controllers
 
             return Ok(response);
         }
+        
+        [Authorize]
+        [HttpPost("self-reset-password-set")]
+        public async Task<IActionResult> SelfResetPassword(PasswordReset data)
+        {
+            var response = await _uow.AuthService().SelfResetPassword(data);
+
+            return Ok(response);
+        }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("user/{userId}/remove")]

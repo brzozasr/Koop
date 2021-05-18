@@ -570,5 +570,47 @@ namespace Koop.Services
             
             return problemResponse;
         }
+        
+        public async Task<ProblemResponse> SelfResetPassword(PasswordReset data)
+        {
+            ProblemResponse problemResponse = new ProblemResponse()
+            {
+                Detail = "Coś poszło nie tak",
+                Status = 500
+            };
+
+            try
+            {
+                Console.WriteLine(data.Token);
+                var user = await _userManager.FindByIdAsync(data.UserId);
+                if (user is null)
+                {
+                    throw new Exception("Użytkownik nie został znaleziony w bazie.");
+                }
+                
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                if (token is null)
+                {
+                    throw new Exception("Problem przy tworzeniu tokenu do resetowania hasła.");
+                }
+
+                var resetPasswordResult = await _userManager.ResetPasswordAsync(user, token, data.Password);
+                if (!resetPasswordResult.Succeeded)
+                {
+                    var errCode = resetPasswordResult.Errors.FirstOrDefault().Code;
+                    throw new Exception($"Coś poszło nie tak podczas resetowania hasła. Kod błędu: {errCode}");
+                }
+                
+                problemResponse.Detail = "Hasło zostało pomyślnie zmienione";
+                problemResponse.Status = 200;
+            }
+            catch (Exception e)
+            {
+                problemResponse.Detail = e.Message;
+                problemResponse.Status = 500;
+            }
+            
+            return problemResponse;
+        }
     }
 }

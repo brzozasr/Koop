@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 #nullable disable
 
@@ -28,6 +29,12 @@ namespace Koop.Models
         public Guid SupplierId { get; set; }
         public bool Available { get; set; }
         public bool Blocked { get; set; }
+        
+        [NotMapped]
+        public IEnumerable<AvailableQuantity> AvailQuantity { get; set; }
+        
+        [NotMapped]
+        public IEnumerable<Category> Category { get; set; }
 
         public virtual Supplier Supplier { get; set; }
         public virtual Unit Unit { get; set; }

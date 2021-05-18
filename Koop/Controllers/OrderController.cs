@@ -131,10 +131,10 @@ namespace Koop.Controllers
                         return BadRequest(new {error = "This order must be open first."});
                     }
 
-                    if (OrderStatuses.Zamknięte == status)
-                    {
-                        _uow.ShopRepository().AssignBaskets(orderId);
-                    }
+                    // if (OrderStatuses.Zamknięte == status)
+                    // {
+                    //     _uow.ShopRepository().AssignBaskets(orderId);
+                    // }
                 }
 
                 _uow.ShopRepository().ChangeOrderStatus(order, status);

@@ -1,11 +1,11 @@
 using System.Net;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Koop.Models.MailSenderService;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 
-namespace Koop.Services
+namespace Koop.Services.MailSender
 {
     public class EmailSenderService : IEmailSender
     {

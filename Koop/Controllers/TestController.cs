@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Koop.Extensions;
@@ -13,6 +15,7 @@ using Koop.Models.Auth;
 using Koop.Models.Repositories;
 using Koop.Models.RepositoryModels;
 using Koop.Models.Util;
+using Koop.Services.MailSender;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,12 +33,14 @@ namespace Koop.Controllers
     public class TestController : ControllerBase
     {
         private IGenericUnitOfWork _uow;
+        private IMyEmailSender _emailSender;
 
-        public TestController(IGenericUnitOfWork genericUnitOfWork)
+        public TestController(IGenericUnitOfWork genericUnitOfWork, IMyEmailSender emailSender)
         {
             _uow = genericUnitOfWork;
+            _emailSender = emailSender;
         }
-        
+
         [AllowAnonymous]
         [HttpGet("index")]
         public IActionResult Index()
@@ -57,7 +62,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize]
         [HttpGet("Auth")]
         public IActionResult Auth()
@@ -68,7 +73,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize(Policy = "Szymek")]
         [HttpGet("AuthUserName")]
         public IActionResult AuthUserName()
@@ -79,7 +84,7 @@ namespace Koop.Controllers
                 Time = DateTime.Now
             });
         }
-        
+
         [Authorize(Roles = "Koty")]
         [HttpGet("AuthRole")]
         public IActionResult AuthRole()
@@ -93,12 +98,14 @@ namespace Koop.Controllers
 
         [Authorize]
         [HttpGet("products")]
-        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc", Guid categoryId = default(Guid))
+        public IActionResult Products(string orderBy = "name", int start = 0, int count = 10, string orderDir = "asc",
+            Guid categoryId = default(Guid))
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
             orderBy = orderBy.ToLower();
             Expression<Func<ProductsShop, object>> order = orderBy switch
             {
+                "productId" => p => p.ProductId,
                 "name" => p => p.ProductName,
                 "price" => p => p.Price,
                 "blocked" => p => p.Blocked,
@@ -116,7 +123,8 @@ namespace Koop.Controllers
                 _ => OrderDirection.Asc
             };
 
-            return Ok(_uow.ShopRepository().GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
+            return Ok(_uow.ShopRepository()
+                .GetProductsShop(Guid.Parse(userId), order, start, count, direction, categoryId));
         }
 
         [HttpGet("product/{productId}/get")]
@@ -136,7 +144,7 @@ namespace Koop.Controllers
         public IActionResult AddProduct(Product product)
         {
             var response = _uow.ShopRepository().AddProduct(product);
-            
+
             return ToResult(response);
         }
 
@@ -152,18 +160,18 @@ namespace Koop.Controllers
             {
                 file = null;
             }
-            
+
             var data = Request.Form["data"].ToString();
             var options = new JsonSerializerOptions()
             {
                 PropertyNameCaseInsensitive = true
             };
-            var jdata = (JObject)JsonConvert.DeserializeObject(data);
+            var jdata = (JObject) JsonConvert.DeserializeObject(data);
             var product = JsonSerializer.Deserialize<Product>(data, options);
-            
+
             var availQuantS = JsonConvert.SerializeObject(jdata["availQuantity"]);
             var availQuantity = JsonSerializer.Deserialize<List<AvailableQuantity>>(availQuantS, options);
-            
+
             var categoryS = JsonConvert.SerializeObject(jdata["category"]);
             var category = JsonSerializer.Deserialize<List<Category>>(categoryS, options);
 
@@ -187,10 +195,10 @@ namespace Koop.Controllers
         public IActionResult RemoveProduct(IEnumerable<Product> products)
         {
             var response = _uow.ShopRepository().RemoveProduct(products);
-            
+
             return ToResult(response);
         }
-        
+
         [HttpGet("product/categories")]
         public IActionResult GetProductCatgeories(Guid productId)
         {
@@ -203,7 +211,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-        
+
         [HttpPost("product/categories/update")]
         public IActionResult UpdateCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -211,7 +219,7 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-        
+
         [HttpDelete("product/categories/remove")]
         public IActionResult RemoveCategories(IEnumerable<ProductCategoriesCombo> productCategoriesCombos)
         {
@@ -219,7 +227,7 @@ namespace Koop.Controllers
 
             return ToResult(response);
         }
-        
+
         [HttpGet("product/availQuantities")]
         public IActionResult GetProductAvailQuantities(Guid productId)
         {
@@ -233,7 +241,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-        
+
         [HttpGet("product/availAllQuantities")]
         public IActionResult GetProductAllAvailQuantities(Guid productId)
         {
@@ -259,7 +267,7 @@ namespace Koop.Controllers
         public IActionResult RemoveAvailQuantities(IEnumerable<AvailableQuantity> availableQuantities)
         {
             var response = _uow.ShopRepository().RemoveAvailableQuantities(availableQuantities);
-            
+
             return ToResult(response);
         }
 
@@ -281,7 +289,7 @@ namespace Koop.Controllers
         public IActionResult UnitsUpdate(IEnumerable<Unit> units)
         {
             var response = _uow.ShopRepository().UpdateUnits(units);
-            
+
             return ToResult(response);
         }
 
@@ -323,7 +331,7 @@ namespace Koop.Controllers
         public IActionResult UpdateCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().UpdateCategories(categories);
-            
+
             return ToResult(response);
         }
 
@@ -331,7 +339,7 @@ namespace Koop.Controllers
         public IActionResult RemoveCategories(IEnumerable<Category> categories)
         {
             var response = _uow.ShopRepository().RemoveCategories(categories);
-            
+
             return ToResult(response);
         }
 
@@ -344,10 +352,10 @@ namespace Koop.Controllers
             if (userId is not null)
             {
                 var response = _uow.ShopRepository().MakeOrder(productId, Guid.Parse(userId), quantity);
-                
+
                 return Ok(response);
             }
-            
+
             return Problem("Your identity could not be verified.", null, 500);
         }
 
@@ -372,14 +380,14 @@ namespace Koop.Controllers
         public IActionResult GetOrderedItemsCount()
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(p => p.Type == ClaimTypes.NameIdentifier)?.Value;
-            
+
             if (userId is not null)
             {
                 var response = _uow.ShopRepository().GetOrderedItemsCount(Guid.Parse(userId));
-                
+
                 return Ok(response);
             }
-            
+
             return Problem("Your identity could not be verified.", null, 500);
         }
 
@@ -405,12 +413,12 @@ namespace Koop.Controllers
                 var orderStatusIdOpened = _uow.Repository<OrderStatus>().GetAll()
                     .FirstOrDefault(x => x.OrderStatusName == OrderStatuses.Otwarte.ToString())?
                     .OrderStatusId;
-                
+
                 var orderGrande = _uow.Repository<Order>().GetAll()
                     .OrderByDescending(x => x.OrderStartDate)
                     .FirstOrDefault();
 
-                if (orderGrande is not null && orderStatusIdOpened.HasValue && 
+                if (orderGrande is not null && orderStatusIdOpened.HasValue &&
                     orderGrande.OrderStatusId == orderStatusIdOpened.Value)
                 {
                     var order = _uow.ShopRepository().GetCooperatorOrders(coopId, orderGrande.OrderId)
@@ -437,7 +445,7 @@ namespace Koop.Controllers
         public IActionResult UpdateUserOrderQuantity(Guid orderedItemId, int quantity)
         {
             var response = _uow.ShopRepository().UpdateUserOrderQuantity(orderedItemId, quantity);
-            
+
             return ToResult(response);
         }
 
@@ -470,6 +478,8 @@ namespace Koop.Controllers
                 if (lastOrderGrandeId.HasValue)
                 {
                     var orders = _uow.Repository<OrderedItem>().GetAll()
+                        .Include(p => p.Product)
+                        .Include(c => c.Coop)
                         .Where(field => field.OrderId == lastOrderGrandeId &&
                                         field.CoopId == coopId && field.OrderStatusId == orderStatusIdPlaned)
                         .ToList();
@@ -478,14 +488,48 @@ namespace Koop.Controllers
                     {
                         if (orderStatusIdClosed.HasValue)
                         {
+                            var culture = CultureInfo.CreateSpecificCulture("pl-PL");
+
+                            var tBody = @"<tr>
+                                <td class=""brd"" style=""padding: 0 10px 0 10px;"">#productName#</td>
+                                <td class=""brd"" style=""text-align: center; padding: 0 10px 0 10px;"">#quantity#</td>
+                                <td class=""brd"" style=""text-align: right; padding: 0 10px 0 10px;"">#price#</td>
+                                <td class=""brd"" style=""text-align: right; padding: 0 10px 0 10px;"">#totalPrice#</td>
+                                </tr>";
+                            var tFoot = @"<tr class=""brd"" style=""font-weight: bold"">
+                                <td style=""padding: 0 10px 0 10px;"">RAZEM</td>
+                                <td style=""padding: 0 10px 0 10px; text-align: center;"">&nbsp;</td>
+                                <td style=""padding: 0 10px 0 10px; text-align: right;"">&nbsp;</td>
+                                <td style=""padding: 0 10px 0 10px; text-align: right;"">#sumPrice#</td>
+                                </tr>";
+
+                            StringBuilder sbTBody = new StringBuilder();
+                            var sumPrice = 0d;
+
                             foreach (var item in orders)
                             {
                                 item.OrderStatusId = orderStatusIdClosed.Value;
+
+                                var price = Math.Round(item.Product.Price, 2, MidpointRounding.AwayFromZero);
+                                var totalPrice = Math.Round(price * item.Quantity, 2, MidpointRounding.AwayFromZero);
+                                sumPrice += totalPrice;
+
+                                sbTBody.Append(tBody
+                                    .Replace("#productName#", item.Product.ProductName)
+                                    .Replace("#quantity#", item.Quantity.ToString())
+                                    .Replace("#price#", $"{price.ToString("#0.00", culture)} zł")
+                                    .Replace("#totalPrice#", $"{totalPrice.ToString("#0.00", culture)} zł"));
                             }
-                            
+
+                            tFoot = tFoot.Replace("#sumPrice#",
+                                $"{Math.Round(sumPrice, 2, MidpointRounding.AwayFromZero).ToString("#0.00", culture)} zł");
+
+                            _emailSender.SendOrderConfirmation(orders[0].Coop.Email, sbTBody.ToString(), tFoot);
+
                             _uow.SaveChanges();
                             return Ok(new {info = "The order has been accepted."});
                         }
+
                         return BadRequest(new {error = "There is a problem with the order status."});
                     }
 
@@ -505,22 +549,22 @@ namespace Koop.Controllers
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-        
+
 
         // [HttpGet("supplier/{abbr}/edit")]
         // public IActionResult EditSupplier(string abbr)
         // {
         //     return Ok(_uow.ShopRepository().GetSupplier(abbr));
         // }
-        
+
         [HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
             var response = _uow.ShopRepository().UpdateUserOrderStatus(orderId, userId, statusId);
-            
+
             return ToResult(response);
         }
-        
+
         /*[HttpPost("user/{userId}/order/{orderId}/setStatus/{statusId}")]
         public IActionResult UpdateUserOrderStatus(Guid orderId, Guid userId, Guid statusId)
         {
@@ -528,20 +572,20 @@ namespace Koop.Controllers
             
             return ToResult(response);
         }*/
-        
+
 
         // [HttpGet("allsuppliers")]
         // public IActionResult AllSuppliers()
         // {
         //     return Ok(_uow.Repository<Supplier>().GetAll());
         // }
-        
+
         [HttpGet("cooperator/{firstname}+{lastname}/history")]
         public IActionResult UserOrdersHistoryView(string firstName, string lastName)
         {
             return Ok(_uow.ShopRepository().GetUserOrders(firstName, lastName));
         }
-        
+
         // [HttpGet("order/baskets")]
         // public IActionResult BasketName()
         // {
@@ -553,7 +597,7 @@ namespace Koop.Controllers
         // {
         //     return Ok(_uow.Repository<Order>().GetAll());
         // }
-        
+
         [NonAction]
         private IActionResult ToResult(ShopRepositoryReturn shopRepositoryReturn)
         {
@@ -567,7 +611,7 @@ namespace Koop.Controllers
                 return Problem(e.Message, null, 500);
             }
         }
-        
+
         [Authorize(Roles = "Admin,Koty")]
         [HttpDelete("supplier/{supplierId}/remove")]
         public async Task<IActionResult> RemoveSupplier(Guid supplierId)
@@ -576,12 +620,12 @@ namespace Koop.Controllers
             {
                 // IEnumerable<Product> products = _uow.ShopRepository().GetProductsBySupplier(supplierId);
                 // _uow.ShopRepository().RemoveProduct(products);
-                
+
                 var supplier = _uow.Repository<Supplier>()
                     .GetDetail(s => s.SupplierId == supplierId);
-                
+
                 _uow.Repository<Supplier>().Delete(supplier);
-                
+
                 await _uow.SaveChangesAsync();
                 return Ok(new {info = $"The supplier has been deleted (supplier ABBR: {supplier.SupplierAbbr})."});
             }
@@ -603,7 +647,7 @@ namespace Koop.Controllers
                 return Problem(e.Message);
             }
         }
-        
+
         [AllowAnonymous]
         [HttpGet("allsuppliers")]
         public IActionResult AllSuppliers()
@@ -630,7 +674,7 @@ namespace Koop.Controllers
             var response = _uow.ShopRepository().IsOrderOpen();
             return Ok(response);
         }
-        
+
         [HttpGet("order/checkStatus")]
         public IActionResult CheckOrderStatus()
         {

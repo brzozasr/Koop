@@ -5,6 +5,7 @@ namespace Koop.Models.RepositoryModels
 {
     public class ProductsShop
     {
+        public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public double Price { get; set; }
         public string Picture { get; set; }
@@ -19,6 +20,5 @@ namespace Koop.Models.RepositoryModels
         public bool Magazine { get; set; }
         public int? Deposit { get; set; }
         public bool Ordered { get; set; }
-        public Guid ProductId { get; set; }
     }
 }

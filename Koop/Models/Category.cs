@@ -15,5 +15,6 @@ namespace Koop.Models
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; }
         public virtual ICollection<ProductCategory> ProductCategories { get; set; }
+        public string Picture { get; set; }
     }
 }

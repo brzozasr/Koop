@@ -122,6 +122,11 @@ namespace Koop.Models
                     .HasMaxLength(100)
                     .IsUnicode(false)
                     .HasColumnName("category_name");
+                
+                entity.Property(e => e.Picture)
+                    .HasColumnType("text")
+                    .HasColumnName("picture")
+                    .HasDefaultValueSql("''::text");
             });
 
             modelBuilder.Entity<CoopOrderHistoryView>(entity =>

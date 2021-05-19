@@ -101,7 +101,6 @@ namespace Koop.Models.Repositories
                     Magazine = p.Product.Magazine,
                     Deposit = p.Product.Deposit,
                     Ordered = orderedProducts.Any(o => o == p.Product.ProductId),
-                    ProductId = p.Product.ProductId
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
@@ -128,8 +127,7 @@ namespace Koop.Models.Repositories
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
                     Deposit = data.Deposit,
-                    Ordered = data.Ordered,
-                    ProductId = data.ProductId
+                    Ordered = data.Ordered
                 };
                 
                 output.Add(tmp);

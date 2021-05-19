@@ -420,7 +420,7 @@ namespace Koop.Controllers
                 if (orderGrande is not null && orderStatusIdOpened.HasValue &&
                     orderGrande.OrderStatusId == orderStatusIdOpened.Value)
                 {
-                    var order = _uow.ShopRepository().GetCooperatorOrders(coopId, orderGrande.OrderId)
+                    var order = _uow.ShopRepository().GetCooperatorOrdersFund(coopId, orderGrande.OrderId)
                         .Where(field => field.OrderStatus == OrderStatuses.Zaplanowane.ToString())
                         .OrderBy(x => x.ProductName);
 
@@ -479,6 +479,7 @@ namespace Koop.Controllers
                     var orders = _uow.Repository<OrderedItem>().GetAll()
                         .Include(p => p.Product)
                         .Include(c => c.Coop)
+                        .ThenInclude(f => f.Fund)
                         .Where(field => field.OrderId == lastOrderGrandeId &&
                                         field.CoopId == coopId && field.OrderStatusId == orderStatusIdPlaned)
                         .ToList();
@@ -496,14 +497,15 @@ namespace Koop.Controllers
                                 <td class=""brd"" style=""text-align: right; padding: 0 10px 0 10px;"">#totalPrice#</td>
                                 </tr>";
                             var tFoot = @"<tr class=""brd"" style=""font-weight: bold"">
-                                <td style=""padding: 0 10px 0 10px;"">RAZEM</td>
+                                <td style=""padding: 0 10px 0 10px;"">Razem<br>Razem z funduszem (#fund#)</td>
                                 <td style=""padding: 0 10px 0 10px; text-align: center;"">&nbsp;</td>
                                 <td style=""padding: 0 10px 0 10px; text-align: right;"">&nbsp;</td>
-                                <td style=""padding: 0 10px 0 10px; text-align: right;"">#sumPrice#</td>
+                                <td style=""padding: 0 10px 0 10px; text-align: right;"">#sumPrice#<br>#sumPriceFund#</td>
                                 </tr>";
 
                             StringBuilder sbTBody = new StringBuilder();
                             var sumPrice = 0d;
+                            int? fund = null;
 
                             foreach (var item in orders)
                             {
@@ -518,10 +520,23 @@ namespace Koop.Controllers
                                     .Replace("#quantity#", item.Quantity.ToString())
                                     .Replace("#price#", $"{price.ToString("#0.00", culture)} zł")
                                     .Replace("#totalPrice#", $"{totalPrice.ToString("#0.00", culture)} zł"));
+
+                                fund ??= item.Coop.Fund.Value;
+                            }
+                            
+                            sumPrice = Math.Round(sumPrice, 2, MidpointRounding.AwayFromZero);
+                            double sumPriceFund = 0d;
+
+                            if (fund != null)
+                            {
+                                sumPriceFund = Math.Round(sumPrice + sumPrice * ((double) fund / 100), 2,
+                                    MidpointRounding.AwayFromZero);
                             }
 
                             tFoot = tFoot.Replace("#sumPrice#",
-                                $"{Math.Round(sumPrice, 2, MidpointRounding.AwayFromZero).ToString("#0.00", culture)} zł");
+                                $"{sumPrice.ToString("#0.00", culture)} zł")
+                                .Replace("#sumPriceFund#", $"{sumPriceFund.ToString("#0.00", culture)} zł")
+                                .Replace("#fund#", $"{fund}%");
 
                             _emailSender.SendOrderConfirmation(orders[0].Coop.Email, sbTBody.ToString(), tFoot);
 

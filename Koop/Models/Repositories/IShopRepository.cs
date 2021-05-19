@@ -23,6 +23,7 @@ namespace Koop.Models.Repositories
             OrderDirection orderDirection = OrderDirection.Asc, Guid categoryId = default(Guid), Guid productId = default(Guid));
 
         public IEnumerable<CooperatorOrder> GetCooperatorOrders(Guid cooperatorId, Guid orderId);
+        public IEnumerable<CooperatorOrderFund> GetCooperatorOrdersFund(Guid cooperatorId, Guid orderId);
         
         IEnumerable<BasketsView> GetBaskets();
         IEnumerable<UserOrdersHistoryView> GetUserOrders(string firstName, string lastName);

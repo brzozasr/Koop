@@ -86,6 +86,7 @@ namespace Koop.Models.Repositories
                     (product, quantity) => new {Product = product, Quantity = quantity})
                 .Select(p => new ProductsShop()
                 {
+                    ProductId = p.Product.ProductId,
                     ProductName = p.Product.ProductName,
                     Price = p.Product.Price,
                     Picture = p.Product.Picture,
@@ -100,7 +101,6 @@ namespace Koop.Models.Repositories
                     Magazine = p.Product.Magazine,
                     Deposit = p.Product.Deposit,
                     Ordered = orderedProducts.Any(o => o == p.Product.ProductId),
-                    ProductId = p.Product.ProductId
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
@@ -113,6 +113,7 @@ namespace Koop.Models.Repositories
                 
                 ProductsShop tmp = new ProductsShop()
                 {
+                    ProductId = data.ProductId,
                     ProductName = data.ProductName,
                     Price = data.Price,
                     Picture = data.Picture,
@@ -126,8 +127,7 @@ namespace Koop.Models.Repositories
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
                     Deposit = data.Deposit,
-                    Ordered = data.Ordered,
-                    ProductId = data.ProductId
+                    Ordered = data.Ordered
                 };
                 
                 output.Add(tmp);

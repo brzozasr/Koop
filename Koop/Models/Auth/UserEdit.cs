@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.ComTypes;
@@ -26,9 +27,22 @@ namespace Koop.Models.Auth
         public string UserName { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public string OldPassword { get; set; }
+        private string _oldPassword;
+
+        public string OldPassword
+        {
+            get => _oldPassword;
+            set => _oldPassword = string.IsNullOrEmpty(value) ? null : value;
+        }
+
+        private string _newPassword;
+
         [StringLength(100, MinimumLength = 8, ErrorMessage = "The password must be at least 8 characters long.")]
-        public string NewPassword { get; set; }
+        public string NewPassword
+        {
+            get => _newPassword;
+            set => _newPassword = string.IsNullOrEmpty(value) ? null : value;
+        }
 
         private Guid? _id;
 
@@ -37,5 +51,7 @@ namespace Koop.Models.Auth
             get => _id;
             set => _id = value == Guid.Empty ? null : value;
         }
+
+        public IEnumerable<string> Role { get; set; }
     }
 }

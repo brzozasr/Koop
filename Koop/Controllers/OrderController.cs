@@ -27,7 +27,7 @@ namespace Koop.Controllers
             _mapper = mapper;
         }
         
-        // [Authorize(Roles = "Admin,Koty,Paczkers")]
+        [Authorize(Roles = "Admin,Koty,Paczkers")]
         [HttpGet("order/baskets")]
         public IActionResult BasketName()
         {
@@ -45,8 +45,30 @@ namespace Koop.Controllers
                 return BadRequest(new {error = e.Message, source = e.Source});
             }
         }
+        
+        [Authorize(Roles = "Admin,Koty")]
+        [HttpPost("order/add")]
+        public IActionResult AddOrder([FromBody] OrderGrandeHistoryView order)
+        {
+            try
+            {
+                order.OrderStatusId = _uow.Repository<OrderStatus>()
+                    .GetDetail(os => os.OrderStatusName == order.OrderStatusName)?.OrderStatusId;
+                
+                var orderMap = _mapper.Map<Order>(order);
 
-        // [Authorize(Roles = "Admin,Koty")]
+                _uow.Repository<Order>().Add(orderMap);
+        
+                _uow.SaveChanges();
+                return Ok(new {info = $"The order has been added (order Id: {orderMap.OrderId})."});
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+
+        [Authorize(Roles = "Admin,Koty")]
         [HttpGet("bigorders")]
         public IActionResult BigOrders()
         {
@@ -60,7 +82,22 @@ namespace Koop.Controllers
             }
         }
         
-        // [Authorize(Roles = "Admin,Koty,OpRo")]
+        [HttpGet("statuses")]
+        public IActionResult Statuses()
+        {
+            try
+            {
+                List<string> listOfStatuses = OrderStatuses.GetNames(typeof(OrderStatuses)).ToList();
+                
+                return Ok(listOfStatuses);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new {error = e.Message, source = e.Source});
+            }
+        }
+        
+        [Authorize(Roles = "Admin,Koty,OpRo")]
         [HttpGet("order/{orderId}/{status}")]
         public IActionResult ChangeOrderStatus(Guid orderId, OrderStatuses status)
         {
@@ -75,6 +112,8 @@ namespace Koop.Controllers
                     {
                         return BadRequest(new {error = "There is already an open order!"});
                     }
+                    
+                    _uow.ShopRepository().ClearBaskets();
                 }
                 
                 
@@ -91,6 +130,11 @@ namespace Koop.Controllers
                     {
                         return BadRequest(new {error = "This order must be open first."});
                     }
+
+                    // if (OrderStatuses.Zamknięte == status)
+                    // {
+                    //     _uow.ShopRepository().AssignBaskets(orderId);
+                    // }
                 }
 
                 _uow.ShopRepository().ChangeOrderStatus(order, status);

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using AutoMapper;
 using Koop.Extensions;
+using Koop.models;
 using Koop.Models;
 using Koop.Models.Auth;
 using Koop.Models.RepositoryModels;
@@ -60,6 +61,14 @@ namespace Koop.Mapper
 
             CreateMap<SupplierViewMap, Supplier>();
             CreateMap<Supplier, SupplierViewMap>();
+            CreateMap<User, CooperantName>();
+            
+            CreateMap<OrderGrandeHistoryView, Order>();
+
+            CreateMap<Role, Roles>();
+            
+            CreateMap<CategoryUpdate, Category>();
+            CreateMap<PictureUpdate, Category>();
         }
     }
 }

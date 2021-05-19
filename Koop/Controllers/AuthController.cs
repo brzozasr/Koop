@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -38,18 +39,7 @@ namespace Koop.Controllers
             Console.WriteLine($"User first name: {newUser.FirstName}");
             var userCreateResult = await _uow.AuthService().SignUp(newUser);
 
-            if (userCreateResult is null)
-            {
-                return Problem("User with the same email already exists.", null, 500);
-            }
-            
-            if (userCreateResult.Succeeded)
-            {
-                return Created(string.Empty, string.Empty);
-            }
-
-            return Problem(userCreateResult.Errors.FirstOrDefault().ToString(), null, 500);
-            // return BadRequest(userCreateResult.Errors);
+            return Ok(userCreateResult);
         }
 
         [HttpPost("signin")]
@@ -88,6 +78,32 @@ namespace Koop.Controllers
             }
 
             return Problem(roleResult.Errors.First().Description, null, 500);
+        }
+
+        [HttpGet("user/{userId}/getRole")]
+        public async Task<IActionResult> GetUserRole(string userId)
+        {
+            var result = await _uow.AuthService().GetUserRoleAsync(userId);
+
+            result ??= new List<string>();
+
+            // var roleId = await _uow.AuthService().GetUserRoleId(result);
+
+            List<string> roles = new List<string>();
+            foreach (var item in result)
+            {
+                roles.Add(item);
+            }
+            
+            return Ok(roles);
+        }
+
+        [HttpGet("roles")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var result = await _uow.AuthService().GetAllRolesAsync();
+            
+            return Ok(result);
         }
 
         [HttpPost("user/{userId}/addRole/{roleName}")]
@@ -143,22 +159,40 @@ namespace Koop.Controllers
             
             if (authUserId is not null)
             {
-                var result = await _uow.AuthService().EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
+                var result = await _uow.AuthService()
+                    .EditUser(userEdit, userId, Guid.Parse(authUserId), authUserRoles);
 
-                if (result is null)
-                {
-                    return Problem("Not enough privileges to edit user's credentials.", null, 500);
-                }
-                
-                if (result.Succeeded)
-                {
-                    return Ok(userEdit);
-                }
-                
-                return Problem(result.Errors.First().Description, null, 500);
+                return Ok(result);
             }
             
             return Problem("User is not authenticated.", null, 500);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> GetPasswordResetTokenAsync(PasswordReset data)
+        {
+            var response = await _uow.AuthService().GetPasswordResetTokenAsync(data);
+
+            return Ok(response);
+        }
+        
+        [AllowAnonymous]
+        [HttpPost("reset-password-set")]
+        public async Task<IActionResult> ResetPassword(PasswordReset data)
+        {
+            var response = await _uow.AuthService().ResetPassword(data);
+
+            return Ok(response);
+        }
+        
+        [Authorize]
+        [HttpPost("self-reset-password-set")]
+        public async Task<IActionResult> SelfResetPassword(PasswordReset data)
+        {
+            var response = await _uow.AuthService().SelfResetPassword(data);
+
+            return Ok(response);
         }
 
         [Authorize(Roles = "Admin")]

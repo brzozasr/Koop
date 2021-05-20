@@ -104,7 +104,8 @@ namespace Koop.Models.Repositories
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
-            var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
+            //var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
+            var productsGrouped = productsSorted.ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
             
             List<ProductsShop> output = new List<ProductsShop>();
             foreach (var product in productsGrouped)

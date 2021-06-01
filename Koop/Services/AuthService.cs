@@ -516,7 +516,8 @@ namespace Koop.Services
                 if (user is null)
                 {
                     problemResponse.Detail = "Na podany adres mailowy został wysłany link do zresetowania hasła";
-                    throw new Exception("Na podany adres mailowy został wysłany link do zresetowania hasła");
+                    //throw new Exception("Na podany adres mailowy został wysłany link do zresetowania hasła");
+                    throw new Exception($"Nie znaleziono użytkownika o adresie {data.Email}");
                 }
 
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);

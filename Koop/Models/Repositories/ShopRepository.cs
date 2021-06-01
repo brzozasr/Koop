@@ -86,6 +86,7 @@ namespace Koop.Models.Repositories
                     (product, quantity) => new {Product = product, Quantity = quantity})
                 .Select(p => new ProductsShop()
                 {
+                    ProductId = p.Product.ProductId,
                     ProductName = p.Product.ProductName,
                     Price = p.Product.Price,
                     Picture = p.Product.Picture,
@@ -100,11 +101,11 @@ namespace Koop.Models.Repositories
                     Magazine = p.Product.Magazine,
                     Deposit = p.Product.Deposit,
                     Ordered = orderedProducts.Any(o => o == p.Product.ProductId),
-                    ProductId = p.Product.ProductId
                 });
             
             var productsSorted = orderDirection == OrderDirection.Asc ? products.OrderBy(orderBy) : products.OrderByDescending(orderBy);
-            var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
+            //var productsGrouped = productsSorted.Skip(start).Take(count).ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
+            var productsGrouped = productsSorted.ToList().GroupBy(p => p.ProductName, p => p, (s, lists) => new {Key = s, Value = lists});
             
             List<ProductsShop> output = new List<ProductsShop>();
             foreach (var product in productsGrouped)
@@ -113,6 +114,7 @@ namespace Koop.Models.Repositories
                 
                 ProductsShop tmp = new ProductsShop()
                 {
+                    ProductId = data.ProductId,
                     ProductName = data.ProductName,
                     Price = data.Price,
                     Picture = data.Picture,
@@ -126,8 +128,7 @@ namespace Koop.Models.Repositories
                     Quantities = data.Quantities,
                     Magazine = data.Magazine,
                     Deposit = data.Deposit,
-                    Ordered = data.Ordered,
-                    ProductId = data.ProductId
+                    Ordered = data.Ordered
                 };
                 
                 output.Add(tmp);
@@ -508,6 +509,43 @@ namespace Koop.Models.Repositories
                 };
                 
                 output.Add(cooperatorOrder);
+            }
+
+            return output;
+        }
+        
+        public IEnumerable<CooperatorOrderFund> GetCooperatorOrdersFund(Guid cooperatorId, Guid orderId)
+        {
+            var order = _koopDbContext.OrderedItems
+                .Include(p => p.OrderStatus)
+                .Include(p => p.Product)
+                .ThenInclude(p => p.Unit)
+                .Include(u => u.Coop)
+                .ThenInclude(f => f.Fund)
+                .Where(p => p.CoopId == cooperatorId)
+                .Where(p => p.OrderId == orderId);
+
+            List<CooperatorOrderFund> output = new List<CooperatorOrderFund>();
+            foreach (var item in order)
+            {
+                CooperatorOrderFund cooperatorOrderFund = new CooperatorOrderFund
+                {
+                    OrderedItemId = item.OrderedItemId,
+                    OrderId = item.OrderId,
+                    ProductId = item.ProductId,
+                    FirstName = item.Coop.FirstName,
+                    LastName = item.Coop.LastName,
+                    ProductName = item.Product.ProductName,
+                    Unit = item.Product.Unit.UnitName,
+                    OrderStatus = item.OrderStatus.OrderStatusName,
+                    Quantity = item.Quantity,
+                    Price = Math.Round(item.Product.Price * item.Quantity, 2,
+                        MidpointRounding.AwayFromZero),
+                    UnitPrice = item.Product.Price,
+                    Fund = item.Coop.Fund.Value
+                };
+                
+                output.Add(cooperatorOrderFund);
             }
 
             return output;
